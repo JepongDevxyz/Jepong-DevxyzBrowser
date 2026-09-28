@@ -92,7 +92,16 @@ jobs:
           NDK="${ANDROID_NDK_ROOT:-${ANDROID_NDK_HOME:-}}"
           test -n "$NDK"
           mkdir -p "$RUNNER_TEMP/ovpn3-native"
+          # OpenVPN 3 uses standalone Asio headers. Ubuntu's libasio-dev supplies
+          # the headers for the configure probe; Android compilation still uses
+          # the NDK toolchain selected below.
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libasio-dev
+          ASIO_INCLUDE_DIR=$(dpkg -L libasio-dev | awk '/\/asio\.hpp$/ {sub(/\/asio\.hpp$/, "", $0); print; exit}')
+          echo "Resolved ASIO_INCLUDE_DIR=$ASIO_INCLUDE_DIR"
+          test -f "$ASIO_INCLUDE_DIR/asio.hpp"
           cmake -S "$RUNNER_TEMP/openvpn3" -B "$RUNNER_TEMP/ovpn3-native" \
+            -DASIO_INCLUDE_DIR="$ASIO_INCLUDE_DIR" \
             -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-26 \
