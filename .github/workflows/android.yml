@@ -141,7 +141,7 @@ jobs:
           add_ssl_library(xkey)
           add_library(openvpn3_core SHARED client/ovpncli.cpp)
           target_include_directories(openvpn3_core PRIVATE client)
-          target_link_libraries(openvpn3_core PRIVATE xkey)
+          target_link_libraries(openvpn3_core xkey)
           add_core_dependencies(openvpn3_core)
           set_target_properties(openvpn3_core PROPERTIES OUTPUT_NAME openvpn3_core)
           EOF
