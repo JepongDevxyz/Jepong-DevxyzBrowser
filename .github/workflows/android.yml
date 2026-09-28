@@ -36,6 +36,22 @@ jobs:
           test -f "$RUNNER_TEMP/openvpn3/client/ovpncli.i"
           grep -q "class OpenVPNClient" "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
           grep -q "TunBuilderBase" "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
+      - name: Generate OpenVPN 3 Android SWIG/JNI bridge
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends swig
+          mkdir -p "$RUNNER_TEMP/ovpn3-java/net/openvpn/ovpn3"
+          cd "$RUNNER_TEMP/openvpn3"
+          swig -c++ -java -package net.openvpn.ovpn3 \
+            -outdir "$RUNNER_TEMP/ovpn3-java/net/openvpn/ovpn3" \
+            -DOPENVPN_PLATFORM_ANDROID \
+            -Iclient -I. \
+            -o "$RUNNER_TEMP/ovpncli_wrap.cxx" \
+            client/ovpncli.i
+          test -s "$RUNNER_TEMP/ovpncli_wrap.cxx"
+          test -s "$RUNNER_TEMP/ovpn3-java/net/openvpn/ovpn3/OpenVPNClient.java"
+          grep -q "JNIEXPORT" "$RUNNER_TEMP/ovpncli_wrap.cxx"
+          grep -q "class OpenVPNClient" "$RUNNER_TEMP/ovpn3-java/net/openvpn/ovpn3/OpenVPNClient.java"
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
