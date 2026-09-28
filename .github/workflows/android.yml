@@ -21,10 +21,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Install Android SDK 36
+      - name: Verify Android SDK
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          test -d "$ANDROID_HOME"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
@@ -33,8 +35,12 @@ jobs:
         run: |
           APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
           test -n "$APK"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep "package: name='com.jepongdevxyz.browser'"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging "$APK" | grep "package: name='com.jepongdevxyz.browser'"
+          "$APKSIGNER" verify --verbose "$APK"
       - uses: actions/upload-artifact@v4
         with:
           name: DevxyzBrowser-debug-apk
