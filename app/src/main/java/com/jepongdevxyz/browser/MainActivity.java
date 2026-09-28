@@ -33,6 +33,7 @@ public final class MainActivity extends AppCompatActivity {
   private View menuButton;
   private TextView vpnStatus;
   private LinearLayout tabStrip;
+  private org.mozilla.geckoview.GeckoView geckoView;
   private ActivityResultLauncher<String[]> openVpnProfile;
   private ActivityResultLauncher<Intent> vpnPermission;
   private boolean vpnReceiverRegistered;
@@ -51,7 +52,16 @@ public final class MainActivity extends AppCompatActivity {
   };
   private final ArrayList<String> historyItems = new ArrayList<>();
   private final ArrayList<String> bookmarks = new ArrayList<>();
-  private int tabCount = 1;
+  private final ArrayList<BrowserTab> tabs = new ArrayList<>();
+  private BrowserTab activeTab;
+
+  private static final class BrowserTab {
+    final GeckoSession session;
+    String url = "";
+    LinearLayout chip;
+    TextView label;
+    BrowserTab(GeckoSession session) { this.session = session; }
+  }
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
@@ -74,9 +84,11 @@ public final class MainActivity extends AppCompatActivity {
       }
     });
     if (runtime == null) runtime = GeckoRuntime.create(this);
+    geckoView = findViewById(R.id.gecko);
     session = new GeckoSession();
     session.open(runtime);
-    ((GeckoView)findViewById(R.id.gecko)).setSession(session);
+    activeTab = new BrowserTab(session);
+    tabs.add(activeTab);
     address = findViewById(R.id.address);
     heroSearch = findViewById(R.id.heroSearch);
     progress = findViewById(R.id.pageProgress);
@@ -84,22 +96,14 @@ public final class MainActivity extends AppCompatActivity {
     vpnStatus = findViewById(R.id.vpnStatus);
     tabStrip = findViewById(R.id.tabStrip);
     menuButton = findViewById(R.id.menu);
-    addTabChip();
+    addTabChip(activeTab);
+    attachSession(activeTab);
+    selectTab(activeTab);
     vpnStatus.setText(DevxyzVpnService.isConnected() ? "Connected • OpenVPN" :
       (VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported"));
     IntentFilter vpnFilter = new IntentFilter(DevxyzVpnService.ACTION_STATE);
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
-
-    session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
-      @Override public void onPageStart(GeckoSession s, String url) {
-        address.setText(url); progress.setVisibility(View.VISIBLE); progress.setProgress(5);
-        if (!historyItems.contains(url)) historyItems.add(0, url);
-      }
-      @Override public void onPageStop(GeckoSession s, boolean ok) {
-        progress.setProgress(100); progress.postDelayed(() -> { progress.setProgress(0); progress.setVisibility(View.GONE); }, 350);
-      }
-    });
 
     findViewById(R.id.back).setOnClickListener(v -> session.goBack());
     findViewById(R.id.refresh).setOnClickListener(v -> session.reload());
@@ -143,7 +147,7 @@ public final class MainActivity extends AppCompatActivity {
     });
     getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
       @Override public void handleOnBackPressed() {
-        if(startPage.getVisibility()!=View.VISIBLE && session.canGoBack()) session.goBack();
+        if(startPage.getVisibility()!=View.VISIBLE && activeTab != null && !activeTab.url.isEmpty()) session.goBack();
         else if(startPage.getVisibility()!=View.VISIBLE) showHome();
         else finish();
       }
@@ -159,20 +163,68 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void newTab() {
-    tabCount++;
-    addTabChip();
-    showHome();
+    GeckoSession newSession = new GeckoSession();
+    newSession.open(runtime);
+    BrowserTab tab = new BrowserTab(newSession);
+    tabs.add(tab);
+    attachSession(tab);
+    addTabChip(tab);
+    selectTab(tab);
   }
 
-  private void addTabChip() {
-    TextView chip = new TextView(this);
-    String label = tabCount == 1 ? "◉  New Tab   ×" : "◉  New Tab " + tabCount + "   ×";
-    chip.setText(label);
-    chip.setTextSize(13);
-    chip.setTextColor(getColor(R.color.text));
-    chip.setGravity(Gravity.CENTER);
-    int pad = (int) (14 * getResources().getDisplayMetrics().density);
-    chip.setPadding(pad, 0, pad, 0);
+  private void attachSession(BrowserTab tab) {
+    tab.session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
+      @Override public void onPageStart(GeckoSession s, String url) {
+        tab.url = url;
+        if (tab == activeTab) {
+          address.setText(url); progress.setVisibility(View.VISIBLE); progress.setProgress(5);
+        }
+        updateTabLabel(tab);
+        if (!historyItems.contains(url)) historyItems.add(0, url);
+      }
+      @Override public void onPageStop(GeckoSession s, boolean ok) {
+        if (tab == activeTab) {
+          progress.setProgress(100);
+          progress.postDelayed(() -> { progress.setProgress(0); progress.setVisibility(View.GONE); }, 350);
+        }
+      }
+    });
+  }
+
+  private void selectTab(BrowserTab tab) {
+    activeTab = tab;
+    session = tab.session;
+    geckoView.setSession(session);
+    startPage.setVisibility(tab.url.isEmpty() ? View.VISIBLE : View.GONE);
+    address.setText(tab.url.isEmpty() ? "" : tab.url);
+    progress.setVisibility(View.GONE);
+    for (BrowserTab item : tabs) updateTabLabel(item);
+  }
+
+  private void addTabChip(BrowserTab tab) {
+    LinearLayout chip = new LinearLayout(this);
+    chip.setGravity(Gravity.CENTER_VERTICAL);
+    chip.setOrientation(LinearLayout.HORIZONTAL);
+    tab.chip = chip;
+    tab.label = new TextView(this);
+    tab.label.setTextSize(13);
+    tab.label.setTextColor(getColor(R.color.text));
+    tab.label.setGravity(Gravity.CENTER_VERTICAL);
+    int pad = (int) (13 * getResources().getDisplayMetrics().density);
+    tab.label.setPadding(pad, 0, 4, 0);
+    chip.addView(tab.label, new LinearLayout.LayoutParams(0,
+      (int) (38 * getResources().getDisplayMetrics().density), 1));
+    TextView close = new TextView(this);
+    close.setText("×");
+    close.setTextSize(18);
+    close.setTextColor(getColor(R.color.muted));
+    close.setGravity(Gravity.CENTER);
+    close.setContentDescription("Close tab");
+    chip.addView(close, new LinearLayout.LayoutParams(
+      (int) (34 * getResources().getDisplayMetrics().density),
+      (int) (38 * getResources().getDisplayMetrics().density)));
+    close.setOnClickListener(v -> closeTab(tab));
+    updateTabLabel(tab);
     GradientDrawable bg = new GradientDrawable();
     bg.setColor(getColor(R.color.panel2));
     bg.setCornerRadius(14 * getResources().getDisplayMetrics().density);
@@ -182,12 +234,25 @@ public final class MainActivity extends AppCompatActivity {
       LinearLayout.LayoutParams.WRAP_CONTENT, (int) (38 * getResources().getDisplayMetrics().density));
     lp.setMargins(3, 0, 5, 0);
     tabStrip.addView(chip, lp);
-    chip.setOnClickListener(v -> showHome());
-    chip.setOnLongClickListener(v -> {
-      if (tabCount > 1) { tabStrip.removeView(chip); tabCount--; }
-      else showHome();
-      return true;
-    });
+    chip.setOnClickListener(v -> selectTab(tab));
+  }
+
+  private void updateTabLabel(BrowserTab tab) {
+    if (tab.chip == null) return;
+    String title = tab.url.isEmpty() ? "New Tab" : Uri.parse(tab.url).getHost();
+    if (title == null || title.isEmpty()) title = "Page";
+    tab.label.setText((tab == activeTab ? "●  " : "◉  ") + title);
+    tab.chip.setContentDescription(title + ". Long press to close tab.");
+  }
+
+  private void closeTab(BrowserTab tab) {
+    int index = tabs.indexOf(tab);
+    if (index < 0) return;
+    tabs.remove(index);
+    tabStrip.removeView(tab.chip);
+    tab.session.close();
+    if (tabs.isEmpty()) newTab();
+    else if (activeTab == tab) selectTab(tabs.get(Math.max(0, index - 1)));
   }
 
   private void showBrowserMenu(View anchor) {
