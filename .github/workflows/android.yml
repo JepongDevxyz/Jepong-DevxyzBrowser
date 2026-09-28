@@ -103,7 +103,7 @@ jobs:
           LZ4_INCLUDE_DIR=$(dpkg -L liblz4-dev | awk '/\/lz4\.h$/ {sub(/\/lz4\.h$/, "", $0); print; exit}')
           echo "Resolved LZ4_INCLUDE_DIR=$LZ4_INCLUDE_DIR"
           test -f "$LZ4_INCLUDE_DIR/lz4.h"
-          LZ4_LIBRARY=$(find /usr/lib -type f -name 'liblz4.so' -print -quit)
+          LZ4_LIBRARY=$(find /usr/lib -name 'liblz4.so' -print -quit)
           echo "Resolved LZ4_LIBRARY=$LZ4_LIBRARY"
           test -n "$LZ4_LIBRARY"
           cmake -S "$RUNNER_TEMP/openvpn3" -B "$RUNNER_TEMP/ovpn3-native" \
