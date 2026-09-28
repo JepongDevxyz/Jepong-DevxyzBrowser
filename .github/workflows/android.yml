@@ -120,7 +120,7 @@ jobs:
             --overlay-ports "$RUNNER_TEMP/openvpn3/deps/vcpkg-ports" \
             --x-manifest-root "$RUNNER_TEMP/ovpn3-android-manifest" \
             --x-install-root "$RUNNER_TEMP/vcpkg-installed"
-          cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3-android-cmake/"
+          cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3/test/ovpncli" "$RUNNER_TEMP/openvpn3-android-cmake/"
           cat > "$RUNNER_TEMP/openvpn3-android-cmake/CMakeLists.txt" <<'EOF'
           cmake_minimum_required(VERSION 3.16...3.30)
           project(OpenVPN3Android LANGUAGES C CXX)
@@ -132,6 +132,7 @@ jobs:
           include(CTest)
           include(findcoredeps)
           add_subdirectory(client)
+          add_subdirectory(test/ovpncli)
           EOF
           TRIPLET="$RUNNER_TEMP/vcpkg-triplets/arm64-android-api26.cmake"
           VCPKG_INSTALLED="$RUNNER_TEMP/vcpkg-installed/arm64-android-api26"
