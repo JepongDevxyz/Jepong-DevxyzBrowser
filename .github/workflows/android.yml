@@ -121,7 +121,9 @@ jobs:
             --overlay-ports "$RUNNER_TEMP/openvpn3/deps/vcpkg-ports" \
             --x-manifest-root "$RUNNER_TEMP/ovpn3-android-manifest" \
             --x-install-root "$RUNNER_TEMP/vcpkg-installed"
-          cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3/test/ovpncli" "$RUNNER_TEMP/openvpn3-android-cmake/"
+          cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3-android-cmake/"
+          mkdir -p "$RUNNER_TEMP/openvpn3-android-cmake/test"
+          cp -a "$RUNNER_TEMP/openvpn3/test/ovpncli" "$RUNNER_TEMP/openvpn3-android-cmake/test/"
           cat > "$RUNNER_TEMP/openvpn3-android-cmake/CMakeLists.txt" <<'EOF'
           cmake_minimum_required(VERSION 3.16...3.30)
           project(OpenVPN3Android LANGUAGES C CXX)
@@ -142,16 +144,15 @@ jobs:
           pkg-config --modversion openssl
           TOOLCHAIN="$NDK/build/cmake/android.toolchain.cmake"
           cmake -S "$RUNNER_TEMP/openvpn3-android-cmake" -B "$RUNNER_TEMP/openvpn3-android-build" -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-            -DVCPKG_TARGET_TRIPLET=arm64-android-api26 \
-            -DVCPKG_OVERLAY_TRIPLETS="$RUNNER_TEMP/vcpkg-triplets" \
-            -DVCPKG_OVERLAY_PORTS="$RUNNER_TEMP/openvpn3/deps/vcpkg-ports" \
-            -DVCPKG_MANIFEST_MODE=OFF -DVCPKG_INSTALLED_DIR="$RUNNER_TEMP/vcpkg-installed" \
+            -DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN" \\
+            -DVCPKG_MANIFEST_MODE=OFF \\
             -DANDROID_NDK="$NDK" -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 \
             -DANDROID_STL=c++_shared -DCLI_NULLTUN=OFF -DCLI_TUNBUILDER=ON \
-            -DBUILD_SWIG_LIB=OFF -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="$VCPKG_INSTALLED/share;$VCPKG_INSTALLED" \
-            -DCMAKE_FIND_ROOT_PATH="$VCPKG_INSTALLED"
+            -DBUILD_SWIG_LIB=OFF -DCMAKE_BUILD_TYPE=Release \\
+            -Dasio_DIR="$VCPKG_INSTALLED/share/asio" \\
+            -Dfmt_DIR="$VCPKG_INSTALLED/share/fmt" \\
+            -DLZ4_INCLUDE_DIR="$VCPKG_INSTALLED/include" \\
+            -DLZ4_LIBRARY="$VCPKG_INSTALLED/lib/liblz4.a"
           cmake --build "$RUNNER_TEMP/openvpn3-android-build" --target ovpncli
           NDK_READELF="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
           test -x "$NDK_READELF"
