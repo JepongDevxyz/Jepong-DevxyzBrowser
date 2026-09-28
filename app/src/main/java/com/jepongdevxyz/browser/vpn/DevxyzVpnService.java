@@ -196,7 +196,7 @@ public final class DevxyzVpnService extends VpnService {
         try (ParcelFileDescriptor descriptor = tunBuilder.establish()) {
             tunBuilder = null;
             return descriptor == null ? -1 : descriptor.detachFd();
-        } catch (RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             Log.e("DevxyzVpn", "Failed to establish TUN", e);
             tunBuilder = null;
             return -1;
