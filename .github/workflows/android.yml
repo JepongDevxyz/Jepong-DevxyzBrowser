@@ -82,7 +82,7 @@ jobs:
           check_dep lz4
           check_dep fmt
           cmake --version
-          CLANG=$(find "$NDK/toolchains/llvm/prebuilt" -type f -name clang++ -print -quit)
+          CLANG=$(find "$NDK/toolchains/llvm/prebuilt" \( -type f -o -type l \) -name "clang++" -print -quit)
           echo "Resolved clang++=$CLANG"
           test -n "$CLANG"
           "$CLANG" --version
