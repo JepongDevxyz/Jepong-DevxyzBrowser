@@ -11,6 +11,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
+import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
+import android.content.Intent;
+import android.net.VpnService;
 import org.mozilla.geckoview.*;
 import java.util.*;
 
@@ -22,12 +25,21 @@ public final class MainActivity extends AppCompatActivity {
   private View startPage;
   private TextView vpnStatus;
   private ActivityResultLauncher<String[]> openVpnProfile;
+  private ActivityResultLauncher<Intent> vpnPermission;
   private final ArrayList<String> historyItems = new ArrayList<>();
   private final ArrayList<String> bookmarks = new ArrayList<>();
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     setContentView(R.layout.activity_main);
+    vpnPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+      if (result.getResultCode() == RESULT_OK) {
+        Toast.makeText(this, "VPN permission granted", Toast.LENGTH_SHORT).show();
+        showVpn();
+      } else {
+        Toast.makeText(this, "VPN permission is required to connect", Toast.LENGTH_LONG).show();
+      }
+    });
     openVpnProfile = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
       if (uri == null) return;
       try {
@@ -157,12 +169,26 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showVpn() {
-    new AlertDialog.Builder(this).setTitle("OpenVPN")
-      .setMessage(VpnProfileStore.hasProfile(this)
-        ? "Profile ready. The native OpenVPN transport is not connected yet."
-        : "Import an authorized .ovpn profile. DevxyzBrowser validates and stores it privately on this device.")
-      .setPositiveButton("Import .ovpn", (d,w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile","application/octet-stream","text/plain"}))
-      .setNegativeButton("Close",null).show();
+    AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("OpenVPN");
+    if (!VpnProfileStore.hasProfile(this)) {
+      b.setMessage("Import an authorized .ovpn profile. DevxyzBrowser validates and stores it privately on this device.")
+       .setPositiveButton("Import .ovpn", (d,w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile","application/octet-stream","text/plain"}));
+    } else if (DevxyzVpnService.isConnected()) {
+      b.setMessage("Connected through OpenVPN.")
+       .setPositiveButton("Disconnect", (d,w) -> {
+         Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
+         startService(stop); vpnStatus.setText("Disconnected • profile ready");
+       });
+    } else {
+      b.setMessage("Profile ready. Android VPN permission can now be granted. Connection will only be reported after the OpenVPN native transport establishes the tunnel.")
+       .setPositiveButton("Connect", (d,w) -> {
+         Intent permission = VpnService.prepare(this);
+         if (permission != null) vpnPermission.launch(permission);
+         else Toast.makeText(this, "VPN permission ready; native OpenVPN transport is the remaining connection stage.", Toast.LENGTH_LONG).show();
+       })
+       .setNeutralButton("Replace profile", (d,w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile","application/octet-stream","text/plain"}));
+    }
+    b.setNegativeButton("Close",null).show();
   }
 
   private void showInfo(String title,String message) {
