@@ -152,7 +152,7 @@ jobs:
             -DBUILD_SWIG_LIB=OFF -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_PREFIX_PATH="$VCPKG_INSTALLED/share;$VCPKG_INSTALLED" \
             -DCMAKE_FIND_ROOT_PATH="$VCPKG_INSTALLED" \
-          cmake --build "$RUNNER_TEMP/openvpn3-android-build" --target ovpncli -- -j2
+          ninja -C "$RUNNER_TEMP/openvpn3-android-build" -j2 ovpncli
           NDK_READELF="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
           test -x "$NDK_READELF"
           ELF=$(find "$RUNNER_TEMP/openvpn3-android-build" -type f -name ovpncli -print -quit)
