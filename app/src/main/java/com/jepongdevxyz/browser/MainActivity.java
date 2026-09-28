@@ -408,12 +408,18 @@ public final class MainActivity extends AppCompatActivity {
         for (WebExtension extension : list) names.append("•  ").append(extension.metaData.name).append('\n');
         summary = names.toString().trim();
       }
-      if (phoneSummary != null) phoneSummary.setText(summary);
-      if (desktopSummary != null) desktopSummary.setText(summary);
+      runOnUiThread(() -> {
+        if (isFinishing()) return;
+        if (phoneSummary != null) phoneSummary.setText(summary);
+        if (desktopSummary != null) desktopSummary.setText(summary);
+      });
     }, error -> {
       String message = "Could not load installed add-ons. Tap Manage to retry.";
-      if (phoneSummary != null) phoneSummary.setText(message);
-      if (desktopSummary != null) desktopSummary.setText(message);
+      runOnUiThread(() -> {
+        if (isFinishing()) return;
+        if (phoneSummary != null) phoneSummary.setText(message);
+        if (desktopSummary != null) desktopSummary.setText(message);
+      });
     });
   }
 
