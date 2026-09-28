@@ -134,8 +134,16 @@ jobs:
           set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
           include(CTest)
           include(findcoredeps)
-          add_subdirectory(client)
-          add_subdirectory(test/ovpncli)
+          add_library(xkey STATIC
+            openvpn/openssl/xkey/xkey_helper.c
+            openvpn/openssl/xkey/xkey_provider.c)
+          target_compile_definitions(xkey INTERFACE -DENABLE_EXTERNAL_PKI)
+          add_ssl_library(xkey)
+          add_library(openvpn3_core SHARED client/ovpncli.cpp)
+          target_include_directories(openvpn3_core PRIVATE client)
+          target_link_libraries(openvpn3_core PRIVATE xkey)
+          add_core_dependencies(openvpn3_core)
+          set_target_properties(openvpn3_core PROPERTIES OUTPUT_NAME openvpn3_core)
           EOF
           TRIPLET="$RUNNER_TEMP/vcpkg-triplets/arm64-android-api26.cmake"
           VCPKG_INSTALLED="$RUNNER_TEMP/vcpkg-installed/arm64-android-api26"
@@ -153,10 +161,10 @@ jobs:
             -Dfmt_DIR="$VCPKG_INSTALLED/share/fmt" \
             -DLZ4_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
             -DLZ4_LIBRARY="$VCPKG_INSTALLED/lib/liblz4.a"
-          cmake --build "$RUNNER_TEMP/openvpn3-android-build" --target ovpncli
+          cmake --build "$RUNNER_TEMP/openvpn3-android-build" --target openvpn3_core
           NDK_READELF="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
           test -x "$NDK_READELF"
-          ELF=$(find "$RUNNER_TEMP/openvpn3-android-build" -type f -name ovpncli -print -quit)
+          ELF=$(find "$RUNNER_TEMP/openvpn3-android-build" -type f -name "libopenvpn3_core.so" -print -quit)
           test -n "$ELF"
           "$NDK_READELF" -h "$ELF" | grep -q "Machine:.*AArch64"
           file "$ELF"
