@@ -86,6 +86,76 @@ jobs:
           echo "Resolved clang++=$CLANG"
           test -n "$CLANG"
           "$CLANG" --version
+      - name: Build pinned OpenVPN 3 native Android ARM64 client
+        run: |
+          set -euo pipefail
+          NDK="${ANDROID_NDK_ROOT:-${ANDROID_NDK_HOME:-}}"
+          if [ -z "$NDK" ]; then NDK=$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1); fi
+          test -n "$NDK"
+          export ANDROID_NDK_HOME="$NDK"
+          export VCPKG_ROOT="$RUNNER_TEMP/vcpkg"
+          git clone https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" checkout a51bb4d1434e6d0927ff79db8033bed8522b85df
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+          mkdir -p "$RUNNER_TEMP/vcpkg-triplets" "$RUNNER_TEMP/ovpn3-android-manifest" "$RUNNER_TEMP/openvpn3-android-cmake"
+          cat > "$RUNNER_TEMP/vcpkg-triplets/arm64-android-api26.cmake" <<'EOF'
+          set(VCPKG_TARGET_ARCHITECTURE arm64)
+          set(VCPKG_CRT_LINKAGE dynamic)
+          set(VCPKG_LIBRARY_LINKAGE static)
+          set(VCPKG_CMAKE_SYSTEM_NAME Android)
+          set(VCPKG_CMAKE_SYSTEM_VERSION 26)
+          set(VCPKG_MAKE_BUILD_TRIPLET "--host=aarch64-linux-android")
+          set(VCPKG_CMAKE_CONFIGURE_OPTIONS -DANDROID_ABI=arm64-v8a)
+          set(VCPKG_BUILD_TYPE release)
+          EOF
+          cat > "$RUNNER_TEMP/ovpn3-android-manifest/vcpkg.json" <<'EOF'
+          {
+            "name": "devxyz-openvpn3-android",
+            "version-string": "1.0.0",
+            "dependencies": ["asio", "fmt", "lz4", "openssl"]
+          }
+          EOF
+          "$VCPKG_ROOT/vcpkg" install --triplet arm64-android-api26 \
+            --overlay-triplets "$RUNNER_TEMP/vcpkg-triplets" \
+            --overlay-ports "$RUNNER_TEMP/openvpn3/deps/vcpkg-ports" \
+            --x-manifest-root "$RUNNER_TEMP/ovpn3-android-manifest" \
+            --x-install-root "$RUNNER_TEMP/vcpkg-installed"
+          cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3-android-cmake/"
+          cat > "$RUNNER_TEMP/openvpn3-android-cmake/CMakeLists.txt" <<'EOF'
+          cmake_minimum_required(VERSION 3.16...3.30)
+          project(OpenVPN3Android LANGUAGES C CXX)
+          set(CMAKE_CXX_STANDARD 20)
+          set(CMAKE_CXX_STANDARD_REQUIRED ON)
+          set(CMAKE_CXX_EXTENSIONS OFF)
+          set(CMAKE_C_STANDARD 99)
+          set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+          include(CTest)
+          include(findcoredeps)
+          add_subdirectory(client)
+          EOF
+          TRIPLET="$RUNNER_TEMP/vcpkg-triplets/arm64-android-api26.cmake"
+          VCPKG_INSTALLED="$RUNNER_TEMP/vcpkg-installed/arm64-android-api26"
+          TOOLCHAIN="$NDK/build/cmake/android.toolchain.cmake"
+          cmake -S "$RUNNER_TEMP/openvpn3-android-cmake" -B "$RUNNER_TEMP/openvpn3-android-build" -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DVCPKG_TARGET_TRIPLET=arm64-android-api26 \
+            -DVCPKG_OVERLAY_TRIPLETS="$RUNNER_TEMP/vcpkg-triplets" \
+            -DVCPKG_OVERLAY_PORTS="$RUNNER_TEMP/openvpn3/deps/vcpkg-ports" \
+            -DVCPKG_MANIFEST_MODE=OFF -DVCPKG_INSTALLED_DIR="$RUNNER_TEMP/vcpkg-installed" \
+            -DANDROID_NDK="$NDK" -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 \
+            -DANDROID_STL=c++_shared -DCLI_NULLTUN=OFF -DCLI_TUNBUILDER=ON \
+            -DBUILD_SWIG_LIB=OFF -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$VCPKG_INSTALLED/share;$VCPKG_INSTALLED" \
+            -DCMAKE_FIND_ROOT_PATH="$VCPKG_INSTALLED" \
+            -DPKG_CONFIG_EXECUTABLE="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar"
+          cmake --build "$RUNNER_TEMP/openvpn3-android-build" --target ovpncli --parallel 2
+          NDK_READELF="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          test -x "$NDK_READELF"
+          ELF=$(find "$RUNNER_TEMP/openvpn3-android-build" -type f -name ovpncli -print -quit)
+          test -n "$ELF"
+          "$NDK_READELF" -h "$ELF" | grep -q "Machine:.*AArch64"
+          file "$ELF"
+          echo "Pinned OpenVPN 3 client compiled for Android arm64-v8a (min API 26)."
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
