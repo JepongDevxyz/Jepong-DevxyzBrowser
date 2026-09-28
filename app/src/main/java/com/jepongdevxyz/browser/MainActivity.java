@@ -8,6 +8,9 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.*;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import org.mozilla.geckoview.*;
 import java.util.*;
 
@@ -17,12 +20,24 @@ public final class MainActivity extends AppCompatActivity {
   private EditText address, heroSearch;
   private ProgressBar progress;
   private View startPage;
+  private TextView vpnStatus;
+  private ActivityResultLauncher<String[]> openVpnProfile;
   private final ArrayList<String> historyItems = new ArrayList<>();
   private final ArrayList<String> bookmarks = new ArrayList<>();
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     setContentView(R.layout.activity_main);
+    openVpnProfile = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
+      if (uri == null) return;
+      try {
+        String endpoint = VpnProfileStore.importProfile(this, uri);
+        vpnStatus.setText("Ready • " + endpoint);
+        Toast.makeText(this, "OpenVPN profile imported", Toast.LENGTH_LONG).show();
+      } catch (Exception ex) {
+        Toast.makeText(this, "Profile rejected: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+      }
+    });
     if (runtime == null) runtime = GeckoRuntime.create(this);
     session = new GeckoSession();
     session.open(runtime);
@@ -31,6 +46,8 @@ public final class MainActivity extends AppCompatActivity {
     heroSearch = findViewById(R.id.heroSearch);
     progress = findViewById(R.id.progress);
     startPage = findViewById(R.id.startPage);
+    vpnStatus = findViewById(R.id.vpnStatus);
+    vpnStatus.setText(VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported");
 
     session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
       @Override public void onPageStart(GeckoSession s, String url) {
@@ -141,8 +158,11 @@ public final class MainActivity extends AppCompatActivity {
 
   private void showVpn() {
     new AlertDialog.Builder(this).setTitle("OpenVPN")
-      .setMessage("Status: Disconnected\n\nNo OpenVPN profile is configured yet. This screen intentionally does not claim a VPN connection until the native VPN engine and an authorized .ovpn profile are active.")
-      .setPositiveButton("OK",null).show();
+      .setMessage(VpnProfileStore.hasProfile(this)
+        ? "Profile ready. The native OpenVPN transport is not connected yet."
+        : "Import an authorized .ovpn profile. DevxyzBrowser validates and stores it privately on this device.")
+      .setPositiveButton("Import .ovpn", (d,w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile","application/octet-stream","text/plain"}))
+      .setNegativeButton("Close",null).show();
   }
 
   private void showInfo(String title,String message) {
