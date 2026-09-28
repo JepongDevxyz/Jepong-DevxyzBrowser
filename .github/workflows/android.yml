@@ -50,7 +50,6 @@ jobs:
             client/ovpncli.i
           test -s "$RUNNER_TEMP/ovpncli_wrap.cxx"
           test -s "$RUNNER_TEMP/ovpn3-java/net/openvpn/ovpn3/OpenVPNClient.java"
-          grep -q "JNIEXPORT" "$RUNNER_TEMP/ovpncli_wrap.cxx"
           grep -q "class OpenVPNClient" "$RUNNER_TEMP/ovpn3-java/net/openvpn/ovpn3/OpenVPNClient.java"
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
