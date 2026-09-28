@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.Gravity;
 import android.graphics.drawable.GradientDrawable;
@@ -47,10 +50,10 @@ public final class MainActivity extends AppCompatActivity {
       String state = intent.getStringExtra("state");
       String detail = intent.getStringExtra("detail");
       boolean error = intent.getBooleanExtra("error", false);
-      if ("CONNECTED".equals(state)) vpnStatus.setText("Connected • " + safe(detail));
-      else if ("CONNECTING".equals(state) || "WAIT".equals(state) || "RECONNECTING".equals(state)) vpnStatus.setText("Connecting • " + safe(detail));
-      else if (error) vpnStatus.setText("Failed • " + safe(detail));
-      else vpnStatus.setText(VpnProfileStore.hasProfile(MainActivity.this) ? "Disconnected • profile ready" : "Disconnected • No profile imported");
+      if ("CONNECTED".equals(state)) setVpnStatus("Connected • " + safe(detail));
+      else if ("CONNECTING".equals(state) || "WAIT".equals(state) || "RECONNECTING".equals(state)) setVpnStatus("Connecting • " + safe(detail));
+      else if (error) setVpnStatus("Failed • " + safe(detail));
+      else setVpnStatus(VpnProfileStore.hasProfile(MainActivity.this) ? "Disconnected • profile ready" : "Disconnected • No profile imported");
       if (error) Toast.makeText(MainActivity.this, safe(detail), Toast.LENGTH_LONG).show();
     }
   };
@@ -89,7 +92,7 @@ public final class MainActivity extends AppCompatActivity {
       if (uri == null) return;
       try {
         String endpoint = VpnProfileStore.importProfile(this, uri);
-        vpnStatus.setText("Ready • " + endpoint);
+        setVpnStatus("Ready • " + endpoint);
         Toast.makeText(this, "OpenVPN profile imported", Toast.LENGTH_LONG).show();
       } catch (Exception ex) {
         Toast.makeText(this, "Profile rejected: " + ex.getMessage(), Toast.LENGTH_LONG).show();
@@ -108,16 +111,21 @@ public final class MainActivity extends AppCompatActivity {
     vpnStatus = findViewById(R.id.vpnStatus);
     tabStrip = findViewById(R.id.tabStrip);
     menuButton = findViewById(R.id.menu);
+    boolean wideLayout = getResources().getConfiguration().screenWidthDp >= 900;
+    findViewById(R.id.tabletRail).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    findViewById(R.id.desktopPanels).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    findViewById(R.id.mobileNav).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
     addTabChip(activeTab);
     attachSession(activeTab);
     selectTab(activeTab);
-    vpnStatus.setText(DevxyzVpnService.isConnected() ? "Connected • OpenVPN" :
+    setVpnStatus(DevxyzVpnService.isConnected() ? "Connected • OpenVPN" :
       (VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported"));
     IntentFilter vpnFilter = new IntentFilter(DevxyzVpnService.ACTION_STATE);
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
 
     findViewById(R.id.back).setOnClickListener(v -> session.goBack());
+    findViewById(R.id.forward).setOnClickListener(v -> session.goForward());
     findViewById(R.id.refresh).setOnClickListener(v -> session.reload());
     findViewById(R.id.newTab).setOnClickListener(v -> newTab());
     menuButton.setOnClickListener(this::showBrowserMenu);
@@ -125,11 +133,26 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.bookmarks).setOnClickListener(v -> showBookmarks());
     findViewById(R.id.history).setOnClickListener(v -> showList("History", historyItems));
     findViewById(R.id.downloads).setOnClickListener(v -> showDownloads());
-    findViewById(R.id.extensions).setOnClickListener(v -> showExtensions());
+    findViewById(R.id.extensions).setOnClickListener(v -> {
+      if (wideLayout) showExtensionsPane(); else showExtensions();
+    });
     findViewById(R.id.extensionsPanel).setOnClickListener(v -> showExtensions());
     findViewById(R.id.vpn).setOnClickListener(v -> showVpn());
     findViewById(R.id.vpnPanel).setOnClickListener(v -> showVpn());
     findViewById(R.id.settings).setOnClickListener(v -> showSettings());
+    findViewById(R.id.railHome).setOnClickListener(v -> showHome());
+    findViewById(R.id.railBookmarks).setOnClickListener(v -> showBookmarks());
+    findViewById(R.id.railHistory).setOnClickListener(v -> showList("History", historyItems));
+    findViewById(R.id.railDownloads).setOnClickListener(v -> showDownloads());
+    findViewById(R.id.railExtensions).setOnClickListener(v -> showExtensionsPane());
+    findViewById(R.id.railVpn).setOnClickListener(v -> showVpn());
+    findViewById(R.id.railSettings).setOnClickListener(v -> showSettings());
+    findViewById(R.id.desktopVpnStatus).setOnClickListener(v -> showVpn());
+    findViewById(R.id.desktopVpnAction).setOnClickListener(v -> showVpn());
+    findViewById(R.id.vpnSettings).setOnClickListener(v -> showVpn());
+    findViewById(R.id.desktopExtensionsAction).setOnClickListener(v -> showExtensions());
+    findViewById(R.id.extensionsClose).setOnClickListener(v -> findViewById(R.id.desktopExtensionsPane).setVisibility(View.GONE));
+    findViewById(R.id.extensionSummary).setOnClickListener(v -> showExtensions());
     findViewById(R.id.addSite).setOnClickListener(v -> {
       EditText site = new EditText(this);
       site.setSingleLine(true); site.setHint("https://example.com");
@@ -151,6 +174,14 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.siteGithub).setOnClickListener(quick);
     findViewById(R.id.siteReddit).setOnClickListener(quick);
     findViewById(R.id.siteX).setOnClickListener(quick);
+    setBrandWordmark(findViewById(R.id.brandTitle));
+    setBrandWordmark(findViewById(R.id.heroTitle));
+    setBrandWordmark(findViewById(R.id.railBrandTitle));
+    refreshExtensionsSummary();
+    if (wideLayout) {
+      findViewById(R.id.phoneVpnCard).setVisibility(View.GONE);
+      findViewById(R.id.phoneExtensionsCard).setVisibility(View.GONE);
+    }
 
     address.setOnEditorActionListener((v,id,e) -> {
       if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { browse(address.getText().toString()); return true; }
@@ -346,7 +377,7 @@ public final class MainActivity extends AppCompatActivity {
       .setView(xpi).setPositiveButton("Install", (d,w) -> {
         String uri=xpi.getText().toString().trim();
         if(uri.startsWith("https://")) runtime.getWebExtensionController().install(uri)
-          .accept(ext -> Toast.makeText(this,"Installed: "+ext.metaData.name,Toast.LENGTH_LONG).show(),
+          .accept(ext -> { Toast.makeText(this,"Installed: "+ext.metaData.name,Toast.LENGTH_LONG).show(); refreshExtensionsSummary(); },
                   err -> Toast.makeText(this,"Install failed: "+err.getMessage(),Toast.LENGTH_LONG).show());
         else Toast.makeText(this,"Use a secure HTTPS .xpi URL",Toast.LENGTH_LONG).show();
       }).setNeutralButton("Manage", (d,w) -> runtime.getWebExtensionController().list()
@@ -358,6 +389,41 @@ public final class MainActivity extends AppCompatActivity {
       .setNegativeButton("Cancel",null).show();
   }
 
+  private void showExtensionsPane() {
+    findViewById(R.id.desktopExtensionsPane).setVisibility(View.VISIBLE);
+    refreshExtensionsSummary();
+  }
+
+  private void refreshExtensionsSummary() {
+    TextView phoneSummary = findViewById(R.id.mobileExtensionSummary);
+    TextView desktopSummary = findViewById(R.id.extensionSummary);
+    if (phoneSummary != null) phoneSummary.setText("Checking installed add-ons…");
+    if (desktopSummary != null) desktopSummary.setText("Checking installed add-ons…");
+    runtime.getWebExtensionController().list().accept(list -> {
+      String summary;
+      if (list.isEmpty()) {
+        summary = "No add-ons installed. Install a Mozilla-signed .xpi extension to use it here.";
+      } else {
+        StringBuilder names = new StringBuilder("Installed add-ons • ").append(list.size()).append('\n');
+        for (WebExtension extension : list) names.append("•  ").append(extension.metaData.name).append('\n');
+        summary = names.toString().trim();
+      }
+      if (phoneSummary != null) phoneSummary.setText(summary);
+      if (desktopSummary != null) desktopSummary.setText(summary);
+    }, error -> {
+      String message = "Could not load installed add-ons. Tap Manage to retry.";
+      if (phoneSummary != null) phoneSummary.setText(message);
+      if (desktopSummary != null) desktopSummary.setText(message);
+    });
+  }
+
+  private void setBrandWordmark(TextView title) {
+    if (title == null) return;
+    SpannableString wordmark = new SpannableString("DevxyzBrowser");
+    wordmark.setSpan(new ForegroundColorSpan(getColor(R.color.purple2)), 6, wordmark.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    title.setText(wordmark);
+  }
+
   private void showVpn() {
     AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("OpenVPN");
     if (!VpnProfileStore.hasProfile(this)) {
@@ -367,7 +433,7 @@ public final class MainActivity extends AppCompatActivity {
       b.setMessage("Connected through OpenVPN.")
        .setPositiveButton("Disconnect", (d,w) -> {
          Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
-         startService(stop); vpnStatus.setText("Disconnecting • stopping OpenVPN");
+         startService(stop); setVpnStatus("Disconnecting • stopping OpenVPN");
        });
     } else {
       b.setMessage("Connect with the imported OpenVPN profile. DevxyzBrowser will show Connected only after the OpenVPN core reports a connected tunnel.")
@@ -423,13 +489,25 @@ public final class MainActivity extends AppCompatActivity {
       .putExtra(DevxyzVpnService.EXTRA_KEY_PASSWORD, keyPassword);
     try {
       ContextCompat.startForegroundService(this, connect);
-      vpnStatus.setText("Connecting • starting OpenVPN");
+      setVpnStatus("Connecting • starting OpenVPN");
     } catch (Exception e) {
       Toast.makeText(this, "Could not start VPN: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
   }
 
   private String safe(String value) { return value == null || value.trim().isEmpty() ? "OpenVPN" : value; }
+
+  private void setVpnStatus(String text) {
+    if (vpnStatus != null) vpnStatus.setText(text);
+    TextView desktopStatus = findViewById(R.id.desktopVpnStatus);
+    if (desktopStatus != null) desktopStatus.setText(text);
+    String action = DevxyzVpnService.isConnected() ? "Disconnect VPN" :
+      (VpnProfileStore.hasProfile(this) ? "Connect VPN" : "Set up VPN");
+    Button phoneAction = findViewById(R.id.vpnPanel);
+    Button desktopAction = findViewById(R.id.desktopVpnAction);
+    if (phoneAction != null) phoneAction.setText(action);
+    if (desktopAction != null) desktopAction.setText(action);
+  }
 
   @Override protected void onDestroy() {
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }

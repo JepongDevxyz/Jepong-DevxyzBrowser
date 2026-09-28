@@ -28,6 +28,9 @@
         <ImageButton android:id="@+id/back" android:layout_width="36dp" android:layout_height="42dp"
             android:src="@drawable/ic_arrow_back" app:tint="@color/muted"
             android:contentDescription="Back" android:background="@android:color/transparent" />
+        <ImageButton android:id="@+id/forward" android:layout_width="32dp" android:layout_height="42dp"
+            android:src="@android:drawable/ic_media_next" app:tint="@color/muted"
+            android:contentDescription="Forward" android:background="@android:color/transparent" />
         <ImageButton android:id="@+id/refresh" android:layout_width="36dp" android:layout_height="42dp"
             android:src="@android:drawable/ic_popup_sync" app:tint="@color/muted"
             android:contentDescription="Reload" android:background="@android:color/transparent" />
@@ -41,14 +44,28 @@
             android:textColor="@color/purple2" android:background="@drawable/toolbar_chip_bg"
             android:contentDescription="Open VPN" android:clickable="true" android:focusable="true" />
         <ImageButton android:id="@+id/extensions" android:layout_width="36dp" android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_manage" app:tint="@color/purple2"
+            android:src="@drawable/ic_extension_puzzle"
             android:contentDescription="Extensions" android:background="@android:color/transparent" />
     </LinearLayout>
     <ProgressBar android:id="@+id/pageProgress" style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent" android:layout_height="2dp" android:max="100"
         android:progressTint="@color/purple2" android:visibility="gone" />
 
-    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+    <LinearLayout android:id="@+id/tabletRail" android:layout_width="184dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@color/panel" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="6dp">
+            <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/devxyz_brandmark" android:contentDescription="DevxyzBrowser logo" />
+            <TextView android:id="@+id/railBrandTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="15sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/railHome" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="⌂   Home" android:textColor="@color.purple2" android:textSize="14sp" android:clickable="true" android:focusable="true" android:background="@drawable/toolbar_chip_bg" />
+        <TextView android:id="@+id/railBookmarks" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="☆   Bookmarks" android:textColor="@color.muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railHistory" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="◷   History" android:textColor="@color.muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railDownloads" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="↓   Downloads" android:textColor="@color.muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railExtensions" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="✣   Extensions" android:textColor="@color.muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railVpn" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="◇   VPN" android:textColor="@color.muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railSettings" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="⚙   Settings" android:textColor="@color.muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+    <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
         <org.mozilla.geckoview.GeckoView android:id="@+id/gecko" android:layout_width="match_parent"
             android:layout_height="match_parent" />
         <ScrollView android:id="@+id/startPage" android:layout_width="match_parent"
@@ -58,12 +75,12 @@
                 android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingTop="24dp" android:paddingBottom="24dp">
                 <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:gravity="center" android:orientation="horizontal">
-                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                        android:src="@drawable/devxyz_launcher_foreground" android:contentDescription="DevxyzBrowser logo" />
+                    <ImageView android:id="@+id/brandLogo" android:layout_width="30dp" android:layout_height="30dp"
+                        android:src="@drawable/devxyz_brandmark" android:contentDescription="DevxyzBrowser logo" />
                     <TextView android:id="@+id/brandTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
                 </LinearLayout>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
+                <TextView android:id="@+id/heroTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
                     android:gravity="center" android:text="DevxyzBrowser"
                     android:textColor="@color/text" android:textStyle="bold" android:textSize="31sp" />
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp"
@@ -78,53 +95,78 @@
                     android:layout_marginTop="20dp" android:scrollbars="none" android:overScrollMode="never">
                     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteYoutube" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="▶" android:textColor="@color/text" android:textSize="24sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageButton android:id="@+id/siteYoutube" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/shortcut_youtube" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open YouTube" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="YouTube" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteFacebook" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="f" android:textColor="@color/text" android:textSize="25sp" android:textStyle="bold" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageButton android:id="@+id/siteFacebook" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/shortcut_facebook" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open Facebook" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Facebook" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteGithub" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="⌘" android:textColor="@color/text" android:textSize="23sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageButton android:id="@+id/siteGithub" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/shortcut_github" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open GitHub" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="GitHub" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteReddit" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="●" android:textColor="@color/orange" android:textSize="23sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageButton android:id="@+id/siteReddit" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/shortcut_reddit" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open Reddit" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Reddit" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/siteX" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="X" android:textColor="@color/text" android:textSize="22sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                        <ImageButton android:id="@+id/siteX" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/shortcut_x" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open X" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="X" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/addSite" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="+" android:textColor="@color/purple2" android:textSize="26sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageButton android:id="@+id/addSite" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/shortcut_add" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Add a site" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Add site" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                     </LinearLayout>
                 </HorizontalScrollView>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
-                    android:orientation="horizontal" android:baselineAligned="false">
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="6dp"
-                        android:padding="14dp" android:orientation="vertical" android:background="@drawable/panel_bg">
-                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="◉  VPN" android:textColor="@color/text" android:textStyle="bold" android:textSize="16sp" />
+                    android:orientation="vertical">
+                    <LinearLayout android:id="@+id/phoneVpnCard" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:padding="16dp" android:orientation="vertical" android:background="@drawable/panel_bg">
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="♢  VPN" android:textColor="@color/text" android:textStyle="bold" android:textSize="17sp" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="OPENVPN" android:textColor="@color/purple2" android:textSize="11sp" android:textStyle="bold" />
+                        </LinearLayout>
                         <TextView android:id="@+id/vpnStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp"
-                            android:text="Disconnected • No profile" android:textColor="@color/muted" android:textSize="11sp" />
-                        <Button android:id="@+id/vpnPanel" android:layout_width="match_parent" android:layout_height="42dp"
-                            android:layout_marginTop="10dp" android:text="Set up" android:textAllCaps="false" android:textSize="12sp" android:textColor="@color/text" android:background="@drawable/accent_bg" />
+                            android:text="Disconnected • No profile imported" android:textColor="@color/muted" android:textSize="13sp" />
+                        <Button android:id="@+id/vpnPanel" android:layout_width="match_parent" android:layout_height="46dp"
+                            android:layout_marginTop="12dp" android:text="Set up VPN" android:textAllCaps="false" android:textSize="14sp" android:textColor="@color/text" android:background="@drawable/accent_bg" />
                     </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp"
-                        android:padding="14dp" android:orientation="vertical" android:background="@drawable/panel_bg">
-                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="✣  Extensions" android:textColor="@color/text" android:textStyle="bold" android:textSize="16sp" />
-                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp"
-                            android:text="Manage your installed add-ons" android:textColor="@color/muted" android:textSize="11sp" />
-                        <Button android:id="@+id/extensionsPanel" android:layout_width="match_parent" android:layout_height="42dp"
-                            android:layout_marginTop="10dp" android:text="Manage" android:textAllCaps="false" android:textSize="12sp" android:textColor="@color/text" android:background="@drawable/toolbar_chip_bg" />
+                    <LinearLayout android:id="@+id/phoneExtensionsCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                        android:padding="16dp" android:orientation="vertical" android:background="@drawable/panel_bg">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="✣  Extensions" android:textColor="@color/text" android:textStyle="bold" android:textSize="17sp" />
+                        <TextView android:id="@+id/mobileExtensionSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                            android:text="Loading installed add-ons…" android:textColor="@color/muted" android:textSize="13sp" />
+                        <Button android:id="@+id/extensionsPanel" android:layout_width="match_parent" android:layout_height="46dp"
+                            android:layout_marginTop="12dp" android:text="Manage extensions" android:textAllCaps="false" android:textSize="14sp" android:textColor="@color/text" android:background="@drawable/toolbar_chip_bg" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
     </FrameLayout>
+    <LinearLayout android:id="@+id/desktopPanels" android:layout_width="276dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@color.bg" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="VPN" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
+                <TextView android:id="@+id/vpnSettings" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="⚙" android:textColor="@color.muted" android:clickable="true" android:focusable="true" android:contentDescription="VPN settings" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="100dp" android:gravity="center" android:text="◉" android:textColor="@color.purple2" android:textSize="48sp" />
+            <TextView android:id="@+id/desktopVpnStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="Disconnected • No profile" android:textColor="@color.muted" android:textSize="12sp" />
+            <Button android:id="@+id/desktopVpnAction" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="12dp" android:text="Connect / set up" android:textAllCaps="false" android:textColor="@color.text" android:background="@drawable/accent_bg" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="12dp" android:background="@color.stroke" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="VPN connection requires your own authorized .ovpn profile." android:textColor="@color.muted" android:textSize="11sp" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/desktopExtensionsPane" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="10dp" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extensions" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
+                <TextView android:id="@+id/extensionsClose" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="×" android:textColor="@color.muted" android:textSize="22sp" android:clickable="true" android:focusable="true" android:contentDescription="Close extensions" />
+            </LinearLayout>
+            <TextView android:id="@+id/extensionSummary" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:text="No extensions installed yet. Add Mozilla-compatible WebExtensions to manage them here." android:textColor="@color.muted" android:textSize="12sp" />
+            <Button android:id="@+id/desktopExtensionsAction" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="12dp" android:text="Browse / manage extensions" android:textAllCaps="false" android:textColor="@color.text" android:background="@drawable/toolbar_chip_bg" />
+        </LinearLayout>
+    </LinearLayout>
+    </LinearLayout>
 
     <!-- Phone navigation; tablet/desktop rail becomes visible in layout-sw600dp -->
     <LinearLayout android:id="@+id/mobileNav" android:layout_width="match_parent" android:layout_height="58dp"
