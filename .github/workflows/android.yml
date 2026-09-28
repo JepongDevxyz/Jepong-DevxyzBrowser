@@ -61,19 +61,32 @@ jobs:
           grep -q "class ClientAPI_TunBuilderBase" "$TUN_BUILDER"
       - name: Probe OpenVPN 3 native Android prerequisites
         run: |
-          test -n "$ANDROID_NDK_ROOT"
-          test -f "$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake"
-          test -f "$RUNNER_TEMP/openvpn3/client/ovpncli.cpp"
-          test -f "$RUNNER_TEMP/openvpn3/openvpn/openssl/xkey/xkey_provider.c"
-          test -f "$RUNNER_TEMP/openvpn3/openvpn/openssl/xkey/xkey_helper.c"
-          test -f "$RUNNER_TEMP/openvpn3/vcpkg.json"
-          grep -q '"asio"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
-          grep -q '"openssl"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
-          grep -q '"lz4"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
-          grep -q '"lzo"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
-          grep -q '"fmt"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          set -euo pipefail
+          check_file() { echo "CHECK file: $1"; test -f "$1"; }
+          check_dep() { echo "CHECK dependency: $1"; grep -q "\"$1\"" "$RUNNER_TEMP/openvpn3/vcpkg.json"; }
+          echo "ANDROID_NDK_ROOT=${ANDROID_NDK_ROOT:-<unset>}"
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-<unset>}"
+          NDK="${ANDROID_NDK_ROOT:-${ANDROID_NDK_HOME:-}}"
+          if [ -z "$NDK" ]; then NDK=$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -1); fi
+          echo "Resolved NDK=$NDK"
+          test -n "$NDK"
+          check_file "$NDK/build/cmake/android.toolchain.cmake"
+          check_file "$RUNNER_TEMP/openvpn3/client/ovpncli.cpp"
+          check_file "$RUNNER_TEMP/openvpn3/openvpn/openssl/xkey/xkey_provider.c"
+          check_file "$RUNNER_TEMP/openvpn3/openvpn/openssl/xkey/xkey_helper.c"
+          check_file "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          echo "Declared vcpkg dependencies:"
+          cat "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          check_dep asio
+          check_dep openssl
+          check_dep lz4
+          check_dep lzo
+          check_dep fmt
           cmake --version
-          "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" --version
+          CLANG=$(find "$NDK/toolchains/llvm/prebuilt" -type f -name clang++ -print -quit)
+          echo "Resolved clang++=$CLANG"
+          test -n "$CLANG"
+          "$CLANG" --version
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
