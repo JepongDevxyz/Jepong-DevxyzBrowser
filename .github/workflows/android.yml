@@ -171,8 +171,8 @@ jobs:
             -DBUILD_SWIG_LIB=OFF -DCMAKE_BUILD_TYPE=Release \
             -DASIO_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
             -Dfmt_DIR="$VCPKG_INSTALLED/share/fmt" \
-            -DOPENSSL_INCLUDE_DIR="$VCPKG_INSTALLED/include" \ \
-            -DOPENSSL_SSL_LIBRARY="$VCPKG_INSTALLED/lib/libssl.a" \ \
+            -DOPENSSL_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
+            -DOPENSSL_SSL_LIBRARY="$VCPKG_INSTALLED/lib/libssl.a" \
             -DOPENSSL_CRYPTO_LIBRARY="$VCPKG_INSTALLED/lib/libcrypto.a" \
             -DLZ4_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
             -DLZ4_LIBRARY="$VCPKG_INSTALLED/lib/liblz4.a"
