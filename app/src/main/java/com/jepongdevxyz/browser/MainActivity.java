@@ -30,9 +30,6 @@ public final class MainActivity extends AppCompatActivity {
       @Override public void onPageStart(GeckoSession s, String url) { address.setText(url); progress.setProgress(5); }
       @Override public void onPageStop(GeckoSession s, boolean ok) { progress.setProgress(100); progress.postDelayed(() -> progress.setProgress(0), 250); }
     });
-    session.setNavigationDelegate(new GeckoSession.NavigationDelegate() {
-      @Override public void onLocationChange(GeckoSession s, String url, java.util.List<GeckoSession.PermissionDelegate.ContentPermission> perms, boolean hasUserGesture) { address.setText(url); }
-    });
 
     findViewById(R.id.back).setOnClickListener(v -> session.goBack());
     findViewById(R.id.refresh).setOnClickListener(v -> session.reload());
