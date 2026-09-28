@@ -2,7 +2,7 @@ plugins { id("com.android.application") }
 
 android {
     namespace = "com.jepongdevxyz.browser"
-    compileSdk = 36
+    compileSdk = 37
     defaultConfig {
         applicationId = "com.jepongdevxyz.browser"
         minSdk = 23
