@@ -27,6 +27,15 @@ jobs:
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           test -d "$ANDROID_HOME/platforms/android-37.0"
           test -d "$ANDROID_HOME/build-tools"
+      - name: Pin and inspect official OpenVPN 3 core
+        run: |
+          git clone --filter=blob:none https://github.com/OpenVPN/openvpn3.git "$RUNNER_TEMP/openvpn3"
+          git -C "$RUNNER_TEMP/openvpn3" checkout 2986b58108726a7aff278a50caa0cff9c4cdf943
+          test "$(git -C "$RUNNER_TEMP/openvpn3" rev-parse HEAD)" = "2986b58108726a7aff278a50caa0cff9c4cdf943"
+          test -f "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
+          test -f "$RUNNER_TEMP/openvpn3/client/ovpncli.i"
+          grep -q "class OpenVPNClient" "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
+          grep -q "TunBuilderBase" "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
