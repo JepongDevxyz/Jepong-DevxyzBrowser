@@ -4,7 +4,7 @@
     android:orientation="vertical" android:background="@color/bg">
 
     <!-- Browser tab strip -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp"
+    <LinearLayout android:layout_width="match_parent" android:layout_height="42dp"
         android:gravity="center_vertical" android:orientation="horizontal"
         android:paddingStart="8dp" android:paddingEnd="8dp" android:background="@color/panel">
         <HorizontalScrollView android:id="@+id/tabScroller" android:layout_width="0dp"
@@ -13,8 +13,8 @@
             <LinearLayout android:id="@+id/tabStrip" android:layout_width="wrap_content"
                 android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal" />
         </HorizontalScrollView>
-        <TextView android:id="@+id/newTab" android:layout_width="42dp" android:layout_height="match_parent"
-            android:gravity="center" android:text="+" android:textSize="27sp" android:textColor="@color/text"
+        <TextView android:id="@+id/newTab" android:layout_width="38dp" android:layout_height="match_parent"
+            android:gravity="center" android:text="+" android:textSize="25sp" android:textColor="@color/text"
             android:contentDescription="New tab" android:clickable="true" android:focusable="true" />
         <ImageButton android:id="@+id/menu" android:layout_width="40dp" android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_more" app:tint="@color/text"
@@ -22,29 +22,27 @@
     </LinearLayout>
 
     <!-- Navigation and address controls -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="58dp" android:orientation="horizontal"
+    <LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:orientation="horizontal"
         android:gravity="center_vertical" android:paddingStart="6dp" android:paddingEnd="8dp"
         android:background="@color/panel">
-        <ImageButton android:id="@+id/back" android:layout_width="40dp" android:layout_height="44dp"
-            android:src="@android:drawable/ic_media_previous" app:tint="@color/muted"
+        <ImageButton android:id="@+id/back" android:layout_width="36dp" android:layout_height="42dp"
+            android:src="@drawable/ic_arrow_back" app:tint="@color/muted"
             android:contentDescription="Back" android:background="@android:color/transparent" />
-        <ImageButton android:id="@+id/refresh" android:layout_width="40dp" android:layout_height="44dp"
+        <ImageButton android:id="@+id/refresh" android:layout_width="36dp" android:layout_height="42dp"
             android:src="@android:drawable/ic_popup_sync" app:tint="@color/muted"
             android:contentDescription="Reload" android:background="@android:color/transparent" />
-        <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="42dp"
-            android:layout_weight="1" android:paddingHorizontal="15dp" android:singleLine="true"
+        <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="40dp"
+            android:layout_weight="1" android:paddingHorizontal="13dp" android:singleLine="true"
             android:imeOptions="actionGo" android:inputType="textUri" android:selectAllOnFocus="true"
             android:hint="Search or enter address" android:textColor="@color/text"
             android:textColorHint="@color/muted" android:background="@drawable/search_bg" />
-        <TextView android:id="@+id/vpn" android:layout_width="46dp" android:layout_height="42dp"
+        <TextView android:id="@+id/vpn" android:layout_width="44dp" android:layout_height="40dp"
             android:gravity="center" android:text="VPN" android:textSize="11sp" android:textStyle="bold"
             android:textColor="@color/purple2" android:background="@drawable/toolbar_chip_bg"
             android:contentDescription="Open VPN" android:clickable="true" android:focusable="true" />
-        <ImageButton android:id="@+id/extensions" android:layout_width="42dp" android:layout_height="42dp"
+        <ImageButton android:id="@+id/extensions" android:layout_width="36dp" android:layout_height="40dp"
             android:src="@android:drawable/ic_menu_manage" app:tint="@color/purple2"
             android:contentDescription="Extensions" android:background="@android:color/transparent" />
-        <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="0dp" android:layout_height="0dp" android:max="100" android:visibility="gone" />
     </LinearLayout>
     <ProgressBar android:id="@+id/pageProgress" style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent" android:layout_height="2dp" android:max="100"
@@ -57,57 +55,72 @@
             android:layout_height="match_parent" android:fillViewport="true" android:background="@drawable/home_backdrop">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:gravity="center_horizontal"
-                android:paddingStart="24dp" android:paddingEnd="24dp" android:paddingTop="44dp" android:paddingBottom="30dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="◉  DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="17sp" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28dp"
-                    android:gravity="center" android:text="Browse Freely.\nSecurely. Your Way."
-                    android:textColor="@color/text" android:textStyle="bold" android:textSize="32sp" />
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp"
-                    android:gravity="center" android:text="Fast. Private. Flexible."
-                    android:textColor="@color/muted" android:textSize="16sp" />
+                android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingTop="24dp" android:paddingBottom="24dp">
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:gravity="center" android:orientation="horizontal">
+                    <ImageView android:layout_width="28dp" android:layout_height="28dp"
+                        android:src="@drawable/devxyz_launcher_foreground" android:contentDescription="DevxyzBrowser logo" />
+                    <TextView android:id="@+id/brandTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
+                </LinearLayout>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
+                    android:gravity="center" android:text="DevxyzBrowser"
+                    android:textColor="@color/text" android:textStyle="bold" android:textSize="31sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp"
+                    android:gravity="center" android:text="Browse Freely. Securely. Your Way."
+                    android:textColor="@color/muted" android:textSize="15sp" />
                 <EditText android:id="@+id/heroSearch" android:layout_width="match_parent" android:layout_height="54dp"
-                    android:layout_marginTop="28dp" android:maxWidth="620dp" android:singleLine="true"
+                    android:layout_marginTop="22dp" android:maxWidth="620dp" android:singleLine="true"
                     android:imeOptions="actionSearch" android:inputType="text" android:hint="⌕   Search the web privately..."
                     android:paddingHorizontal="20dp" android:textColor="@color/text" android:textColorHint="@color/muted"
                     android:background="@drawable/search_bg" />
-                <LinearLayout android:id="@+id/quickSites" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp" android:gravity="center" android:orientation="horizontal">
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/siteYoutube" android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="▶" android:textColor="@color/text" android:textSize="25sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="YouTube" android:textColor="@color/muted" android:textSize="11sp" />
+                <HorizontalScrollView android:id="@+id/quickSites" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp" android:scrollbars="none" android:overScrollMode="never">
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                            <TextView android:id="@+id/siteYoutube" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="▶" android:textColor="@color.text" android:textSize="24sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="YouTube" android:textColor="@color.muted" android:textSize="10sp" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                            <TextView android:id="@+id/siteFacebook" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="f" android:textColor="@color.text" android:textSize="25sp" android:textStyle="bold" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Facebook" android:textColor="@color.muted" android:textSize="10sp" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                            <TextView android:id="@+id/siteGithub" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="⌘" android:textColor="@color.text" android:textSize="23sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="GitHub" android:textColor="@color.muted" android:textSize="10sp" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                            <TextView android:id="@+id/siteReddit" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="●" android:textColor="@color/orange" android:textSize="23sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Reddit" android:textColor="@color/muted" android:textSize="10sp" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <TextView android:id="@+id/siteX" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="X" android:textColor="@color.text" android:textSize="22sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="X" android:textColor="@color.muted" android:textSize="10sp" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                            <TextView android:id="@+id/addSite" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="+" android:textColor="@color/purple2" android:textSize="26sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Add site" android:textColor="@color/muted" android:textSize="10sp" />
+                        </LinearLayout>
                     </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/siteFacebook" android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="f" android:textColor="@color/text" android:textSize="26sp" android:textStyle="bold" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Facebook" android:textColor="@color/muted" android:textSize="11sp" />
+                </HorizontalScrollView>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
+                    android:orientation="horizontal" android:baselineAligned="false">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="6dp"
+                        android:padding="14dp" android:orientation="vertical" android:background="@drawable/panel_bg">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="◉  VPN" android:textColor="@color.text" android:textStyle="bold" android:textSize="16sp" />
+                        <TextView android:id="@+id/vpnStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp"
+                            android:text="Disconnected • No profile" android:textColor="@color.muted" android:textSize="11sp" />
+                        <Button android:id="@+id/vpnPanel" android:layout_width="match_parent" android:layout_height="42dp"
+                            android:layout_marginTop="10dp" android:text="Set up" android:textAllCaps="false" android:textSize="12sp" android:textColor="@color.text" android:background="@drawable/accent_bg" />
                     </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/siteGithub" android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="⌘" android:textColor="@color/text" android:textSize="25sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="GitHub" android:textColor="@color/muted" android:textSize="11sp" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp"
+                        android:padding="14dp" android:orientation="vertical" android:background="@drawable/panel_bg">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="✣  Extensions" android:textColor="@color.text" android:textStyle="bold" android:textSize="16sp" />
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp"
+                            android:text="Manage your installed add-ons" android:textColor="@color.muted" android:textSize="11sp" />
+                        <Button android:id="@+id/extensionsPanel" android:layout_width="match_parent" android:layout_height="42dp"
+                            android:layout_marginTop="10dp" android:text="Manage" android:textAllCaps="false" android:textSize="12sp" android:textColor="@color.text" android:background="@drawable/toolbar_chip_bg" />
                     </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/siteReddit" android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="●" android:textColor="@color/orange" android:textSize="25sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Reddit" android:textColor="@color/muted" android:textSize="11sp" />
-                    </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/addSite" android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="+" android:textColor="@color/purple2" android:textSize="28sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="Add site" android:textColor="@color/muted" android:textSize="11sp" />
-                    </LinearLayout>
-                </LinearLayout>
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26dp"
-                    android:padding="18dp" android:orientation="vertical" android:background="@drawable/panel_bg">
-                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Private browsing" android:textColor="@color/text" android:textStyle="bold" android:textSize="17sp" />
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="●  GeckoView" android:textColor="@color/green" android:textSize="12sp" />
-                    </LinearLayout>
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp"
-                        android:text="Manage your VPN and installed add-ons from the toolbar. Your browsing stays on this device."
-                        android:textColor="@color/muted" android:textSize="13sp" />
-                    <TextView android:id="@+id/vpnStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginTop="13dp" android:padding="12dp" android:text="Disconnected • No profile imported"
-                        android:textColor="@color/muted" android:background="@drawable/shortcut_bg" />
-                    <Button android:id="@+id/vpnPanel" android:layout_width="match_parent" android:layout_height="48dp"
-                        android:layout_marginTop="10dp" android:text="Set up VPN" android:textColor="@color/text" android:background="@drawable/accent_bg" />
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
