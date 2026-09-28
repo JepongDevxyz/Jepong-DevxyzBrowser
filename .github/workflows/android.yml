@@ -51,10 +51,14 @@ jobs:
           test -s "$RUNNER_TEMP/ovpncli_wrap.cxx"
           echo "Generated SWIG Java files:"
           find "$RUNNER_TEMP/ovpn3-java" -type f -name "*.java" -print | sort
-          OPENVPN_CLIENT=$(find "$RUNNER_TEMP/ovpn3-java" -type f -name "OpenVPNClient.java" -print -quit)
+          OPENVPN_CLIENT=$(find "$RUNNER_TEMP/ovpn3-java" -type f -name "ClientAPI_OpenVPNClient.java" -print -quit)
           test -n "$OPENVPN_CLIENT"
           test -s "$OPENVPN_CLIENT"
-          grep -q "class OpenVPNClient" "$OPENVPN_CLIENT"
+          grep -q "class ClientAPI_OpenVPNClient" "$OPENVPN_CLIENT"
+          TUN_BUILDER=$(find "$RUNNER_TEMP/ovpn3-java" -type f -name "ClientAPI_TunBuilderBase.java" -print -quit)
+          test -n "$TUN_BUILDER"
+          test -s "$TUN_BUILDER"
+          grep -q "class ClientAPI_TunBuilderBase" "$TUN_BUILDER"
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
