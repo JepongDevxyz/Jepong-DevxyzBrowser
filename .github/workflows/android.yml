@@ -122,8 +122,20 @@ jobs:
             --x-manifest-root "$RUNNER_TEMP/ovpn3-android-manifest" \
             --x-install-root "$RUNNER_TEMP/vcpkg-installed"
           cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3-android-cmake/"
-          mkdir -p "$RUNNER_TEMP/openvpn3-android-cmake/test"
-          cp -a "$RUNNER_TEMP/openvpn3/test/ovpncli" "$RUNNER_TEMP/openvpn3-android-cmake/test/"
+          OVPN3_CMAKE="$RUNNER_TEMP/openvpn3-android-cmake" python3 - <<'PY'
+          import os
+          from pathlib import Path
+          cmake = Path(os.environ["OVPN3_CMAKE"]) / "cmake/findcoredeps.cmake"
+          text = cmake.read_text()
+          old_ssl = "pkg_search_module(OpenSSL REQUIRED IMPORTED_TARGET openssl)\n        SET(SSL_LIBRARY PkgConfig::OpenSSL)"
+          new_ssl = "find_package(OpenSSL REQUIRED)\n        SET(SSL_LIBRARY OpenSSL::SSL OpenSSL::Crypto)"
+          old_threads = "if(UNIX)\n        target_link_libraries(${target} pthread)\n    endif()"
+          new_threads = "if(UNIX AND NOT ANDROID)\n        target_link_libraries(${target} pthread)\n    endif()"
+          assert old_ssl in text
+          assert old_threads in text
+          text = text.replace(old_ssl, new_ssl).replace(old_threads, new_threads)
+          cmake.write_text(text)
+          PY
           cat > "$RUNNER_TEMP/openvpn3-android-cmake/CMakeLists.txt" <<'EOF'
           cmake_minimum_required(VERSION 3.16...3.30)
           project(OpenVPN3Android LANGUAGES C CXX)
@@ -159,6 +171,9 @@ jobs:
             -DBUILD_SWIG_LIB=OFF -DCMAKE_BUILD_TYPE=Release \
             -DASIO_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
             -Dfmt_DIR="$VCPKG_INSTALLED/share/fmt" \
+            -DOPENSSL_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
+            -DOPENSSL_SSL_LIBRARY="$VCPKG_INSTALLED/lib/libssl.a" \
+            -DOPENSSL_CRYPTO_LIBRARY="$VCPKG_INSTALLED/lib/libcrypto.a" \
             -DLZ4_INCLUDE_DIR="$VCPKG_INSTALLED/include" \
             -DLZ4_LIBRARY="$VCPKG_INSTALLED/lib/liblz4.a"
           cmake --build "$RUNNER_TEMP/openvpn3-android-build" --target openvpn3_core
