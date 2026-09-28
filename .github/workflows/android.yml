@@ -59,6 +59,21 @@ jobs:
           test -n "$TUN_BUILDER"
           test -s "$TUN_BUILDER"
           grep -q "class ClientAPI_TunBuilderBase" "$TUN_BUILDER"
+      - name: Probe OpenVPN 3 native Android prerequisites
+        run: |
+          test -n "$ANDROID_NDK_ROOT"
+          test -f "$ANDROID_NDK_ROOT/build/cmake/android.toolchain.cmake"
+          test -f "$RUNNER_TEMP/openvpn3/client/ovpncli.cpp"
+          test -f "$RUNNER_TEMP/openvpn3/openvpn/openssl/xkey/xkey_provider.c"
+          test -f "$RUNNER_TEMP/openvpn3/openvpn/openssl/xkey/xkey_helper.c"
+          test -f "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          grep -q '"asio"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          grep -q '"openssl"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          grep -q '"lz4"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          grep -q '"lzo"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          grep -q '"fmt"' "$RUNNER_TEMP/openvpn3/vcpkg.json"
+          cmake --version
+          "$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++" --version
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
