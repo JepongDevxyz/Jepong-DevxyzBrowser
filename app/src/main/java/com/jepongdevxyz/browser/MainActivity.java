@@ -16,6 +16,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 import android.content.Intent;
@@ -66,6 +70,14 @@ public final class MainActivity extends AppCompatActivity {
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     setContentView(R.layout.activity_main);
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    View content = findViewById(android.R.id.content);
+    ViewCompat.setOnApplyWindowInsetsListener(content, (view, insets) -> {
+      Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+      view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+      return WindowInsetsCompat.CONSUMED;
+    });
+    ViewCompat.requestApplyInsets(content);
     vpnPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
       if (result.getResultCode() == RESULT_OK) {
         requestVpnCredentials();
@@ -114,6 +126,7 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.history).setOnClickListener(v -> showList("History", historyItems));
     findViewById(R.id.downloads).setOnClickListener(v -> showDownloads());
     findViewById(R.id.extensions).setOnClickListener(v -> showExtensions());
+    findViewById(R.id.extensionsPanel).setOnClickListener(v -> showExtensions());
     findViewById(R.id.vpn).setOnClickListener(v -> showVpn());
     findViewById(R.id.vpnPanel).setOnClickListener(v -> showVpn());
     findViewById(R.id.settings).setOnClickListener(v -> showSettings());
@@ -131,11 +144,13 @@ public final class MainActivity extends AppCompatActivity {
       else if(id==R.id.siteFacebook) browse("https://www.facebook.com");
       else if(id==R.id.siteGithub) browse("https://github.com");
       else if(id==R.id.siteReddit) browse("https://www.reddit.com");
+      else if(id==R.id.siteX) browse("https://x.com");
     };
     findViewById(R.id.siteYoutube).setOnClickListener(quick);
     findViewById(R.id.siteFacebook).setOnClickListener(quick);
     findViewById(R.id.siteGithub).setOnClickListener(quick);
     findViewById(R.id.siteReddit).setOnClickListener(quick);
+    findViewById(R.id.siteX).setOnClickListener(quick);
 
     address.setOnEditorActionListener((v,id,e) -> {
       if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { browse(address.getText().toString()); return true; }
@@ -156,6 +171,10 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showHome() {
+    if (activeTab != null) {
+      activeTab.url = "";
+      updateTabLabel(activeTab);
+    }
     startPage.setVisibility(View.VISIBLE);
     address.setText("");
     progress.setVisibility(View.GONE);
@@ -414,7 +433,8 @@ public final class MainActivity extends AppCompatActivity {
 
   @Override protected void onDestroy() {
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
-    if(session!=null) session.close();
+    for (BrowserTab tab : tabs) tab.session.close();
+    tabs.clear();
     super.onDestroy();
   }
 }
