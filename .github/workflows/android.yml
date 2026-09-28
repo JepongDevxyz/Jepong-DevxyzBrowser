@@ -96,7 +96,7 @@ jobs:
           # the headers for the configure probe; Android compilation still uses
           # the NDK toolchain selected below.
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libasio-dev liblz4-dev
+          sudo apt-get install -y --no-install-recommends libasio-dev liblz4-dev libfmt-dev
           ASIO_INCLUDE_DIR=$(dpkg -L libasio-dev | awk '/\/asio\.hpp$/ {sub(/\/asio\.hpp$/, "", $0); print; exit}')
           echo "Resolved ASIO_INCLUDE_DIR=$ASIO_INCLUDE_DIR"
           test -f "$ASIO_INCLUDE_DIR/asio.hpp"
