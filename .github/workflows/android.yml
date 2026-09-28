@@ -86,37 +86,6 @@ jobs:
           echo "Resolved clang++=$CLANG"
           test -n "$CLANG"
           "$CLANG" --version
-      - name: Configure OpenVPN 3 Android native core
-        run: |
-          set -euo pipefail
-          NDK="${ANDROID_NDK_ROOT:-${ANDROID_NDK_HOME:-}}"
-          test -n "$NDK"
-          mkdir -p "$RUNNER_TEMP/ovpn3-native"
-          # OpenVPN 3 uses standalone Asio headers. Ubuntu's libasio-dev supplies
-          # the headers for the configure probe; Android compilation still uses
-          # the NDK toolchain selected below.
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libasio-dev liblz4-dev libfmt-dev
-          ASIO_INCLUDE_DIR=$(dpkg -L libasio-dev | awk '/\/asio\.hpp$/ {sub(/\/asio\.hpp$/, "", $0); print; exit}')
-          echo "Resolved ASIO_INCLUDE_DIR=$ASIO_INCLUDE_DIR"
-          test -f "$ASIO_INCLUDE_DIR/asio.hpp"
-          LZ4_INCLUDE_DIR=$(dpkg -L liblz4-dev | awk '/\/lz4\.h$/ {sub(/\/lz4\.h$/, "", $0); print; exit}')
-          echo "Resolved LZ4_INCLUDE_DIR=$LZ4_INCLUDE_DIR"
-          test -f "$LZ4_INCLUDE_DIR/lz4.h"
-          LZ4_LIBRARY=$(find /usr/lib -name 'liblz4.so' -print -quit)
-          echo "Resolved LZ4_LIBRARY=$LZ4_LIBRARY"
-          test -n "$LZ4_LIBRARY"
-          cmake -S "$RUNNER_TEMP/openvpn3" -B "$RUNNER_TEMP/ovpn3-native" \
-            -DASIO_INCLUDE_DIR="$ASIO_INCLUDE_DIR" \
-            -DLZ4_INCLUDE_DIR="$LZ4_INCLUDE_DIR" \
-            -DLZ4_LIBRARY="$LZ4_LIBRARY" \
-            -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
-            -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-26 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTING=OFF
-          test -f "$RUNNER_TEMP/ovpn3-native/CMakeCache.txt"
-          echo "OpenVPN 3 Android CMake configuration completed."
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
