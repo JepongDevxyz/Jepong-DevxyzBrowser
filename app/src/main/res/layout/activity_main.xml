@@ -1,13 +1,51 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
- android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
- android:background="@color/bg" android:padding="8dp">
- <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal">
-  <ImageButton android:id="@+id/back" android:layout_width="44dp" android:layout_height="match_parent" android:src="@android:drawable/ic_media_previous" android:contentDescription="Back" android:background="@android:color/transparent"/>
-  <ImageButton android:id="@+id/refresh" android:layout_width="44dp" android:layout_height="match_parent" android:src="@android:drawable/ic_popup_sync" android:contentDescription="Refresh" android:background="@android:color/transparent"/>
-  <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:singleLine="true" android:hint="Search with Devxyz or enter address" android:textColor="@color/text" android:textColorHint="@color/muted" android:backgroundTint="@color/purple"/>
-  <Button android:id="@+id/vpn" android:layout_width="wrap_content" android:layout_height="44dp" android:text="VPN"/>
-  <Button android:id="@+id/extensions" android:layout_width="wrap_content" android:layout_height="44dp" android:text="✚"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:background="@color/bg">
+ <LinearLayout android:layout_width="88dp" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_horizontal" android:padding="8dp" android:background="@color/panel">
+  <TextView android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center" android:text="◉" android:textSize="30sp" android:textColor="@color/purple2"/>
+  <Button android:id="@+id/home" android:layout_width="match_parent" android:layout_height="48dp" android:text="Home" android:textSize="10sp"/>
+  <Button android:id="@+id/bookmarks" android:layout_width="match_parent" android:layout_height="48dp" android:text="Saved" android:textSize="10sp"/>
+  <Button android:id="@+id/history" android:layout_width="match_parent" android:layout_height="48dp" android:text="History" android:textSize="10sp"/>
+  <Button android:id="@+id/downloads" android:layout_width="match_parent" android:layout_height="48dp" android:text="Files" android:textSize="10sp"/>
+  <Button android:id="@+id/extensionsSide" android:layout_width="match_parent" android:layout_height="48dp" android:text="Add-ons" android:textSize="10sp"/>
+  <Button android:id="@+id/vpnSide" android:layout_width="match_parent" android:layout_height="48dp" android:text="VPN" android:textSize="10sp"/>
+  <Space android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1"/>
+  <Button android:id="@+id/settings" android:layout_width="match_parent" android:layout_height="48dp" android:text="Settings" android:textSize="9sp"/>
  </LinearLayout>
- <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="2dp" android:max="100"/>
- <org.mozilla.geckoview.GeckoView android:id="@+id/gecko" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
+ <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:orientation="vertical" android:padding="10dp">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal" android:gravity="center_vertical">
+   <ImageButton android:id="@+id/back" android:layout_width="42dp" android:layout_height="42dp" android:src="@android:drawable/ic_media_previous" android:contentDescription="Back" android:background="@android:color/transparent"/>
+   <ImageButton android:id="@+id/refresh" android:layout_width="42dp" android:layout_height="42dp" android:src="@android:drawable/ic_popup_sync" android:contentDescription="Refresh" android:background="@android:color/transparent"/>
+   <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:paddingHorizontal="16dp" android:singleLine="true" android:imeOptions="actionGo" android:hint="Search or enter address" android:textColor="@color/text" android:textColorHint="@color/muted" android:background="@drawable/search_bg"/>
+   <Button android:id="@+id/vpn" android:layout_width="72dp" android:layout_height="44dp" android:text="VPN"/>
+   <Button android:id="@+id/extensions" android:layout_width="54dp" android:layout_height="44dp" android:text="✚"/>
+  </LinearLayout>
+  <ProgressBar android:id="@+id/progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="2dp" android:max="100"/>
+  <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+   <org.mozilla.geckoview.GeckoView android:id="@+id/gecko" android:layout_width="match_parent" android:layout_height="match_parent"/>
+   <ScrollView android:id="@+id/startPage" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:background="@color/bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal" android:padding="20dp">
+     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="DevxyzBrowser" android:textColor="@color/purple2" android:textStyle="bold" android:textSize="18sp"/>
+     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26dp" android:gravity="center" android:text="Browse Freely. Securely.\nYour Way." android:textColor="@color/text" android:textStyle="bold" android:textSize="32sp"/>
+     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:gravity="center" android:text="Fast Gecko browsing, real extensions, and privacy controls in one place." android:textColor="@color/muted" android:textSize="14sp"/>
+     <EditText android:id="@+id/heroSearch" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="24dp" android:maxWidth="680dp" android:singleLine="true" android:imeOptions="actionSearch" android:hint="Search the web" android:paddingHorizontal="20dp" android:textColor="@color/text" android:textColorHint="@color/muted" android:background="@drawable/search_bg"/>
+     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:gravity="center" android:orientation="horizontal">
+      <Button android:id="@+id/siteYoutube" android:layout_width="wrap_content" android:layout_height="48dp" android:text="YouTube"/>
+      <Button android:id="@+id/siteFacebook" android:layout_width="wrap_content" android:layout_height="48dp" android:text="Facebook"/>
+      <Button android:id="@+id/siteGithub" android:layout_width="wrap_content" android:layout_height="48dp" android:text="GitHub"/>
+      <Button android:id="@+id/siteReddit" android:layout_width="wrap_content" android:layout_height="48dp" android:text="Reddit"/>
+     </LinearLayout>
+     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp" android:orientation="horizontal" android:baselineAligned="false">
+      <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:orientation="vertical" android:padding="18dp" android:background="@drawable/panel_bg">
+       <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Privacy at a glance" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp"/>
+       <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="Tracker protection • Secure browsing • Extension controls" android:textColor="@color/muted"/>
+      </LinearLayout>
+      <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:orientation="vertical" android:padding="18dp" android:background="@drawable/panel_bg">
+       <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="VPN" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp"/>
+       <TextView android:id="@+id/vpnStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Disconnected • No profile imported" android:textColor="@color/muted"/>
+       <Button android:id="@+id/vpnPanel" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="12dp" android:text="Open VPN"/>
+      </LinearLayout>
+     </LinearLayout>
+    </LinearLayout>
+   </ScrollView>
+  </FrameLayout>
+ </LinearLayout>
 </LinearLayout>
