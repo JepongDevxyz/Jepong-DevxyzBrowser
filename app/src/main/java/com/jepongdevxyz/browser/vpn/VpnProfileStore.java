@@ -44,12 +44,46 @@ public final class VpnProfileStore {
         return new String(data, StandardCharsets.UTF_8);
     }
 
+    public static boolean requiresCredentials(Context context) throws IOException {
+        String profile = read(context);
+        for (String line : profile.split("\\r?\\n")) {
+            String s = line.trim();
+            if (s.startsWith("<") || s.startsWith("#") || s.startsWith(";")) continue;
+            String[] parts = s.split("\\s+", 2);
+            if (parts.length == 0) continue;
+            if (parts[0].equalsIgnoreCase("askpass") || parts[0].equalsIgnoreCase("auth-user-pass")) return true;
+        }
+        return false;
+    }
+
     private static void validate(String c) throws IOException {
         String lower=c.toLowerCase(java.util.Locale.ROOT);
         if (!lower.contains("client") || !lower.contains("remote "))
             throw new IOException("Not a valid OpenVPN client profile");
         if (lower.contains("script-security") || lower.contains("up ") || lower.contains("down "))
             throw new IOException("Profiles containing local script hooks are not accepted");
+        boolean inline = false;
+        for (String line : c.split("\\r?\\n")) {
+            String s = line.trim();
+            String sl = s.toLowerCase(java.util.Locale.ROOT);
+            if (sl.startsWith("<") && sl.endsWith(">")) {
+                String tag = sl.replaceFirst("^</?", "").replaceFirst(">$", "").trim();
+                boolean inlineDataTag = java.util.Arrays.asList("ca", "cert", "key", "tls-auth", "tls-crypt",
+                        "tls-crypt-v2", "pkcs12", "dh", "extra-certs", "crl-verify", "auth-user-pass").contains(tag);
+                if (inlineDataTag) inline = !sl.startsWith("</");
+                continue;
+            }
+            if (inline || s.isEmpty() || s.startsWith("#") || s.startsWith(";")) continue;
+            String[] parts = s.split("\\s+", 2);
+            if (parts.length < 2) continue;
+            String option = parts[0].toLowerCase(java.util.Locale.ROOT);
+            if ((option.equals("ca") || option.equals("cert") || option.equals("key")
+                    || option.equals("tls-auth") || option.equals("tls-crypt")
+                    || option.equals("crl-verify") || option.equals("auth-user-pass"))
+                    && !parts[1].trim().startsWith("#")) {
+                throw new IOException("This profile references external files. Import a profile with inline certificates and keys.");
+            }
+        }
     }
 
     private static String endpoint(String c) {

@@ -1,6 +1,9 @@
 package com.jepongdevxyz.browser;
 
 import android.app.*;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -10,6 +13,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 import android.content.Intent;
@@ -26,6 +30,20 @@ public final class MainActivity extends AppCompatActivity {
   private TextView vpnStatus;
   private ActivityResultLauncher<String[]> openVpnProfile;
   private ActivityResultLauncher<Intent> vpnPermission;
+  private boolean vpnReceiverRegistered;
+  private final BroadcastReceiver vpnStateReceiver = new BroadcastReceiver() {
+    @Override public void onReceive(Context context, Intent intent) {
+      if (!DevxyzVpnService.ACTION_STATE.equals(intent.getAction())) return;
+      String state = intent.getStringExtra("state");
+      String detail = intent.getStringExtra("detail");
+      boolean error = intent.getBooleanExtra("error", false);
+      if ("CONNECTED".equals(state)) vpnStatus.setText("Connected • " + safe(detail));
+      else if ("CONNECTING".equals(state) || "WAIT".equals(state) || "RECONNECTING".equals(state)) vpnStatus.setText("Connecting • " + safe(detail));
+      else if (error) vpnStatus.setText("Failed • " + safe(detail));
+      else vpnStatus.setText(VpnProfileStore.hasProfile(MainActivity.this) ? "Disconnected • profile ready" : "Disconnected • No profile imported");
+      if (error) Toast.makeText(MainActivity.this, safe(detail), Toast.LENGTH_LONG).show();
+    }
+  };
   private final ArrayList<String> historyItems = new ArrayList<>();
   private final ArrayList<String> bookmarks = new ArrayList<>();
 
@@ -34,8 +52,7 @@ public final class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
     vpnPermission = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
       if (result.getResultCode() == RESULT_OK) {
-        Toast.makeText(this, "VPN permission granted", Toast.LENGTH_SHORT).show();
-        showVpn();
+        requestVpnCredentials();
       } else {
         Toast.makeText(this, "VPN permission is required to connect", Toast.LENGTH_LONG).show();
       }
@@ -59,7 +76,11 @@ public final class MainActivity extends AppCompatActivity {
     progress = findViewById(R.id.progress);
     startPage = findViewById(R.id.startPage);
     vpnStatus = findViewById(R.id.vpnStatus);
-    vpnStatus.setText(VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported");
+    vpnStatus.setText(DevxyzVpnService.isConnected() ? "Connected • OpenVPN" :
+      (VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported"));
+    IntentFilter vpnFilter = new IntentFilter(DevxyzVpnService.ACTION_STATE);
+    ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
+    vpnReceiverRegistered = true;
 
     session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
       @Override public void onPageStart(GeckoSession s, String url) {
@@ -180,11 +201,11 @@ public final class MainActivity extends AppCompatActivity {
          startService(stop); vpnStatus.setText("Disconnected • profile ready");
        });
     } else {
-      b.setMessage("Profile ready. Android VPN permission can now be granted. Connection will only be reported after the OpenVPN native transport establishes the tunnel.")
+      b.setMessage("Connect with the imported OpenVPN profile. DevxyzBrowser will show Connected only after the OpenVPN core reports a connected tunnel.")
        .setPositiveButton("Connect", (d,w) -> {
          Intent permission = VpnService.prepare(this);
          if (permission != null) vpnPermission.launch(permission);
-         else Toast.makeText(this, "VPN permission ready; native OpenVPN transport is the remaining connection stage.", Toast.LENGTH_LONG).show();
+         else requestVpnCredentials();
        })
        .setNeutralButton("Replace profile", (d,w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile","application/octet-stream","text/plain"}));
     }
@@ -195,5 +216,55 @@ public final class MainActivity extends AppCompatActivity {
     new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("OK",null).show();
   }
 
-  @Override protected void onDestroy() { if(session!=null) session.close(); super.onDestroy(); }
+  private void requestVpnCredentials() {
+    try {
+      if (!VpnProfileStore.requiresCredentials(this)) {
+        startOpenVpn("", "", "");
+        return;
+      }
+    } catch (Exception e) {
+      Toast.makeText(this, "Could not read VPN profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      return;
+    }
+    LinearLayout fields = new LinearLayout(this);
+    fields.setOrientation(LinearLayout.VERTICAL);
+    int pad = (int)(20 * getResources().getDisplayMetrics().density);
+    fields.setPadding(pad, 0, pad, 0);
+    EditText username = new EditText(this);
+    username.setSingleLine(true); username.setHint("Username (if required)");
+    EditText password = new EditText(this);
+    password.setSingleLine(true); password.setHint("VPN password (if required)");
+    password.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+    EditText keyPassword = new EditText(this);
+    keyPassword.setSingleLine(true); keyPassword.setHint("Private key password (if required)");
+    keyPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+    fields.addView(username); fields.addView(password); fields.addView(keyPassword);
+    new AlertDialog.Builder(this).setTitle("VPN credentials")
+      .setMessage("These credentials are used for this connection and are not saved by the app.")
+      .setView(fields)
+      .setPositiveButton("Connect", (dialog, which) -> startOpenVpn(
+        username.getText().toString(), password.getText().toString(), keyPassword.getText().toString()))
+      .setNegativeButton("Cancel", null).show();
+  }
+
+  private void startOpenVpn(String username, String password, String keyPassword) {
+    Intent connect = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_CONNECT)
+      .putExtra(DevxyzVpnService.EXTRA_USERNAME, username)
+      .putExtra(DevxyzVpnService.EXTRA_PASSWORD, password)
+      .putExtra(DevxyzVpnService.EXTRA_KEY_PASSWORD, keyPassword);
+    try {
+      ContextCompat.startForegroundService(this, connect);
+      vpnStatus.setText("Connecting • starting OpenVPN");
+    } catch (Exception e) {
+      Toast.makeText(this, "Could not start VPN: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
+  }
+
+  private String safe(String value) { return value == null || value.trim().isEmpty() ? "OpenVPN" : value; }
+
+  @Override protected void onDestroy() {
+    if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
+    if(session!=null) session.close();
+    super.onDestroy();
+  }
 }

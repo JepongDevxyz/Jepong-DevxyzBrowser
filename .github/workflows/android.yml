@@ -36,7 +36,7 @@ jobs:
           test -f "$RUNNER_TEMP/openvpn3/client/ovpncli.i"
           grep -q "class OpenVPNClient" "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
           grep -q "TunBuilderBase" "$RUNNER_TEMP/openvpn3/client/ovpncli.hpp"
-      - name: Generate OpenVPN 3 Android SWIG/JNI bridge
+      - name: Verify pinned OpenVPN 3 client and TUN API
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends swig
@@ -122,6 +122,7 @@ jobs:
             --x-manifest-root "$RUNNER_TEMP/ovpn3-android-manifest" \
             --x-install-root "$RUNNER_TEMP/vcpkg-installed"
           cp -a "$RUNNER_TEMP/openvpn3/client" "$RUNNER_TEMP/openvpn3/cmake" "$RUNNER_TEMP/openvpn3/openvpn" "$RUNNER_TEMP/openvpn3/deps" "$RUNNER_TEMP/openvpn3-android-cmake/"
+          cp app/src/main/cpp/openvpn3_jni.cpp "$RUNNER_TEMP/openvpn3-android-cmake/android_jni.cpp"
           OVPN3_CMAKE="$RUNNER_TEMP/openvpn3-android-cmake" python3 - <<'PY'
           import os
           from pathlib import Path
@@ -151,8 +152,8 @@ jobs:
             openvpn/openssl/xkey/xkey_provider.c)
           target_compile_definitions(xkey INTERFACE -DENABLE_EXTERNAL_PKI)
           add_ssl_library(xkey)
-          add_library(openvpn3_core SHARED client/ovpncli.cpp)
-          target_include_directories(openvpn3_core PRIVATE client)
+          add_library(openvpn3_core SHARED client/ovpncli.cpp android_jni.cpp)
+          target_include_directories(openvpn3_core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" client)
           target_link_libraries(openvpn3_core xkey)
           add_core_dependencies(openvpn3_core)
           set_target_properties(openvpn3_core PROPERTIES OUTPUT_NAME openvpn3_core)
@@ -184,6 +185,9 @@ jobs:
           "$NDK_READELF" -h "$ELF" > "$RUNNER_TEMP/openvpn3-elf-header.txt"
           cat "$RUNNER_TEMP/openvpn3-elf-header.txt"
           grep -q "Machine:.*AArch64" "$RUNNER_TEMP/openvpn3-elf-header.txt"
+          NDK_NM="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
+          "$NDK_NM" -D --defined-only "$ELF" | grep -q "Java_com_jepongdevxyz_browser_vpn_NativeOpenVpn_start"
+          "$NDK_NM" -D --defined-only "$ELF" | grep -q "Java_com_jepongdevxyz_browser_vpn_NativeOpenVpn_stop"
           file "$ELF"
           JNI_LIBS="app/src/main/jniLibs/arm64-v8a"
           mkdir -p "$JNI_LIBS"
@@ -192,6 +196,15 @@ jobs:
           test -s "$CXX_RUNTIME"
           install -m 0644 "$CXX_RUNTIME" "$JNI_LIBS/libc++_shared.so"
           echo "Pinned OpenVPN 3 ARM64 core and its C++ runtime are staged for APK packaging."
+          LICENSES="app/src/main/assets/licenses"
+          mkdir -p "$LICENSES/openvpn3" "$LICENSES/third-party"
+          cp "$RUNNER_TEMP/openvpn3/LICENSES/MPL-2.0.txt" "$LICENSES/openvpn3/"
+          cp "$RUNNER_TEMP/openvpn3/LICENSES/AGPL-3.0-only.txt" "$LICENSES/openvpn3/"
+          cp "$RUNNER_TEMP/openvpn3/LICENSES/openvpn3-openssl-exception.txt" "$LICENSES/openvpn3/"
+          for package in asio fmt lz4 openssl; do
+            test -s "$VCPKG_INSTALLED/share/$package/copyright"
+            cp "$VCPKG_INSTALLED/share/$package/copyright" "$LICENSES/third-party/$package.txt"
+          done
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Lint
@@ -205,6 +218,10 @@ jobs:
           test -x "$AAPT"
           test -x "$APKSIGNER"
           "$AAPT" dump badging "$APK" | grep "package: name='com.jepongdevxyz.browser'"
+          unzip -Z1 "$APK" | grep -qx 'lib/arm64-v8a/libopenvpn3_core.so'
+          unzip -Z1 "$APK" | grep -qx 'lib/arm64-v8a/libc++_shared.so'
+          unzip -Z1 "$APK" | grep -qx 'assets/licenses/openvpn3/MPL-2.0.txt'
+          unzip -Z1 "$APK" | grep -qx 'assets/licenses/third-party/openssl.txt'
           "$APKSIGNER" verify --verbose "$APK"
       - uses: actions/upload-artifact@v4
         with:
