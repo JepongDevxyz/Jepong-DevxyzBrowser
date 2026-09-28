@@ -80,7 +80,6 @@ jobs:
           check_dep asio
           check_dep openssl
           check_dep lz4
-          check_dep lzo
           check_dep fmt
           cmake --version
           CLANG=$(find "$NDK/toolchains/llvm/prebuilt" -type f -name clang++ -print -quit)
