@@ -7,7 +7,7 @@ import android.widget.*;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import org.mozilla.geckoview.*;
-import java.net.URLEncoder;
+import android.net.Uri;
 
 public final class MainActivity extends AppCompatActivity {
   private static GeckoRuntime runtime;
@@ -48,7 +48,7 @@ public final class MainActivity extends AppCompatActivity {
     String q = raw.trim();
     if (!q.matches("^[a-zA-Z][a-zA-Z0-9+.-]*://.*$")) {
       if (q.contains(".") && !q.contains(" ")) q = "https://" + q;
-      else q = "https://www.google.com/search?q=" + URLEncoder.encode(q, "UTF-8");
+      else q = "https://www.google.com/search?q=" + Uri.encode(q);
     }
     session.loadUri(q);
   }
