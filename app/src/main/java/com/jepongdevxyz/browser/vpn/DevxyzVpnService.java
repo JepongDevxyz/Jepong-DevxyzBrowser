@@ -14,6 +14,8 @@ import android.util.Log;
 import com.jepongdevxyz.browser.MainActivity;
 import com.jepongdevxyz.browser.R;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /** Owns the Android VPN interface and the OpenVPN 3 client lifetime. */
 public final class DevxyzVpnService extends VpnService {
@@ -158,7 +160,14 @@ public final class DevxyzVpnService extends VpnService {
     }
     public synchronized boolean nativeTunExcludeRoute(String address, int prefix) {
         if (tunBuilder == null) return false;
-        if (Build.VERSION.SDK_INT >= 33) tunBuilder.excludeRoute(new IpPrefix(address, prefix));
+        if (Build.VERSION.SDK_INT >= 33) {
+            try {
+                tunBuilder.excludeRoute(new IpPrefix(InetAddress.getByName(address), prefix));
+            } catch (UnknownHostException e) {
+                Log.e("DevxyzVpn", "Invalid excluded route address", e);
+                return false;
+            }
+        }
         return true;
     }
     public synchronized boolean nativeTunAddDns(String address) {
@@ -179,7 +188,7 @@ public final class DevxyzVpnService extends VpnService {
     public synchronized boolean nativeTunAllowFamily(int family, boolean allow) {
         if (tunBuilder == null) return false;
         if (allow) tunBuilder.allowFamily(family);
-        else tunBuilder.disallowFamily(family);
+        // Families without a VPN address, route, or DNS entry are blocked by default.
         return true;
     }
     public synchronized int nativeTunEstablish() {
