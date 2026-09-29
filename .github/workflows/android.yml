@@ -242,40 +242,51 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics
           disable-animations: true
           script: |
+            set +e
+            REVIEW_DIR="$GITHUB_WORKSPACE/visual-review"
+            mkdir -p "$REVIEW_DIR"
             adb shell wm size 1536x1024
             adb shell wm density 160
             adb install app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n com.jepongdevxyz.browser/.MainActivity
             sleep 20
-            adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
-            adb shell pidof com.jepongdevxyz.browser
-            adb shell uiautomator dump /sdcard/window.xml
-            adb shell cat /sdcard/window.xml > "$RUNNER_TEMP/emulator-window.xml"
-            adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-desktop-reference.png"
-            adb logcat -d -v time > "$RUNNER_TEMP/desktop-logcat.txt"
+            adb shell dumpsys window > "$REVIEW_DIR/desktop-window.txt" 2>&1
+            adb shell pidof com.jepongdevxyz.browser > "$REVIEW_DIR/desktop-pid.txt" 2>&1
+            adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
+            adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+            adb exec-out screencap -p > "$REVIEW_DIR/devxyz-desktop-reference.png" 2> "$REVIEW_DIR/desktop-screencap.txt"
+            adb logcat -d -v time > "$REVIEW_DIR/desktop-logcat.txt" 2>&1
+            adb shell dumpsys activity activities > "$REVIEW_DIR/desktop-activity.txt" 2>&1
             adb shell wm size 720x1600
             adb shell wm density 320
             adb shell am force-stop com.jepongdevxyz.browser
             adb shell am start -n com.jepongdevxyz.browser/.MainActivity
             sleep 20
-            adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
-            adb shell pidof com.jepongdevxyz.browser
-            adb shell uiautomator dump /sdcard/phone-window.xml
-            adb shell cat /sdcard/phone-window.xml > "$RUNNER_TEMP/phone-emulator-window.xml"
-            adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-phone-reference.png"
-            adb logcat -d -v time > "$RUNNER_TEMP/phone-logcat.txt"
-            python3 scripts/verify_emulator_screen.py "$RUNNER_TEMP/emulator-window.xml"
-            python3 scripts/verify_emulator_screen.py "$RUNNER_TEMP/phone-emulator-window.xml"
+            adb shell dumpsys window > "$REVIEW_DIR/phone-window.txt" 2>&1
+            adb shell pidof com.jepongdevxyz.browser > "$REVIEW_DIR/phone-pid.txt" 2>&1
+            adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
+            adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+            adb exec-out screencap -p > "$REVIEW_DIR/devxyz-phone-reference.png" 2> "$REVIEW_DIR/phone-screencap.txt"
+            adb logcat -d -v time > "$REVIEW_DIR/phone-logcat.txt" 2>&1
+            adb shell dumpsys activity activities > "$REVIEW_DIR/phone-activity.txt" 2>&1
+            python3 scripts/verify_emulator_screen.py "$REVIEW_DIR/desktop-window.xml"
+            desktop_xml_status=$?
+            python3 scripts/verify_emulator_screen.py "$REVIEW_DIR/phone-window.xml"
+            phone_xml_status=$?
+            desktop_foreground_status=0
+            phone_foreground_status=0
+            grep -q 'com.jepongdevxyz.browser' "$REVIEW_DIR/desktop-window.txt" || desktop_foreground_status=1
+            grep -q 'com.jepongdevxyz.browser' "$REVIEW_DIR/phone-window.txt" || phone_foreground_status=1
+            test -s "$REVIEW_DIR/devxyz-desktop-reference.png" || desktop_foreground_status=1
+            test -s "$REVIEW_DIR/devxyz-phone-reference.png" || phone_foreground_status=1
+            test -s "$REVIEW_DIR/desktop-pid.txt" || desktop_foreground_status=1
+            test -s "$REVIEW_DIR/phone-pid.txt" || phone_foreground_status=1
+            test "$desktop_xml_status" -eq 0 && test "$phone_xml_status" -eq 0 && test "$desktop_foreground_status" -eq 0 && test "$phone_foreground_status" -eq 0
       - name: Upload visual review screenshots (no APK)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: DevxyzBrowser-visual-review-only
           path: |
-            ${{ runner.temp }}/devxyz-desktop-reference.png
-            ${{ runner.temp }}/devxyz-phone-reference.png
-            ${{ runner.temp }}/emulator-window.xml
-            ${{ runner.temp }}/phone-emulator-window.xml
-            ${{ runner.temp }}/desktop-logcat.txt
-            ${{ runner.temp }}/phone-logcat.txt
+            visual-review/**
           if-no-files-found: error
