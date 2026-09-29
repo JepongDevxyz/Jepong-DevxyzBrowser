@@ -12,6 +12,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.Gravity;
+import android.view.ViewGroup;
 import android.graphics.drawable.GradientDrawable;
 import android.view.inputmethod.EditorInfo;
 import android.widget.*;
