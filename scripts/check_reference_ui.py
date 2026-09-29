@@ -68,6 +68,7 @@ assert "killSwitch" not in ids, "do not present a fake in-app kill switch; Andro
 assert "api-level: 30" in workflow and "arch: x86_64" in workflow, "visual review emulator must use the runner's supported ABI"
 assert "dumpsys window" in workflow and "com.jepongdevxyz.browser" in workflow, "visual review must verify the browser is foregrounded"
 assert workflow.count("uiautomator dump") >= 2 and workflow.count("am force-stop com.jepongdevxyz.browser") == 1, "desktop and phone screenshots must reject ANR overlays and restart at phone dimensions"
+assert "scripts/verify_emulator_screen.py" in workflow, "emulator screenshot flow must use the tested ANR verifier"
 assert "DevxyzBrowser-visual-review-only" in workflow, "verification workflow should publish screenshots only"
 assert "name: DevxyzBrowser-debug-apk" not in workflow, "verification workflow must not expose an unreviewed APK"
 assert 'providers.gradleProperty("devxyz.abi")' in build, "APK must select one target ABI to avoid packaging all GeckoView binaries"
