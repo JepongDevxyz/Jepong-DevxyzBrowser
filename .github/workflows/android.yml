@@ -232,9 +232,13 @@ jobs:
           gradle --no-daemon clean :app:assembleDebug
       - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 30
           arch: x86_64
-          profile: pixel_7
+          profile: pixel_2
+          cores: 4
+          ram-size: 4096M
+          heap-size: 512M
+          emulator-boot-timeout: 1200
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics
           disable-animations: true
           script: |
@@ -242,7 +246,9 @@ jobs:
             adb shell wm density 160
             adb install app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n com.jepongdevxyz.browser/.MainActivity
-            sleep 30
+            sleep 60
+            adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
+            adb shell pidof com.jepongdevxyz.browser
             adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-desktop-reference.png"
             adb shell wm size 720x1600
             adb shell wm density 320

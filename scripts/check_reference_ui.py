@@ -8,12 +8,14 @@ LAYOUT = ROOT / "app/src/main/res/layout/activity_main.xml"
 BACKDROP = ROOT / "app/src/main/res/drawable/home_backdrop.xml"
 ACTIVITY = ROOT / "app/src/main/java/com/jepongdevxyz/browser/MainActivity.java"
 MANIFEST = ROOT / "app/src/main/AndroidManifest.xml"
+WORKFLOW = ROOT / ".github/workflows/android.yml"
 ANDROID = "{http://schemas.android.com/apk/res/android}"
 
 layout = ET.parse(LAYOUT).getroot()
 backdrop = ET.parse(BACKDROP).getroot()
 activity = ACTIVITY.read_text()
 manifest = ET.parse(MANIFEST).getroot()
+workflow = WORKFLOW.read_text()
 ids = {
     node.attrib.get(ANDROID + "id", "").split("/")[-1]: node
     for node in layout.iter()
@@ -51,5 +53,10 @@ application = manifest.find("application")
 assert application is not None and application.attrib.get(ANDROID + "icon") == "@mipmap/ic_launcher", "custom installer icon not wired"
 for fake_toggle in ("autoConnect", "killSwitch", "blockTrackers"):
     assert fake_toggle not in ids, f"remove nonfunctional VPN toggle {fake_toggle}"
+
+assert "api-level: 30" in workflow and "arch: x86_64" in workflow, "visual review emulator must use the runner's supported ABI"
+assert "dumpsys window" in workflow and "com.jepongdevxyz.browser" in workflow, "visual review must verify the browser is foregrounded"
+assert "DevxyzBrowser-visual-review-only" in workflow, "verification workflow should publish screenshots only"
+assert "name: DevxyzBrowser-debug-apk" not in workflow, "verification workflow must not expose an unreviewed APK"
 
 print("Reference UI static checks passed")
