@@ -83,6 +83,7 @@ assert "scripts/verify_emulator_screen.py" in capture, "emulator screenshot flow
 assert "DevxyzBrowser-visual-review-only" in workflow, "verification workflow should publish screenshots only"
 assert capture.count("screencap -p") == 2 and "set +e" in capture, "capture both form factors before running failure gates"
 assert 'REVIEW_DIR="visual-review"' in capture, "emulator diagnostics must use a stable workspace path"
+assert capture.count("System UI isn't responding") == 2 and capture.count("KEYCODE_DPAD_DOWN") == 2, "wait for boot-time System UI ANRs before capturing, without hiding browser ANRs"
 assert "name: DevxyzBrowser-debug-apk" not in workflow, "verification workflow must not expose an unreviewed APK"
 assert 'providers.gradleProperty("devxyz.abi")' in build, "APK must select one target ABI to avoid packaging all GeckoView binaries"
 assert 'abiFilters += browserAbi' in build, "selected GeckoView ABI must be enforced in the APK"

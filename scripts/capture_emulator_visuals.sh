@@ -15,6 +15,13 @@ adb shell dumpsys window > "$REVIEW_DIR/desktop-window.txt" 2>&1
 adb shell pidof "$PACKAGE" > "$REVIEW_DIR/desktop-pid.txt" 2>&1
 adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
 adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+if grep -Fq "System UI isn't responding" "$REVIEW_DIR/desktop-window.xml"; then
+  adb shell input keyevent KEYCODE_DPAD_DOWN
+  adb shell input keyevent KEYCODE_ENTER
+  sleep 10
+  adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
+  adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+fi
 adb exec-out screencap -p > "$REVIEW_DIR/devxyz-desktop-reference.png" 2> "$REVIEW_DIR/desktop-screencap.txt"
 adb logcat -d -v time > "$REVIEW_DIR/desktop-logcat.txt" 2>&1
 adb shell dumpsys activity activities > "$REVIEW_DIR/desktop-activity.txt" 2>&1
@@ -28,6 +35,13 @@ adb shell dumpsys window > "$REVIEW_DIR/phone-window.txt" 2>&1
 adb shell pidof "$PACKAGE" > "$REVIEW_DIR/phone-pid.txt" 2>&1
 adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
 adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+if grep -Fq "System UI isn't responding" "$REVIEW_DIR/phone-window.xml"; then
+  adb shell input keyevent KEYCODE_DPAD_DOWN
+  adb shell input keyevent KEYCODE_ENTER
+  sleep 10
+  adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
+  adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+fi
 adb exec-out screencap -p > "$REVIEW_DIR/devxyz-phone-reference.png" 2> "$REVIEW_DIR/phone-screencap.txt"
 adb logcat -d -v time > "$REVIEW_DIR/phone-logcat.txt" 2>&1
 adb shell dumpsys activity activities > "$REVIEW_DIR/phone-activity.txt" 2>&1
