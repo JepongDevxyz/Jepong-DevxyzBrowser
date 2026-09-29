@@ -226,8 +226,29 @@ jobs:
           unzip -Z1 "$APK" | grep -qx 'assets/licenses/openvpn3/MPL-2.0.txt'
           unzip -Z1 "$APK" | grep -qx 'assets/licenses/third-party/openssl.txt'
           "$APKSIGNER" verify --verbose "$APK"
-      - uses: actions/upload-artifact@v4
+      - uses: reactivecircus/android-emulator-runner@v2
         with:
-          name: DevxyzBrowser-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          api-level: 35
+          arch: arm64-v8a
+          profile: pixel_7
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics
+          disable-animations: true
+          script: |
+            adb shell wm size 1536x1024
+            adb shell wm density 160
+            adb install app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n com.jepongdevxyz.browser/.MainActivity
+            sleep 30
+            adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-desktop-reference.png"
+            adb shell wm size 720x1600
+            adb shell wm density 320
+            sleep 3
+            adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-phone-reference.png"
+      - name: Upload visual review screenshots (no APK)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DevxyzBrowser-visual-review-only
+          path: |
+            ${{ runner.temp }}/devxyz-desktop-reference.png
+            ${{ runner.temp }}/devxyz-phone-reference.png
           if-no-files-found: error
