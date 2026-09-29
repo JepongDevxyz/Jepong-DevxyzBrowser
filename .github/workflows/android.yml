@@ -259,7 +259,18 @@ jobs:
             adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-desktop-reference.png"
             adb shell wm size 720x1600
             adb shell wm density 320
-            sleep 3
+            adb shell am force-stop com.jepongdevxyz.browser
+            adb shell am start -n com.jepongdevxyz.browser/.MainActivity
+            sleep 45
+            adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
+            adb shell pidof com.jepongdevxyz.browser
+            adb shell uiautomator dump /sdcard/phone-window.xml
+            adb shell cat /sdcard/phone-window.xml > "$RUNNER_TEMP/phone-emulator-window.xml"
+            if grep -Eqi "isn't responding|Close app|Wait" "$RUNNER_TEMP/phone-emulator-window.xml"; then
+              adb logcat -d -v time > "$RUNNER_TEMP/phone-emulator-anr-logcat.txt"
+              cat "$RUNNER_TEMP/phone-emulator-anr-logcat.txt" | grep -E -i -C 3 'ANR in|am_anr|not responding|GeckoRuntime|FATAL EXCEPTION' | tail -120 || true
+              exit 1
+            fi
             adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-phone-reference.png"
       - name: Upload visual review screenshots (no APK)
         uses: actions/upload-artifact@v4
