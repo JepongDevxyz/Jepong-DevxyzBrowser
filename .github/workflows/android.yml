@@ -241,7 +241,7 @@ jobs:
           emulator-boot-timeout: 1200
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics
           disable-animations: true
-          script: |
+          script: |-
             adb shell wm size 1536x1024
             adb shell wm density 160
             adb install app/build/outputs/apk/debug/app-debug.apk
