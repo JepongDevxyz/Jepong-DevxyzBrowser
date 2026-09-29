@@ -18,6 +18,7 @@ backdrop = ET.parse(BACKDROP).getroot()
 activity = ACTIVITY.read_text()
 manifest = ET.parse(MANIFEST).getroot()
 workflow = WORKFLOW.read_text()
+EMULATOR_CAPTURE = ROOT / "scripts/capture_emulator_visuals.sh"
 build = BUILD.read_text()
 ids = {
     node.attrib.get(ANDROID + "id", "").split("/")[-1]: node
@@ -72,11 +73,15 @@ application = manifest.find("application")
 assert application is not None and application.attrib.get(ANDROID + "icon") == "@mipmap/ic_launcher", "custom installer icon not wired"
 assert "killSwitch" not in ids, "do not present a fake in-app kill switch; Android controls Always-on VPN"
 
+assert "script: bash scripts/capture_emulator_visuals.sh" in workflow, "emulator capture must run in one persistent shell"
+capture = EMULATOR_CAPTURE.read_text()
 assert "api-level: 30" in workflow and "arch: x86_64" in workflow, "visual review emulator must use the runner's supported ABI"
-assert "dumpsys window" in workflow and "com.jepongdevxyz.browser" in workflow, "visual review must verify the browser is foregrounded"
-assert workflow.count("uiautomator dump") >= 2 and workflow.count("am force-stop com.jepongdevxyz.browser") == 1, "desktop and phone screenshots must reject ANR overlays and restart at phone dimensions"
-assert "scripts/verify_emulator_screen.py" in workflow, "emulator screenshot flow must use the tested ANR verifier"
+assert "dumpsys window" in capture and "com.jepongdevxyz.browser" in capture, "visual review must verify the browser is foregrounded"
+assert capture.count("uiautomator dump") >= 2 and capture.count("am force-stop") == 1, "desktop and phone screenshots must reject ANR overlays and restart at phone dimensions"
+assert "scripts/verify_emulator_screen.py" in capture, "emulator screenshot flow must use the tested ANR verifier"
 assert "DevxyzBrowser-visual-review-only" in workflow, "verification workflow should publish screenshots only"
+assert capture.count("screencap -p") == 2 and "set +e" in capture, "capture both form factors before running failure gates"
+assert 'REVIEW_DIR="visual-review"' in capture, "emulator diagnostics must use a stable workspace path"
 assert "name: DevxyzBrowser-debug-apk" not in workflow, "verification workflow must not expose an unreviewed APK"
 assert 'providers.gradleProperty("devxyz.abi")' in build, "APK must select one target ABI to avoid packaging all GeckoView binaries"
 assert 'abiFilters += browserAbi' in build, "selected GeckoView ABI must be enforced in the APK"
