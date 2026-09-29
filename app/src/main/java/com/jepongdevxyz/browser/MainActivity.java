@@ -164,7 +164,6 @@ public final class MainActivity extends AppCompatActivity {
     }
     quickSiteStrip.getChildAt(4).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     addTabChip(activeTab);
-    attachSession(activeTab);
     selectTab(activeTab);
     setVpnStatus(DevxyzVpnService.isConnected() ? "Connected • OpenVPN" :
       (VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported"));

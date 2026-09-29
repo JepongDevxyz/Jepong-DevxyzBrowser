@@ -53,6 +53,7 @@ assert "Settings.ACTION_VPN_SETTINGS" in activity, "Kill Switch control must ope
 on_create = activity.split("@Override public void onCreate(Bundle state)", 1)[1].split("\n  private ", 1)[0]
 assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
+assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
 assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].split("\n  private ", 1)[0], "navigating to a site must start Gecko on demand"
 lazy_session = activity.split("private GeckoSession ensureBrowserSession(", 1)[1].split("\n  private ", 1)[0]
 assert "ensureBrowserRuntime()" in lazy_session and "tab.session.open(runtime)" in lazy_session, "first navigation must create and open its Gecko session"
