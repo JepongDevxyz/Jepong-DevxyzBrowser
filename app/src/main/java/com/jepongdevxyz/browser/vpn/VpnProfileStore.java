@@ -34,6 +34,10 @@ public final class VpnProfileStore {
         return new File(context.getFilesDir(), FILE).isFile();
     }
 
+    public static String getEndpoint(Context context) throws IOException {
+        return endpoint(read(context));
+    }
+
     public static String read(Context context) throws IOException {
         File file = new File(context.getFilesDir(), FILE);
         byte[] data = new byte[(int) file.length()];

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -30,6 +31,9 @@ import android.net.VpnService;
 import org.mozilla.geckoview.*;
 import java.util.*;
 import androidx.appcompat.widget.PopupMenu;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 
 public final class MainActivity extends AppCompatActivity {
   private static GeckoRuntime runtime;
@@ -40,6 +44,9 @@ public final class MainActivity extends AppCompatActivity {
   private View menuButton;
   private TextView vpnStatus;
   private LinearLayout tabStrip;
+  private LinearLayout extensionRows;
+  private EditText extensionSearch;
+  private List<WebExtension> installedExtensions = Collections.emptyList();
   private org.mozilla.geckoview.GeckoView geckoView;
   private ActivityResultLauncher<String[]> openVpnProfile;
   private ActivityResultLauncher<Intent> vpnPermission;
@@ -70,6 +77,22 @@ public final class MainActivity extends AppCompatActivity {
     BrowserTab(GeckoSession session) { this.session = session; }
   }
 
+  private static final class AddonCard {
+    final String name, description, slug, color;
+    AddonCard(String name, String description, String slug, String color) {
+      this.name = name; this.description = description; this.slug = slug; this.color = color;
+    }
+    boolean supportedOnAndroid() { return slug != null; }
+    String downloadUrl() { return "https://addons.mozilla.org/firefox/downloads/latest/" + slug + "/latest.xpi"; }
+  }
+  private static final AddonCard[] ADDON_CATALOG = {
+    new AddonCard("uBlock Origin", "Block ads and trackers", "ublock-origin", "#B31326"),
+    new AddonCard("Dark Reader", "Dark mode for all websites", "darkreader", "#168EAA"),
+    new AddonCard("Grammarly", "Not available on Android", null, "#168F70"),
+    new AddonCard("SponsorBlock", "Skip sponsored segments", "sponsorblock", "#E73D32"),
+    new AddonCard("React Developer Tools", "Not available on Android", null, "#1497B8")
+  };
+
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     setContentView(R.layout.activity_main);
@@ -94,13 +117,33 @@ public final class MainActivity extends AppCompatActivity {
         String endpoint = VpnProfileStore.importProfile(this, uri);
         setVpnStatus("Ready • " + endpoint);
         Toast.makeText(this, "OpenVPN profile imported", Toast.LENGTH_LONG).show();
+        if (getPreferences(MODE_PRIVATE).getBoolean("auto_connect_vpn", false)) connectSavedProfileWithPermission();
       } catch (Exception ex) {
         Toast.makeText(this, "Profile rejected: " + ex.getMessage(), Toast.LENGTH_LONG).show();
       }
     });
-    if (runtime == null) runtime = GeckoRuntime.create(this);
+    if (runtime == null) {
+      runtime = GeckoRuntime.create(this);
+      runtime.getWebExtensionController().setPromptDelegate(new WebExtensionController.PromptDelegate() {
+        @Override public GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
+            WebExtension extension, String[] permissions, String[] origins, String[] dataPermissions) {
+          GeckoResult<WebExtension.PermissionPromptResponse> result = new GeckoResult<>();
+          runOnUiThread(() -> {
+            String detail = "Permissions:\n" + permissionLines(permissions, origins, dataPermissions);
+            new AlertDialog.Builder(MainActivity.this).setTitle("Install " + extension.metaData.name + "?")
+              .setMessage(detail).setPositiveButton("Allow and install", (d,w) -> result.complete(
+                new WebExtension.PermissionPromptResponse(true, false, false)))
+              .setNegativeButton("Cancel", (d,w) -> result.complete(
+                new WebExtension.PermissionPromptResponse(false, false, false)))
+              .setOnCancelListener(d -> result.complete(new WebExtension.PermissionPromptResponse(false, false, false)))
+              .show();
+          });
+          return result;
+        }
+      });
+    }
     geckoView = findViewById(R.id.gecko);
-    session = new GeckoSession();
+    session = newBrowserSession();
     session.open(runtime);
     activeTab = new BrowserTab(session);
     tabs.add(activeTab);
@@ -110,11 +153,36 @@ public final class MainActivity extends AppCompatActivity {
     startPage = findViewById(R.id.startPage);
     vpnStatus = findViewById(R.id.vpnStatus);
     tabStrip = findViewById(R.id.tabStrip);
+    extensionRows = findViewById(R.id.desktopExtensionRows);
+    extensionSearch = findViewById(R.id.extensionSearch);
     menuButton = findViewById(R.id.menu);
     boolean wideLayout = getResources().getConfiguration().screenWidthDp >= 1200;
     findViewById(R.id.tabletRail).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.desktopPanels).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.mobileNav).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
+    findViewById(R.id.homeBrandLockup).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
+    findViewById(R.id.heroTitle).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
+    findViewById(R.id.heroSubtitle).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
+    findViewById(R.id.desktopHomeTitle).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    findViewById(R.id.desktopHomeSubtitle).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    View homeContent = ((android.widget.ScrollView) startPage).getChildAt(0);
+    homeContent.setPadding(homeContent.getPaddingLeft(), dp(wideLayout ? 66 : 42), homeContent.getPaddingRight(), homeContent.getPaddingBottom());
+    int shortcutSize = wideLayout ? 72 : 58;
+    for (int id : new int[]{R.id.siteYoutube, R.id.siteFacebook, R.id.siteGithub, R.id.siteReddit, R.id.siteX, R.id.addSite}) {
+      android.view.ViewGroup.LayoutParams shortcut = findViewById(id).getLayoutParams();
+      shortcut.width = dp(shortcutSize);
+      shortcut.height = dp(wideLayout ? 76 : 58);
+      findViewById(id).setLayoutParams(shortcut);
+    }
+    LinearLayout quickSiteStrip = findViewById(R.id.quickSiteStrip);
+    int quickSiteCellWidth = dp(wideLayout ? 86 : 60);
+    for (int index = 0; index < quickSiteStrip.getChildCount(); index++) {
+      View cell = quickSiteStrip.getChildAt(index);
+      ViewGroup.LayoutParams cellParams = cell.getLayoutParams();
+      cellParams.width = quickSiteCellWidth;
+      cell.setLayoutParams(cellParams);
+    }
+    quickSiteStrip.getChildAt(4).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     addTabChip(activeTab);
     attachSession(activeTab);
     selectTab(activeTab);
@@ -152,9 +220,16 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.desktopVpnStatus).setOnClickListener(v -> showVpn());
     findViewById(R.id.desktopVpnAction).setOnClickListener(v -> showVpn());
     findViewById(R.id.vpnSettings).setOnClickListener(v -> showVpn());
-    findViewById(R.id.desktopExtensionsAction).setOnClickListener(v -> showExtensions());
+    findViewById(R.id.desktopExtensionsAction).setOnClickListener(v -> browseMoreExtensions());
     findViewById(R.id.extensionsClose).setOnClickListener(v -> findViewById(R.id.desktopExtensionsPane).setVisibility(View.GONE));
-    findViewById(R.id.extensionSummary).setOnClickListener(v -> showExtensions());
+    findViewById(R.id.vpnProfileSelector).setOnClickListener(v -> showVpn());
+    findViewById(R.id.killSwitchSettings).setOnClickListener(v -> openAndroidVpnSettings());
+    setupVpnSwitches();
+    extensionSearch.addTextChangedListener(new TextWatcher() {
+      @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+      @Override public void onTextChanged(CharSequence s, int start, int before, int count) { renderExtensionRows(installedExtensions, s.toString()); }
+      @Override public void afterTextChanged(Editable s) {}
+    });
     findViewById(R.id.addSite).setOnClickListener(v -> {
       EditText site = new EditText(this);
       site.setSingleLine(true); site.setHint("https://example.com");
@@ -177,9 +252,10 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.siteReddit).setOnClickListener(quick);
     findViewById(R.id.siteX).setOnClickListener(quick);
     setBrandWordmark(findViewById(R.id.brandTitle));
-    setBrandWordmark(findViewById(R.id.heroTitle));
+    setBrandWordmark(findViewById(R.id.desktopHomeTitle));
     setBrandWordmark(findViewById(R.id.railBrandTitle));
     refreshExtensionsSummary();
+    maybeAutoConnectSavedProfile();
     if (wideLayout) {
       findViewById(R.id.phoneVpnCard).setVisibility(View.GONE);
       findViewById(R.id.phoneExtensionsCard).setVisibility(View.GONE);
@@ -215,13 +291,19 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void newTab() {
-    GeckoSession newSession = new GeckoSession();
+    GeckoSession newSession = newBrowserSession();
     newSession.open(runtime);
     BrowserTab tab = new BrowserTab(newSession);
     tabs.add(tab);
     attachSession(tab);
     addTabChip(tab);
     selectTab(tab);
+  }
+
+  private GeckoSession newBrowserSession() {
+    boolean protection = getPreferences(MODE_PRIVATE).getBoolean("block_trackers", true);
+    GeckoSessionSettings settings = new GeckoSessionSettings.Builder().useTrackingProtection(protection).build();
+    return new GeckoSession(settings);
   }
 
   private void attachSession(BrowserTab tab) {
@@ -372,23 +454,60 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showExtensions() {
+    runtime.getWebExtensionController().list().accept(list -> runOnUiThread(() -> {
+      if (isFinishing()) return;
+      AlertDialog.Builder dialog = new AlertDialog.Builder(this).setTitle("Extensions • " + list.size() + " installed")
+        .setPositiveButton("Browse more", (d,w) -> browseMoreExtensions())
+        .setNeutralButton("Install signed .xpi", (d,w) -> showXpiInstallDialog())
+        .setNegativeButton("Close", null);
+      if (list.isEmpty()) dialog.setMessage("No add-ons installed yet. Choose Browse more to install a Mozilla Add-on.");
+      else {
+        String[] names = new String[list.size()];
+        for (int i = 0; i < list.size(); i++) names[i] = list.get(i).metaData.name;
+        dialog.setItems(names, (d, which) -> showExtensionActions(list.get(which)));
+      }
+      dialog.show();
+    }), error -> runOnUiThread(() -> Toast.makeText(this, "Unable to load extensions: " + error.getMessage(), Toast.LENGTH_LONG).show()));
+  }
+
+  private void showExtensionActions(WebExtension extension) {
+    String name = extension.metaData.name == null ? "Extension" : extension.metaData.name;
+    String stateAction = extension.metaData.enabled ? "Disable" : "Enable";
+    new AlertDialog.Builder(this).setTitle(name)
+      .setItems(new String[]{stateAction, "Remove"}, (dialog, which) -> {
+        if (which == 0) {
+          GeckoResult<WebExtension> result = extension.metaData.enabled
+            ? runtime.getWebExtensionController().disable(extension, WebExtensionController.EnableSource.USER)
+            : runtime.getWebExtensionController().enable(extension, WebExtensionController.EnableSource.USER);
+          result.accept(updated -> refreshExtensionsSummary(), error -> Toast.makeText(this, "Could not update extension: " + error.getMessage(), Toast.LENGTH_LONG).show());
+        } else {
+          new AlertDialog.Builder(this).setTitle("Remove " + name + "?")
+            .setMessage("This removes the add-on and its stored data from this browser.")
+            .setPositiveButton("Remove", (d,w) -> runtime.getWebExtensionController().uninstall(extension)
+              .accept(removed -> refreshExtensionsSummary(), error -> Toast.makeText(this, "Could not remove extension: " + error.getMessage(), Toast.LENGTH_LONG).show()))
+            .setNegativeButton("Cancel", null).show();
+        }
+      }).setNegativeButton("Close", null).show();
+  }
+
+  private void showXpiInstallDialog() {
     final EditText xpi = new EditText(this);
+    xpi.setSingleLine(true);
     xpi.setHint("Mozilla-signed .xpi URL");
-    new AlertDialog.Builder(this).setTitle("Extensions")
-      .setMessage("Install a Mozilla-signed WebExtension. Installed add-ons persist across restarts.")
-      .setView(xpi).setPositiveButton("Install", (d,w) -> {
-        String uri=xpi.getText().toString().trim();
-        if(uri.startsWith("https://")) runtime.getWebExtensionController().install(uri)
-          .accept(ext -> { Toast.makeText(this,"Installed: "+ext.metaData.name,Toast.LENGTH_LONG).show(); refreshExtensionsSummary(); },
-                  err -> Toast.makeText(this,"Install failed: "+err.getMessage(),Toast.LENGTH_LONG).show());
-        else Toast.makeText(this,"Use a secure HTTPS .xpi URL",Toast.LENGTH_LONG).show();
-      }).setNeutralButton("Manage", (d,w) -> runtime.getWebExtensionController().list()
-        .accept(list -> {
-          String[] names=new String[list.size()];
-          for(int i=0;i<list.size();i++) names[i]=list.get(i).metaData.name;
-          new AlertDialog.Builder(this).setTitle("Installed extensions").setItems(names,null).setPositiveButton("Done",null).show();
-        }, err -> Toast.makeText(this,"Unable to list extensions",Toast.LENGTH_LONG).show()))
-      .setNegativeButton("Cancel",null).show();
+    new AlertDialog.Builder(this).setTitle("Install extension")
+      .setMessage("Only Mozilla-signed extensions are accepted. Review and approve requested permissions before installation.")
+      .setView(xpi).setPositiveButton("Continue", (d,w) -> {
+        String uri = xpi.getText().toString().trim();
+        if (!uri.startsWith("https://")) {
+          Toast.makeText(this, "Use a secure HTTPS .xpi URL", Toast.LENGTH_LONG).show();
+          return;
+        }
+        installExtension(uri, "Extension");
+      }).setNegativeButton("Cancel", null).show();
+  }
+
+  private void browseMoreExtensions() {
+    load("https://addons.mozilla.org/en-US/android/extensions/");
   }
 
   private void showExtensionsPane() {
@@ -398,9 +517,7 @@ public final class MainActivity extends AppCompatActivity {
 
   private void refreshExtensionsSummary() {
     TextView phoneSummary = findViewById(R.id.mobileExtensionSummary);
-    TextView desktopSummary = findViewById(R.id.extensionSummary);
     if (phoneSummary != null) phoneSummary.setText("Checking installed add-ons…");
-    if (desktopSummary != null) desktopSummary.setText("Checking installed add-ons…");
     runtime.getWebExtensionController().list().accept(list -> {
       String summary;
       if (list.isEmpty()) {
@@ -412,17 +529,156 @@ public final class MainActivity extends AppCompatActivity {
       }
       runOnUiThread(() -> {
         if (isFinishing()) return;
+        installedExtensions = new ArrayList<>(list);
         if (phoneSummary != null) phoneSummary.setText(summary);
-        if (desktopSummary != null) desktopSummary.setText(summary);
+        renderExtensionRows(installedExtensions, extensionSearch == null ? "" : extensionSearch.getText().toString());
       });
     }, error -> {
       String message = "Could not load installed add-ons. Tap Manage to retry.";
       runOnUiThread(() -> {
         if (isFinishing()) return;
         if (phoneSummary != null) phoneSummary.setText(message);
-        if (desktopSummary != null) desktopSummary.setText(message);
+        renderExtensionRows(Collections.emptyList(), extensionSearch == null ? "" : extensionSearch.getText().toString());
       });
     });
+  }
+
+  private void renderExtensionRows(List<WebExtension> installed, String rawQuery) {
+    if (extensionRows == null) return;
+    extensionRows.removeAllViews();
+    String query = rawQuery == null ? "" : rawQuery.trim().toLowerCase(Locale.ROOT);
+    Set<WebExtension> shown = new HashSet<>();
+    for (AddonCard addon : ADDON_CATALOG) {
+      WebExtension match = findInstalledAddon(installed, addon);
+      if (match != null) shown.add(match);
+      if (!query.isEmpty() && !addon.name.toLowerCase(Locale.ROOT).contains(query)
+          && !addon.description.toLowerCase(Locale.ROOT).contains(query)) continue;
+      addExtensionRow(addon, match);
+    }
+    for (WebExtension extension : installed) {
+      if (shown.contains(extension)) continue;
+      String name = extension.metaData.name == null ? "Installed extension" : extension.metaData.name;
+      if (!query.isEmpty() && !name.toLowerCase(Locale.ROOT).contains(query)) continue;
+      addExtensionRow(new AddonCard(name, "Installed WebExtension", null, "#6540B8"), extension);
+    }
+    if (extensionRows.getChildCount() == 0) {
+      TextView empty = new TextView(this);
+      empty.setText(query.isEmpty() ? "No extensions found" : "No matches for “" + rawQuery + "”");
+      empty.setTextColor(getColor(R.color.muted));
+      empty.setTextSize(12);
+      empty.setGravity(Gravity.CENTER);
+      extensionRows.addView(empty, new LinearLayout.LayoutParams(-1, 0, 1));
+    }
+  }
+
+  private WebExtension findInstalledAddon(List<WebExtension> installed, AddonCard addon) {
+    for (WebExtension extension : installed) {
+      String name = extension.metaData.name == null ? "" : extension.metaData.name.toLowerCase(Locale.ROOT);
+      if (name.equals(addon.name.toLowerCase(Locale.ROOT))) return extension;
+      if (addon.slug != null && name.contains(addon.slug.replace('-', ' '))) return extension;
+      if (addon.name.equals("Dark Reader") && name.contains("dark reader")) return extension;
+      if (addon.name.equals("uBlock Origin") && name.contains("ublock")) return extension;
+      if (addon.name.equals("SponsorBlock") && name.contains("sponsorblock")) return extension;
+    }
+    return null;
+  }
+
+  private void addExtensionRow(AddonCard addon, WebExtension installed) {
+    LinearLayout row = new LinearLayout(this);
+    row.setGravity(Gravity.CENTER_VERTICAL);
+    row.setOrientation(LinearLayout.HORIZONTAL);
+    LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, dp(48));
+    extensionRows.addView(row, rowLp);
+
+    TextView icon = new TextView(this);
+    icon.setGravity(Gravity.CENTER);
+    icon.setText(extensionMonogram(addon.name));
+    icon.setTextColor(0xFFFFFFFF);
+    icon.setTextSize(10);
+    GradientDrawable iconBg = new GradientDrawable();
+    iconBg.setColor(android.graphics.Color.parseColor(addon.color));
+    iconBg.setCornerRadius(12 * getResources().getDisplayMetrics().density);
+    icon.setBackground(iconBg);
+    row.addView(icon, new LinearLayout.LayoutParams(dp(30), dp(30)));
+
+    LinearLayout labels = new LinearLayout(this);
+    labels.setOrientation(LinearLayout.VERTICAL);
+    labels.setPadding(8, 0, 4, 0);
+    TextView title = new TextView(this);
+    title.setText(addon.name);
+    title.setTextColor(getColor(R.color.text));
+    title.setTextSize(11);
+    title.setSingleLine(true);
+    TextView description = new TextView(this);
+    description.setText(addon.description);
+    description.setTextColor(getColor(R.color.muted));
+    description.setTextSize(9);
+    description.setSingleLine(true);
+    labels.addView(title);
+    labels.addView(description);
+    row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
+
+    if (installed != null) {
+      Switch toggle = new Switch(this);
+      toggle.setChecked(installed.metaData.enabled);
+      toggle.setContentDescription("Enable " + addon.name);
+      row.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
+      toggle.setOnCheckedChangeListener((button, enabled) -> {
+        GeckoResult<WebExtension> result = enabled
+          ? runtime.getWebExtensionController().enable(installed, WebExtensionController.EnableSource.USER)
+          : runtime.getWebExtensionController().disable(installed, WebExtensionController.EnableSource.USER);
+        result.accept(updated -> refreshExtensionsSummary(), error -> {
+          Toast.makeText(this, "Could not change " + addon.name + ": " + error.getMessage(), Toast.LENGTH_LONG).show();
+          refreshExtensionsSummary();
+        });
+      });
+    } else if (addon.supportedOnAndroid()) {
+      TextView install = new TextView(this);
+      install.setText("Add");
+      install.setTextColor(getColor(R.color.purple2));
+      install.setTextSize(11);
+      install.setGravity(Gravity.CENTER);
+      install.setPadding(8, 0, 2, 0);
+      install.setContentDescription("Install " + addon.name + " from Mozilla Add-ons");
+      install.setOnClickListener(v -> new AlertDialog.Builder(this)
+        .setTitle("Install " + addon.name + "?")
+        .setMessage("This will download the Mozilla-signed Android extension. GeckoView will show its requested permissions before installation.")
+        .setPositiveButton("Continue", (d,w) -> installExtension(addon.downloadUrl(), addon.name))
+        .setNegativeButton("Cancel", null).show());
+      row.addView(install, new LinearLayout.LayoutParams(-2, 38));
+    } else {
+      TextView unavailable = new TextView(this);
+      unavailable.setText("Unavailable");
+      unavailable.setTextColor(getColor(R.color.muted));
+      unavailable.setTextSize(9);
+      row.addView(unavailable, new LinearLayout.LayoutParams(-2, -2));
+    }
+  }
+
+  private String extensionMonogram(String name) {
+    if (name.equals("uBlock Origin")) return "ub";
+    if (name.equals("Dark Reader")) return "◉";
+    if (name.equals("Grammarly")) return "G";
+    if (name.equals("SponsorBlock")) return "▶";
+    if (name.startsWith("React")) return "⚛";
+    return name.isEmpty() ? "✣" : name.substring(0, 1).toUpperCase(Locale.ROOT);
+  }
+
+  private void installExtension(String uri, String displayName) {
+    runtime.getWebExtensionController().install(uri, WebExtensionController.INSTALLATION_METHOD_MANAGER)
+      .accept(ext -> {
+        Toast.makeText(this, "Installed: " + ext.metaData.name, Toast.LENGTH_LONG).show();
+        refreshExtensionsSummary();
+      }, error -> Toast.makeText(this, displayName + " install failed: " + error.getMessage(), Toast.LENGTH_LONG).show());
+  }
+
+  private String permissionLines(String[] permissions, String[] origins, String[] dataPermissions) {
+    ArrayList<String> lines = new ArrayList<>();
+    for (String value : permissions) lines.add("• " + value);
+    for (String value : origins) lines.add("• Site access: " + value);
+    for (String value : dataPermissions) lines.add("• Data: " + value);
+    if (lines.isEmpty()) lines.add("No additional permissions requested.");
+    return TextUtils.join("\n", lines);
   }
 
   private void setBrandWordmark(TextView title) {
@@ -430,6 +686,10 @@ public final class MainActivity extends AppCompatActivity {
     SpannableString wordmark = new SpannableString("DevxyzBrowser");
     wordmark.setSpan(new ForegroundColorSpan(getColor(R.color.purple2)), 6, wordmark.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     title.setText(wordmark);
+  }
+
+  private int dp(int value) {
+    return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
   }
 
   private void showVpn() {
@@ -508,13 +768,91 @@ public final class MainActivity extends AppCompatActivity {
   private void setVpnStatus(String text) {
     if (vpnStatus != null) vpnStatus.setText(text);
     TextView desktopStatus = findViewById(R.id.desktopVpnStatus);
-    if (desktopStatus != null) desktopStatus.setText(text);
+    boolean connected = DevxyzVpnService.isConnected();
+    if (desktopStatus != null) {
+      desktopStatus.setText(connected ? "Connected" : text.startsWith("Connecting") ? "Connecting" : "Disconnected");
+      desktopStatus.setTextColor(getColor(connected ? R.color.green : R.color.muted));
+    }
+    TextView secure = findViewById(R.id.vpnSecureCard);
+    if (secure != null) secure.setText(connected ? "✓  Your VPN tunnel is connected" : "◇  VPN status is verified by OpenVPN");
+    if (secure != null) secure.setTextColor(getColor(connected ? R.color.green : R.color.muted));
+    TextView profileName = findViewById(R.id.vpnProfileName);
+    TextView profileSubtitle = findViewById(R.id.vpnProfileSubtitle);
+    if (profileName != null && profileSubtitle != null) {
+      try {
+        profileName.setText(VpnProfileStore.hasProfile(this) ? VpnProfileStore.getEndpoint(this) : "No profile imported");
+        profileSubtitle.setText(VpnProfileStore.hasProfile(this) ? "Imported OpenVPN server" : "Choose your OpenVPN server");
+      } catch (Exception ignored) {
+        profileName.setText("Profile unavailable");
+      }
+    }
     String action = DevxyzVpnService.isConnected() ? "Disconnect VPN" :
       (VpnProfileStore.hasProfile(this) ? "Connect VPN" : "Set up VPN");
     Button phoneAction = findViewById(R.id.vpnPanel);
     Button desktopAction = findViewById(R.id.desktopVpnAction);
     if (phoneAction != null) phoneAction.setText(action);
     if (desktopAction != null) desktopAction.setText(action);
+  }
+
+  private void setupVpnSwitches() {
+    android.content.SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+    Switch autoConnect = findViewById(R.id.autoConnect);
+    Switch blockTrackers = findViewById(R.id.blockTrackers);
+    autoConnect.setChecked(preferences.getBoolean("auto_connect_vpn", false));
+    blockTrackers.setChecked(preferences.getBoolean("block_trackers", true));
+    autoConnect.setOnCheckedChangeListener((button, checked) -> {
+      preferences.edit().putBoolean("auto_connect_vpn", checked).apply();
+      if (checked && !VpnProfileStore.hasProfile(this)) {
+        button.setChecked(false);
+        Toast.makeText(this, "Import an OpenVPN profile before enabling Auto Connect", Toast.LENGTH_LONG).show();
+        showVpn();
+      } else if (checked) {
+        connectSavedProfileWithPermission();
+      }
+    });
+    blockTrackers.setOnCheckedChangeListener((button, checked) -> {
+      preferences.edit().putBoolean("block_trackers", checked).apply();
+      for (BrowserTab tab : tabs) tab.session.getSettings().setUseTrackingProtection(checked);
+      Toast.makeText(this, checked ? "Gecko tracking protection enabled" : "Gecko tracking protection disabled", Toast.LENGTH_SHORT).show();
+    });
+  }
+
+  private void maybeAutoConnectSavedProfile() {
+    if (!getPreferences(MODE_PRIVATE).getBoolean("auto_connect_vpn", false)
+        || !VpnProfileStore.hasProfile(this) || DevxyzVpnService.isConnected()) return;
+    try {
+      if (VpnProfileStore.requiresCredentials(this)) {
+        setVpnStatus("Disconnected • credentials required for Auto Connect");
+        return;
+      }
+      if (VpnService.prepare(this) == null) startOpenVpn("", "", "");
+      else setVpnStatus("Disconnected • approve VPN permission to connect");
+    } catch (Exception error) {
+      setVpnStatus("Disconnected • VPN profile unavailable");
+    }
+  }
+
+  private void connectSavedProfileWithPermission() {
+    try {
+      if (VpnProfileStore.requiresCredentials(this)) {
+        requestVpnCredentials();
+        return;
+      }
+      Intent permission = VpnService.prepare(this);
+      if (permission != null) vpnPermission.launch(permission);
+      else startOpenVpn("", "", "");
+    } catch (Exception error) {
+      Toast.makeText(this, "Could not read VPN profile: " + error.getMessage(), Toast.LENGTH_LONG).show();
+    }
+  }
+
+  private void openAndroidVpnSettings() {
+    new AlertDialog.Builder(this).setTitle("Android Kill Switch")
+      .setMessage("Android controls Always-on VPN and Block connections without VPN. Choose DevxyzBrowser in system VPN settings and enable those options if you want the system kill switch.")
+      .setPositiveButton("Open VPN settings", (dialog, which) -> {
+        try { startActivity(new Intent(Settings.ACTION_VPN_SETTINGS)); }
+        catch (Exception error) { Toast.makeText(this, "VPN settings are unavailable on this device", Toast.LENGTH_LONG).show(); }
+      }).setNegativeButton("Cancel", null).show();
   }
 
   @Override protected void onDestroy() {

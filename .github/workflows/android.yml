@@ -229,7 +229,7 @@ jobs:
       - name: Prepare emulator-only screenshot build without ARM64 VPN library
         run: |
           mv app/src/main/jniLibs/arm64-v8a "$RUNNER_TEMP/arm64-v8a-vpn-libraries"
-          gradle --no-daemon clean :app:assembleDebug
+          gradle --no-daemon clean :app:assembleDebug -Pdevxyz.abi=x86_64
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
@@ -249,6 +249,13 @@ jobs:
             sleep 60
             adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
             adb shell pidof com.jepongdevxyz.browser
+            adb shell uiautomator dump /sdcard/window.xml
+            adb shell cat /sdcard/window.xml > "$RUNNER_TEMP/emulator-window.xml"
+            if grep -Eqi "isn't responding|Close app|Wait" "$RUNNER_TEMP/emulator-window.xml"; then
+              adb logcat -d -v time > "$RUNNER_TEMP/emulator-anr-logcat.txt"
+              cat "$RUNNER_TEMP/emulator-anr-logcat.txt" | grep -E -i -C 3 'ANR in|am_anr|not responding|GeckoRuntime|FATAL EXCEPTION' | tail -120 || true
+              exit 1
+            fi
             adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-desktop-reference.png"
             adb shell wm size 720x1600
             adb shell wm density 320
