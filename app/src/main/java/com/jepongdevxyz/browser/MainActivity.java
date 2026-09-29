@@ -71,7 +71,7 @@ public final class MainActivity extends AppCompatActivity {
   private BrowserTab activeTab;
 
   private static final class BrowserTab {
-    final GeckoSession session;
+    GeckoSession session;
     String url = "";
     LinearLayout chip;
     TextView label;
@@ -123,30 +123,9 @@ public final class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Profile rejected: " + ex.getMessage(), Toast.LENGTH_LONG).show();
       }
     });
-    if (runtime == null) {
-      runtime = GeckoRuntime.create(this);
-      runtime.getWebExtensionController().setPromptDelegate(new WebExtensionController.PromptDelegate() {
-        @Override public GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
-            WebExtension extension, String[] permissions, String[] origins, String[] dataPermissions) {
-          GeckoResult<WebExtension.PermissionPromptResponse> result = new GeckoResult<>();
-          runOnUiThread(() -> {
-            String detail = "Permissions:\n" + permissionLines(permissions, origins, dataPermissions);
-            new AlertDialog.Builder(MainActivity.this).setTitle("Install " + extension.metaData.name + "?")
-              .setMessage(detail).setPositiveButton("Allow and install", (d,w) -> result.complete(
-                new WebExtension.PermissionPromptResponse(true, false, false)))
-              .setNegativeButton("Cancel", (d,w) -> result.complete(
-                new WebExtension.PermissionPromptResponse(false, false, false)))
-              .setOnCancelListener(d -> result.complete(new WebExtension.PermissionPromptResponse(false, false, false)))
-              .show();
-          });
-          return result;
-        }
-      });
-    }
     geckoView = findViewById(R.id.gecko);
-    session = newBrowserSession();
-    session.open(runtime);
-    activeTab = new BrowserTab(session);
+    geckoView.setVisibility(View.GONE);
+    activeTab = new BrowserTab(null);
     tabs.add(activeTab);
     address = findViewById(R.id.address);
     heroSearch = findViewById(R.id.heroSearch);
@@ -193,9 +172,9 @@ public final class MainActivity extends AppCompatActivity {
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
 
-    findViewById(R.id.back).setOnClickListener(v -> session.goBack());
-    findViewById(R.id.forward).setOnClickListener(v -> session.goForward());
-    findViewById(R.id.refresh).setOnClickListener(v -> session.reload());
+    findViewById(R.id.back).setOnClickListener(v -> { if (session != null) session.goBack(); });
+    findViewById(R.id.forward).setOnClickListener(v -> { if (session != null) session.goForward(); });
+    findViewById(R.id.refresh).setOnClickListener(v -> { if (session != null) session.reload(); });
     findViewById(R.id.newTab).setOnClickListener(v -> newTab());
     menuButton.setOnClickListener(this::showBrowserMenu);
     findViewById(R.id.home).setOnClickListener(v -> showHome());
@@ -272,7 +251,7 @@ public final class MainActivity extends AppCompatActivity {
     });
     getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
       @Override public void handleOnBackPressed() {
-        if(startPage.getVisibility()!=View.VISIBLE && activeTab != null && !activeTab.url.isEmpty()) session.goBack();
+        if(startPage.getVisibility()!=View.VISIBLE && activeTab != null && activeTab.session != null && !activeTab.url.isEmpty()) session.goBack();
         else if(startPage.getVisibility()!=View.VISIBLE) showHome();
         else finish();
       }
@@ -286,19 +265,57 @@ public final class MainActivity extends AppCompatActivity {
       updateTabLabel(activeTab);
     }
     startPage.setVisibility(View.VISIBLE);
+    geckoView.setVisibility(View.GONE);
     address.setText("");
     progress.setVisibility(View.GONE);
     progress.setProgress(0);
   }
 
   private void newTab() {
-    GeckoSession newSession = newBrowserSession();
-    newSession.open(runtime);
-    BrowserTab tab = new BrowserTab(newSession);
+    BrowserTab tab = new BrowserTab(null);
     tabs.add(tab);
-    attachSession(tab);
     addTabChip(tab);
     selectTab(tab);
+  }
+
+  private void ensureBrowserRuntime() {
+    if (runtime != null) return;
+    runtime = GeckoRuntime.create(getApplicationContext());
+    runtime.getWebExtensionController().setPromptDelegate(new WebExtensionController.PromptDelegate() {
+      @Override public GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
+          WebExtension extension, String[] permissions, String[] origins, String[] dataPermissions) {
+        GeckoResult<WebExtension.PermissionPromptResponse> result = new GeckoResult<>();
+        runOnUiThread(() -> {
+          String detail = "Permissions:\n" + permissionLines(permissions, origins, dataPermissions);
+          new AlertDialog.Builder(MainActivity.this).setTitle("Install " + extension.metaData.name + "?")
+            .setMessage(detail).setPositiveButton("Allow and install", (d,w) -> result.complete(
+              new WebExtension.PermissionPromptResponse(true, false, false)))
+            .setNegativeButton("Cancel", (d,w) -> result.complete(
+              new WebExtension.PermissionPromptResponse(false, false, false)))
+            .setOnCancelListener(d -> result.complete(new WebExtension.PermissionPromptResponse(false, false, false)))
+            .show();
+        });
+        return result;
+      }
+    });
+  }
+
+  private GeckoSession ensureBrowserSession(BrowserTab tab) {
+    ensureBrowserRuntime();
+    if (tab.session == null) {
+      tab.session = newBrowserSession();
+      tab.session.open(runtime);
+      attachSession(tab);
+    }
+    if (tab == activeTab) {
+      GeckoSession attached = geckoView.getSession();
+      if (attached != tab.session) {
+        if (attached != null) geckoView.releaseSession();
+        geckoView.setSession(tab.session);
+      }
+      geckoView.setVisibility(View.VISIBLE);
+    }
+    return tab.session;
   }
 
   private GeckoSession newBrowserSession() {
@@ -329,7 +346,12 @@ public final class MainActivity extends AppCompatActivity {
   private void selectTab(BrowserTab tab) {
     activeTab = tab;
     session = tab.session;
-    geckoView.setSession(session);
+    GeckoSession attached = geckoView.getSession();
+    if (attached != session) {
+      if (attached != null) geckoView.releaseSession();
+      if (session != null) geckoView.setSession(session);
+    }
+    geckoView.setVisibility(session == null ? View.GONE : View.VISIBLE);
     startPage.setVisibility(tab.url.isEmpty() ? View.VISIBLE : View.GONE);
     address.setText(tab.url.isEmpty() ? "" : tab.url);
     progress.setVisibility(View.GONE);
@@ -385,7 +407,7 @@ public final class MainActivity extends AppCompatActivity {
     if (index < 0) return;
     tabs.remove(index);
     tabStrip.removeView(tab.chip);
-    tab.session.close();
+    if (tab.session != null) tab.session.close();
     if (tabs.isEmpty()) newTab();
     else if (activeTab == tab) selectTab(tabs.get(Math.max(0, index - 1)));
   }
@@ -427,6 +449,7 @@ public final class MainActivity extends AppCompatActivity {
   private void browse(String raw) {
     String q = raw.trim();
     if(q.isEmpty()) return;
+    session = ensureBrowserSession(activeTab);
     startPage.setVisibility(View.GONE);
     load(q);
   }
@@ -455,6 +478,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showExtensions() {
+    ensureBrowserRuntime();
     runtime.getWebExtensionController().list().accept(list -> runOnUiThread(() -> {
       if (isFinishing()) return;
       AlertDialog.Builder dialog = new AlertDialog.Builder(this).setTitle("Extensions • " + list.size() + " installed")
@@ -512,12 +536,19 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showExtensionsPane() {
+    ensureBrowserRuntime();
     findViewById(R.id.desktopExtensionsPane).setVisibility(View.VISIBLE);
     refreshExtensionsSummary();
   }
 
   private void refreshExtensionsSummary() {
     TextView phoneSummary = findViewById(R.id.mobileExtensionSummary);
+    if (runtime == null) {
+      if (phoneSummary != null) phoneSummary.setText("Open Extensions to load installed add-ons.");
+      installedExtensions = Collections.emptyList();
+      renderExtensionRows(installedExtensions, extensionSearch == null ? "" : extensionSearch.getText().toString());
+      return;
+    }
     if (phoneSummary != null) phoneSummary.setText("Checking installed add-ons…");
     runtime.getWebExtensionController().list().accept(list -> {
       String summary;
@@ -813,7 +844,7 @@ public final class MainActivity extends AppCompatActivity {
     });
     blockTrackers.setOnCheckedChangeListener((button, checked) -> {
       preferences.edit().putBoolean("block_trackers", checked).apply();
-      for (BrowserTab tab : tabs) tab.session.getSettings().setUseTrackingProtection(checked);
+      for (BrowserTab tab : tabs) if (tab.session != null) tab.session.getSettings().setUseTrackingProtection(checked);
       Toast.makeText(this, checked ? "Gecko tracking protection enabled" : "Gecko tracking protection disabled", Toast.LENGTH_SHORT).show();
     });
   }
@@ -858,7 +889,7 @@ public final class MainActivity extends AppCompatActivity {
 
   @Override protected void onDestroy() {
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
-    for (BrowserTab tab : tabs) tab.session.close();
+    for (BrowserTab tab : tabs) if (tab.session != null) tab.session.close();
     tabs.clear();
     super.onDestroy();
   }

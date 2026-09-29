@@ -246,29 +246,36 @@ jobs:
             adb shell wm density 160
             adb install app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n com.jepongdevxyz.browser/.MainActivity
-            sleep 60
+            sleep 20
             adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
             adb shell pidof com.jepongdevxyz.browser
             adb shell uiautomator dump /sdcard/window.xml
             adb shell cat /sdcard/window.xml > "$RUNNER_TEMP/emulator-window.xml"
-            python3 scripts/verify_emulator_screen.py "$RUNNER_TEMP/emulator-window.xml"
             adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-desktop-reference.png"
+            adb logcat -d -v time > "$RUNNER_TEMP/desktop-logcat.txt"
             adb shell wm size 720x1600
             adb shell wm density 320
             adb shell am force-stop com.jepongdevxyz.browser
             adb shell am start -n com.jepongdevxyz.browser/.MainActivity
-            sleep 45
+            sleep 20
             adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' | grep 'com.jepongdevxyz.browser'
             adb shell pidof com.jepongdevxyz.browser
             adb shell uiautomator dump /sdcard/phone-window.xml
             adb shell cat /sdcard/phone-window.xml > "$RUNNER_TEMP/phone-emulator-window.xml"
-            python3 scripts/verify_emulator_screen.py "$RUNNER_TEMP/phone-emulator-window.xml"
             adb exec-out screencap -p > "$RUNNER_TEMP/devxyz-phone-reference.png"
+            adb logcat -d -v time > "$RUNNER_TEMP/phone-logcat.txt"
+            python3 scripts/verify_emulator_screen.py "$RUNNER_TEMP/emulator-window.xml"
+            python3 scripts/verify_emulator_screen.py "$RUNNER_TEMP/phone-emulator-window.xml"
       - name: Upload visual review screenshots (no APK)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: DevxyzBrowser-visual-review-only
           path: |
             ${{ runner.temp }}/devxyz-desktop-reference.png
             ${{ runner.temp }}/devxyz-phone-reference.png
+            ${{ runner.temp }}/emulator-window.xml
+            ${{ runner.temp }}/phone-emulator-window.xml
+            ${{ runner.temp }}/desktop-logcat.txt
+            ${{ runner.temp }}/phone-logcat.txt
           if-no-files-found: error

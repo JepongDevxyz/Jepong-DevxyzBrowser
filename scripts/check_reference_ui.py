@@ -49,6 +49,13 @@ for addon_slug in ("ublock-origin", "darkreader", "sponsorblock"):
 assert "WebExtensionController.EnableSource.USER" in activity, "installed add-ons need functional user enable/disable actions"
 assert "GeckoSessionSettings" in activity and "setUseTrackingProtection" in activity, "Block Trackers must control Gecko tracking protection"
 assert "Settings.ACTION_VPN_SETTINGS" in activity, "Kill Switch control must open Android VPN settings"
+on_create = activity.split("@Override public void onCreate(Bundle state)", 1)[1].split("\n  private ", 1)[0]
+assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
+assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
+assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].split("\n  private ", 1)[0], "navigating to a site must start Gecko on demand"
+lazy_session = activity.split("private GeckoSession ensureBrowserSession(", 1)[1].split("\n  private ", 1)[0]
+assert "ensureBrowserRuntime()" in lazy_session and "tab.session.open(runtime)" in lazy_session, "first navigation must create and open its Gecko session"
+assert "GeckoRuntime.create(getApplicationContext())" in activity.split("private void ensureBrowserRuntime()", 1)[1].split("\n  private ", 1)[0], "lazy runtime must be process-scoped"
 
 shortcut_ids = ("siteYoutube", "siteFacebook", "siteGithub", "siteReddit", "siteX", "addSite")
 for view_id in shortcut_ids:
