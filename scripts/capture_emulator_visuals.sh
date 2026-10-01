@@ -42,8 +42,9 @@ adb shell am start -n "$PACKAGE/.MainActivity"
 sleep 20
 adb shell am force-stop "$PACKAGE"
 adb shell am start -n "$PACKAGE/.MainActivity" --ez visual_test_splash true
-sleep 4
+sleep 20
 adb exec-out screencap -p > "$REVIEW_DIR/mobile-splash.png" 2> "$REVIEW_DIR/mobile-splash-screencap.txt"
+adb shell input tap 360 800
 mobile_splash_size=$(wc -c < "$REVIEW_DIR/mobile-splash.png")
 mobile_splash_status=0
 if [ "$mobile_splash_size" -le 20000 ]; then
