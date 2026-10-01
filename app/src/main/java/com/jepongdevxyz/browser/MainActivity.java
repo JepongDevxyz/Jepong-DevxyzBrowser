@@ -209,6 +209,7 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.railVpn).setOnClickListener(v -> showVpn());
     findViewById(R.id.railSettings).setOnClickListener(v -> showSettings());
     findViewById(R.id.desktopVpnStatus).setOnClickListener(v -> showVpn());
+    findViewById(R.id.desktopVpnMap).setOnClickListener(v -> showVpn());
     findViewById(R.id.desktopVpnAction).setOnClickListener(v -> showVpn());
     findViewById(R.id.vpnSettings).setOnClickListener(v -> showVpn());
     findViewById(R.id.desktopExtensionsAction).setOnClickListener(v -> browseMoreExtensions());
@@ -671,8 +672,8 @@ public final class MainActivity extends AppCompatActivity {
     labels.addView(description);
     row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
 
+    Switch toggle = new Switch(this);
     if (installed != null) {
-      Switch toggle = new Switch(this);
       toggle.setChecked(installed.metaData.enabled);
       toggle.setContentDescription("Enable " + addon.name);
       row.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
@@ -686,25 +687,22 @@ public final class MainActivity extends AppCompatActivity {
         });
       });
     } else if (addon.supportedOnAndroid()) {
-      TextView install = new TextView(this);
-      install.setText("Add");
-      install.setTextColor(getColor(R.color.purple2));
-      install.setTextSize(11);
-      install.setGravity(Gravity.CENTER);
-      install.setPadding(8, 0, 2, 0);
-      install.setContentDescription("Install " + addon.name + " from Mozilla Add-ons");
-      install.setOnClickListener(v -> new AlertDialog.Builder(this)
-        .setTitle("Install " + addon.name + "?")
-        .setMessage("This will download the Mozilla-signed Android extension. GeckoView will show its requested permissions before installation.")
-        .setPositiveButton("Continue", (d,w) -> installExtension(addon.downloadUrl(), addon.name))
-        .setNegativeButton("Cancel", null).show());
-      row.addView(install, new LinearLayout.LayoutParams(-2, 38));
+      toggle.setChecked(false);
+      toggle.setContentDescription("Install " + addon.name + " from Mozilla Add-ons");
+      toggle.setOnClickListener(v -> {
+        if (!toggle.isChecked()) return;
+        toggle.setChecked(false);
+        new AlertDialog.Builder(this).setTitle("Install " + addon.name + "?")
+          .setMessage("This will download the Mozilla-signed Android extension. GeckoView will show its requested permissions before installation.")
+          .setPositiveButton("Continue", (d,w) -> installExtension(addon.downloadUrl(), addon.name))
+          .setNegativeButton("Cancel", null).show();
+      });
+      row.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
     } else {
-      TextView unavailable = new TextView(this);
-      unavailable.setText("Unavailable");
-      unavailable.setTextColor(getColor(R.color.muted));
-      unavailable.setTextSize(9);
-      row.addView(unavailable, new LinearLayout.LayoutParams(-2, -2));
+      toggle.setChecked(false);
+      toggle.setEnabled(false);
+      toggle.setContentDescription(addon.name + " is unavailable on Android");
+      row.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
     }
   }
 

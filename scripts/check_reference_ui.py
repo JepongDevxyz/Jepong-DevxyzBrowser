@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 LAYOUT = ROOT / "app/src/main/res/layout/activity_main.xml"
-BACKDROP = ROOT / "app/src/main/res/drawable-sw600dp/home_backdrop.xml"
+BACKDROP = ROOT / "app/src/main/res/drawable-w1200dp/home_backdrop.xml"
 ACTIVITY = ROOT / "app/src/main/java/com/jepongdevxyz/browser/MainActivity.java"
 MANIFEST = ROOT / "app/src/main/AndroidManifest.xml"
 WORKFLOW = ROOT / ".github/workflows/android.yml"
@@ -44,13 +44,17 @@ assert "@drawable/vpn_world_power" in ET.tostring(layout, encoding="unicode"), "
 for view_id in ("desktopVpnMap", "desktopVpnAction", "desktopVpnStatus", "vpnProfileSelector", "autoConnect", "killSwitchSettings", "blockTrackers", "extensionSearch", "desktopExtensionRows"):
     assert view_id in ids, f"missing reference panel element {view_id}"
 assert ids.get("heroTitle") is not None and "Browse Freely." in ids["heroTitle"].attrib.get(ANDROID + "text", ""), "reference home hero headline missing"
-assert (ROOT / "app/src/main/res/drawable-sw600dp/home_backdrop.xml").is_file(), "desktop scenic background variant missing"
+assert (ROOT / "app/src/main/res/drawable-w1200dp/home_backdrop.xml").is_file(), "wide-screen scenic background variant missing"
 for addon_slug in ("ublock-origin", "darkreader", "sponsorblock"):
     assert addon_slug in activity, f"official Android add-on install action missing for {addon_slug}"
+extension_row = activity.split("private void addExtensionRow(", 1)[1].split("\n  private ", 1)[0]
+assert "new Switch(this)" in extension_row and "toggle.setOnClickListener" in extension_row, "extension rows should show functional switches for install/enable actions"
+assert "installExtension(addon.downloadUrl(), addon.name)" in extension_row, "extension switch must install compatible add-ons after confirmation"
 assert "WebExtensionController.EnableSource.USER" in activity, "installed add-ons need functional user enable/disable actions"
 assert "GeckoSessionSettings" in activity and "setUseTrackingProtection" in activity, "Block Trackers must control Gecko tracking protection"
 assert "Settings.ACTION_VPN_SETTINGS" in activity, "Kill Switch control must open Android VPN settings"
 on_create = activity.split("@Override public void onCreate(Bundle state)", 1)[1].split("\n  private ", 1)[0]
+assert "findViewById(R.id.desktopVpnMap).setOnClickListener" in on_create, "VPN power control artwork must open its connection controls"
 assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
 assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
