@@ -94,7 +94,7 @@
                     android:gravity="center" android:text="Browse Freely.\nSecurely. Your Way."
                     android:textColor="@color/text" android:textStyle="bold" android:textSize="34sp" />
                 <TextView android:id="@+id/desktopHomeTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
-                    android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="37sp" android:visibility="gone" />
+                    android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="40sp" android:visibility="gone" />
                 <TextView android:id="@+id/desktopHomeSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:gravity="center"
                     android:text="Browse Freely. Securely. Your Way." android:textColor="@color/muted" android:textSize="15sp" android:visibility="gone" />
                 <TextView android:id="@+id/heroSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
@@ -197,8 +197,11 @@
                 <TextView android:id="@+id/extensionsClose" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="×" android:textColor="@color/muted" android:textSize="22sp" android:clickable="true" android:focusable="true" android:contentDescription="Close extensions" />
             </LinearLayout>
             <EditText android:id="@+id/extensionSearch" android:layout_width="match_parent" android:layout_height="38dp" android:layout_marginTop="2dp" android:layout_marginBottom="6dp" android:paddingHorizontal="12dp" android:singleLine="true" android:hint="⌕  Search extensions…" android:textColor="@color/text" android:textColorHint="@color/muted" android:textSize="12sp" android:background="@drawable/search_bg" />
-            <LinearLayout android:id="@+id/desktopExtensionRows" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="vertical" />
-            <Button android:id="@+id/desktopExtensionsAction" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="8dp" android:text="Browse more extensions" android:textAllCaps="false" android:textColor="@color/text" android:background="@drawable/toolbar_chip_bg" />
+            <LinearLayout android:id="@+id/desktopExtensionRows" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+            <LinearLayout android:id="@+id/desktopExtensionsAction" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="8dp" android:paddingHorizontal="14dp" android:gravity="center" android:orientation="horizontal" android:background="@drawable/extension_action_bg" android:clickable="true" android:focusable="true" android:contentDescription="Browse more extensions">
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_extension" android:tint="@color/purple2" android:contentDescription="" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="Browse more extensions" android:textColor="@color/purple2" android:textSize="14sp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
     </LinearLayout>
