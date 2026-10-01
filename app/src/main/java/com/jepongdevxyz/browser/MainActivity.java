@@ -221,7 +221,7 @@ public final class MainActivity extends AppCompatActivity {
       addressBar.setTextSize(12);
     }
     View homeContent = ((android.widget.ScrollView) startPage).getChildAt(0);
-    homeContent.setPadding(homeContent.getPaddingLeft(), dp(wideLayout ? 66 : 42), homeContent.getPaddingRight(), homeContent.getPaddingBottom());
+    homeContent.setPadding(homeContent.getPaddingLeft(), dp(wideLayout ? 63 : 42), homeContent.getPaddingRight(), homeContent.getPaddingBottom());
     homeContent.setTranslationX(wideLayout ? dp(24) : 0);
     EditText homeSearch = findViewById(R.id.heroSearch);
     ViewGroup.LayoutParams searchParams = homeSearch.getLayoutParams();
