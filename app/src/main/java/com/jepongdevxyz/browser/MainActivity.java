@@ -361,6 +361,7 @@ public final class MainActivity extends AppCompatActivity {
     splash.setBackgroundColor(android.graphics.Color.BLACK);
     ImageView image = new ImageView(this);
     image.setImageResource(R.drawable.mobile_reference_splash);
+    image.setContentDescription("DevxyzBrowser mobile reference splash");
     image.setScaleType(ImageView.ScaleType.FIT_CENTER);
     splash.addView(image, new FrameLayout.LayoutParams(-1, -1));
     content.addView(splash, new FrameLayout.LayoutParams(-1, -1));
@@ -376,7 +377,8 @@ public final class MainActivity extends AppCompatActivity {
       controller.show(WindowInsetsCompat.Type.systemBars());
     };
     splash.setOnClickListener(v -> dismiss.run());
-    splash.postDelayed(dismiss, 2200);
+    long splashDuration = getIntent().getBooleanExtra("visual_test_splash", false) ? 10000L : 2200L;
+    splash.postDelayed(dismiss, splashDuration);
   }
 
   private void showHome() {
@@ -502,6 +504,14 @@ public final class MainActivity extends AppCompatActivity {
       params.width = dp(48);
       action.setLayoutParams(params);
     }
+    View extensionsAction = findViewById(R.id.extensions);
+    LinearLayout.LayoutParams extensionsParams =
+      (LinearLayout.LayoutParams) extensionsAction.getLayoutParams();
+    extensionsParams.setMarginStart(dp(8));
+    extensionsAction.setLayoutParams(extensionsParams);
+    LinearLayout navigationToolbar = findViewById(R.id.navigationToolbar);
+    navigationToolbar.setPadding(navigationToolbar.getPaddingLeft(),
+      navigationToolbar.getPaddingTop(), 0, navigationToolbar.getPaddingBottom());
     LinearLayout.LayoutParams addressParams = (LinearLayout.LayoutParams) address.getLayoutParams();
     addressParams.height = dp(32);
     addressParams.setMarginStart(dp(10));
