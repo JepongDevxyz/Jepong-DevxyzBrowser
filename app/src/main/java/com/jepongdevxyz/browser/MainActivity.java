@@ -1,4 +1,3 @@
-Reference UI static checks passed
 package com.jepongdevxyz.browser;
 
 import android.app.*;
