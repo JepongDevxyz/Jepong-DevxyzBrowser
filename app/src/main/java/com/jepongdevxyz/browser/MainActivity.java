@@ -213,6 +213,11 @@ public final class MainActivity extends AppCompatActivity {
     }
     View homeContent = ((android.widget.ScrollView) startPage).getChildAt(0);
     homeContent.setPadding(homeContent.getPaddingLeft(), dp(wideLayout ? 66 : 42), homeContent.getPaddingRight(), homeContent.getPaddingBottom());
+    homeContent.setTranslationX(wideLayout ? dp(24) : 0);
+    EditText homeSearch = findViewById(R.id.heroSearch);
+    ViewGroup.LayoutParams searchParams = homeSearch.getLayoutParams();
+    searchParams.width = wideLayout ? dp(544) : ViewGroup.LayoutParams.MATCH_PARENT;
+    homeSearch.setLayoutParams(searchParams);
     int shortcutSize = wideLayout ? 72 : 58;
     for (int id : new int[]{R.id.siteYoutube, R.id.siteFacebook, R.id.siteGithub, R.id.siteReddit, R.id.siteX, R.id.addSite}) {
       android.view.ViewGroup.LayoutParams shortcut = findViewById(id).getLayoutParams();
@@ -221,7 +226,12 @@ public final class MainActivity extends AppCompatActivity {
       findViewById(id).setLayoutParams(shortcut);
     }
     LinearLayout quickSiteStrip = findViewById(R.id.quickSiteStrip);
-    int quickSiteCellWidth = dp(wideLayout ? 86 : 60);
+    int quickSiteCellWidth = dp(wideLayout ? 99 : 60);
+    ViewGroup.LayoutParams quickStripParams = quickSiteStrip.getLayoutParams();
+    quickStripParams.width = wideLayout ? ViewGroup.LayoutParams.MATCH_PARENT : ViewGroup.LayoutParams.WRAP_CONTENT;
+    quickSiteStrip.setLayoutParams(quickStripParams);
+    quickSiteStrip.setGravity(wideLayout ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
+    ((android.widget.HorizontalScrollView) findViewById(R.id.quickSites)).setFillViewport(wideLayout);
     for (int index = 0; index < quickSiteStrip.getChildCount(); index++) {
       View cell = quickSiteStrip.getChildAt(index);
       ViewGroup.LayoutParams cellParams = cell.getLayoutParams();
