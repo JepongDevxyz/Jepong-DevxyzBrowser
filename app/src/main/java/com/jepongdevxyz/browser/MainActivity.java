@@ -180,6 +180,7 @@ public final class MainActivity extends AppCompatActivity {
         else desktopInsetsController.show(WindowInsetsCompat.Type.systemBars());
       });
       findViewById(R.id.windowClose).setOnClickListener(v -> finish());
+      configureDesktopToolbar();
       BrowserTab brandTab = new BrowserTab(null);
       brandTab.displayTitle = "DevxyzBrowser";
       tabs.add(0, brandTab);
@@ -452,6 +453,21 @@ public final class MainActivity extends AppCompatActivity {
     for (BrowserTab item : tabs) updateTabLabel(item);
   }
 
+  private void configureDesktopToolbar() {
+    int[] navigationIds = {R.id.back, R.id.forward, R.id.refresh};
+    for (int id : navigationIds) {
+      View action = findViewById(id);
+      ViewGroup.LayoutParams navParams = action.getLayoutParams();
+      navParams.width = dp(42);
+      action.setLayoutParams(navParams);
+    }
+    LinearLayout.LayoutParams addressParams = (LinearLayout.LayoutParams) address.getLayoutParams();
+    addressParams.setMarginStart(dp(10));
+    address.setLayoutParams(addressParams);
+    address.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
+    address.setCompoundDrawablePadding(dp(7));
+  }
+
   private void addTabChip(BrowserTab tab) {
     LinearLayout chip = new LinearLayout(this);
     chip.setGravity(Gravity.CENTER_VERTICAL);
@@ -482,9 +498,11 @@ public final class MainActivity extends AppCompatActivity {
     bg.setStroke((int) getResources().getDisplayMetrics().density, getColor(R.color.stroke));
     chip.setBackground(bg);
     int tabWidth = getResources().getConfiguration().screenWidthDp >= 1200
-      ? dp(210) : LinearLayout.LayoutParams.WRAP_CONTENT;
+      ? ("DevxyzBrowser".equals(tab.displayTitle) ? dp(202) : dp(216))
+      : LinearLayout.LayoutParams.WRAP_CONTENT;
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(tabWidth, dp(38));
-    lp.setMargins(3, 0, 5, 0);
+    int rightMargin = "DevxyzBrowser".equals(tab.displayTitle) ? 0 : 5;
+    lp.setMargins(3, 0, rightMargin, 0);
     int index = tabStrip.getChildCount();
     if (findViewById(R.id.newTab).getParent() == tabStrip) index--;
     tabStrip.addView(chip, Math.max(0, index), lp);
@@ -505,6 +523,7 @@ public final class MainActivity extends AppCompatActivity {
       LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
       iconParams.setMargins(dp(8), 0, dp(4), 0);
       tab.chip.addView(brandIcon, 0, iconParams);
+      tab.label.setPadding(dp(7), 0, 4, 0);
     }
     tab.chip.setContentDescription(title + ". Long press to close tab.");
   }

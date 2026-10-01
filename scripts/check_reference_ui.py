@@ -69,6 +69,11 @@ for icon in ("ic_home_active", "ic_bookmark", "ic_history", "ic_download", "ic_e
 for icon in ("ublock", "darkreader", "grammarly", "sponsorblock", "reactdevtools"):
     assert (ROOT / f"app/src/main/res/drawable-nodpi/extension_{icon}.png").is_file(), f"missing reference extension mark {icon}"
 assert "desktopFullscreen = !desktopFullscreen" in activity and "moveTaskToBack(true)" in activity and "findViewById(R.id.windowClose).setOnClickListener(v -> finish())" in activity, "wide window controls must perform minimize/fullscreen/close actions"
+desktop_toolbar = activity.split("private void configureDesktopToolbar()", 1)[1].split("\n  private ", 1)[0]
+assert "navParams.width = dp(42)" in desktop_toolbar and "addressParams.setMarginStart(dp(10))" in desktop_toolbar, "desktop toolbar control spacing differs from the reference"
+assert "R.drawable.ic_search" in desktop_toolbar and "setCompoundDrawablePadding(dp(7))" in desktop_toolbar, "desktop address field must show the reference search icon and inset"
+assert '? ("DevxyzBrowser".equals(tab.displayTitle) ? dp(202) : dp(216))' in activity and "tab.label.setPadding(dp(7), 0, 4, 0)" in activity, "desktop tab widths and brand-label inset differ from the reference"
+assert (ROOT / "app/src/main/res/drawable/ic_search.xml").is_file(), "desktop address search icon asset missing"
 for addon_slug in ("ublock-origin", "darkreader", "sponsorblock"):
     assert addon_slug in activity, f"official Android add-on install action missing for {addon_slug}"
 extension_row = activity.split("private void addExtensionRow(", 1)[1].split("\n  private ", 1)[0]
