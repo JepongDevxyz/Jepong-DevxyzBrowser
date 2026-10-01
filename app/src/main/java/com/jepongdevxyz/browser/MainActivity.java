@@ -193,7 +193,7 @@ public final class MainActivity extends AppCompatActivity {
     LinearLayout tabletRail = findViewById(R.id.tabletRail);
     tabletRail.setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     tabletRail.findViewById(R.id.tabletRailBrand).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
-    if (wideLayout) tabletRail.setPadding(dp(10), dp(21), dp(10), dp(10));
+    if (wideLayout) tabletRail.setPadding(dp(8), dp(21), dp(12), dp(10));
     findViewById(R.id.desktopPanels).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.mobileNav).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
     findViewById(R.id.homeBrandLockup).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
@@ -234,6 +234,7 @@ public final class MainActivity extends AppCompatActivity {
     EditText homeSearch = findViewById(R.id.heroSearch);
     ViewGroup.LayoutParams searchParams = homeSearch.getLayoutParams();
     searchParams.width = wideLayout ? dp(544) : ViewGroup.LayoutParams.MATCH_PARENT;
+    if (wideLayout) searchParams.height = dp(52);
     homeSearch.setLayoutParams(searchParams);
     int shortcutSize = wideLayout ? 72 : 58;
     for (int id : new int[]{R.id.siteYoutube, R.id.siteFacebook, R.id.siteGithub, R.id.siteReddit, R.id.siteX, R.id.addSite}) {
@@ -490,9 +491,22 @@ public final class MainActivity extends AppCompatActivity {
       navParams.width = dp(42);
       action.setLayoutParams(navParams);
     }
+    View vpnAction = findViewById(R.id.vpn);
+    ViewGroup.LayoutParams vpnParams = vpnAction.getLayoutParams();
+    vpnParams.width = dp(68);
+    vpnParams.height = dp(32);
+    vpnAction.setLayoutParams(vpnParams);
+    for (int id : new int[]{R.id.extensions, R.id.toolbarDownloads, R.id.profile, R.id.menu}) {
+      View action = findViewById(id);
+      ViewGroup.LayoutParams params = action.getLayoutParams();
+      params.width = dp(48);
+      action.setLayoutParams(params);
+    }
     LinearLayout.LayoutParams addressParams = (LinearLayout.LayoutParams) address.getLayoutParams();
+    addressParams.height = dp(32);
     addressParams.setMarginStart(dp(10));
     address.setLayoutParams(addressParams);
+    address.setTextSize(14);
     address.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
     address.setCompoundDrawablePadding(dp(7));
   }
