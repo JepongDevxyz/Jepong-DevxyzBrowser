@@ -94,6 +94,9 @@ for view_id in ("vpnPanel", "extensionsPanel", "desktopVpnAction", "desktopExten
 application = manifest.find("application")
 assert application is not None and application.attrib.get(ANDROID + "icon") == "@mipmap/ic_launcher", "custom installer icon not wired"
 assert "killSwitch" not in ids, "do not present a fake in-app kill switch; Android controls Always-on VPN"
+downloads = activity.split("private void showDownloads()", 1)[1].split("\n  private ", 1)[0]
+assert "onExternalResponse" in activity and "MediaStore.Downloads" in activity, "browser downloads must save actual response bodies"
+assert "download_uris" in downloads and "Intent.ACTION_VIEW" in activity, "Downloads must list and open saved files"
 
 assert "script: bash scripts/capture_emulator_visuals.sh" in workflow, "emulator capture must run in one persistent shell"
 capture = EMULATOR_CAPTURE.read_text()
