@@ -39,8 +39,10 @@ assert desktop_panels is not None and desktop_panels.attrib.get(ANDROID + "orien
 assert desktop_panels.attrib.get(ANDROID + "layout_width") == "574dp", "desktop panels should match the reference right-column width"
 assert ids.get("desktopVpnPanel") is not None and ids["desktopVpnPanel"].attrib.get(ANDROID + "layout_width") == "284dp", "VPN panel width differs from reference"
 assert ids.get("desktopExtensionsPane") is not None and ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_width") == "278dp", "Extensions panel width differs from reference"
+assert ANDROID + "padding" not in ids["desktopVpnPanel"].attrib and ids["desktopVpnPanel"].attrib.get(ANDROID + "paddingStart") == "18dp" and ids["desktopVpnPanel"].attrib.get(ANDROID + "paddingEnd") == "18dp", "VPN panel horizontal inset differs from reference"
 assert ids["desktopExtensionRows"].attrib.get(ANDROID + "layout_height") == "wrap_content" and ANDROID + "layout_weight" not in ids["desktopExtensionRows"].attrib, "extension rows must size to their content like the reference"
 assert ids["desktopExtensionsPane"].attrib.get(ANDROID + "paddingStart") == "20dp" and ids["desktopExtensionsPane"].attrib.get(ANDROID + "paddingEnd") == "20dp", "extensions pane content inset differs from reference"
+assert ANDROID + "padding" not in ids["desktopExtensionsPane"].attrib, "extensions pane shorthand padding overrides measured horizontal insets"
 assert ids["tabletRailBrand"] is not None and "tabletRail.findViewById(R.id.tabletRailBrand).setVisibility(wideLayout ? View.GONE" in activity, "wide navigation rail must start with Home instead of a brand row"
 assert ids["desktopExtensionsAction"].tag.endswith("LinearLayout"), "extension catalog action must use a custom reference-style chip, not a tinted Android button"
 assert ids["desktopExtensionsAction"].attrib.get(ANDROID + "background") == "@drawable/extension_action_bg", "extension action chip background differs from reference"
@@ -53,6 +55,7 @@ assert ids.get("heroTitle") is not None and "Browse Freely." in ids["heroTitle"]
 assert (ROOT / "app/src/main/res/drawable-w1200dp/home_backdrop.xml").is_file(), "wide-screen scenic background variant missing"
 assert ids.get("browserRoot") is not None, "browser shell needs a clipping root for the reference window frame"
 assert ids.get("tabletRail") is not None and ids["tabletRail"].attrib.get(ANDROID + "layout_width") == "176dp", "wide navigation rail width differs from reference"
+assert ids.get("railHome") is not None and ids["railHome"].attrib.get(ANDROID + "background") == "@drawable/rail_home_active_bg", "active Home item background differs from reference"
 for view_id, drawable in (("railHome", "ic_home_active"), ("railBookmarks", "ic_bookmark"), ("railHistory", "ic_history"), ("railDownloads", "ic_download"), ("railExtensions", "ic_extension"), ("railVpn", "ic_shield"), ("railSettings", "ic_settings")):
     assert ids.get(view_id) is not None and ids[view_id].attrib.get(ANDROID + "drawableStart") == f"@drawable/{drawable}", f"{view_id} must use the reference-style navigation icon"
 for view_id, drawable in (("forward", "ic_forward"), ("refresh", "ic_refresh"), ("toolbarDownloads", "ic_download"), ("profile", "ic_profile"), ("menu", "ic_menu")):
