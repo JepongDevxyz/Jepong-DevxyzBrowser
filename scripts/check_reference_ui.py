@@ -36,15 +36,29 @@ assert any(node.attrib.get(ANDROID + "text") == "Browse Freely. Securely. Your W
 # Geometry checks tie the native layout to the supplied desktop reference.
 desktop_panels = ids.get("desktopPanels")
 assert desktop_panels is not None and desktop_panels.attrib.get(ANDROID + "orientation") == "horizontal", "desktop VPN and Extensions must be side-by-side"
-assert desktop_panels.attrib.get(ANDROID + "layout_width") == "600dp", "desktop panels should match the reference right-column width"
-assert ids.get("desktopVpnPanel") is not None and ids["desktopVpnPanel"].attrib.get(ANDROID + "layout_width") == "280dp", "VPN panel width differs from reference"
-assert ids.get("desktopExtensionsPane") is not None and ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_width") == "282dp", "Extensions panel width differs from reference"
+assert desktop_panels.attrib.get(ANDROID + "layout_width") == "574dp", "desktop panels should match the reference right-column width"
+assert ids.get("desktopVpnPanel") is not None and ids["desktopVpnPanel"].attrib.get(ANDROID + "layout_width") == "284dp", "VPN panel width differs from reference"
+assert ids.get("desktopExtensionsPane") is not None and ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_width") == "278dp", "Extensions panel width differs from reference"
 assert (ROOT / "app/src/main/res/drawable-nodpi/vpn_world_power.png").is_file(), "reference VPN map/power artwork missing"
 assert "@drawable/vpn_world_power" in ET.tostring(layout, encoding="unicode"), "VPN reference artwork not used"
 for view_id in ("desktopVpnMap", "desktopVpnAction", "desktopVpnStatus", "vpnProfileSelector", "autoConnect", "killSwitchSettings", "blockTrackers", "extensionSearch", "desktopExtensionRows"):
     assert view_id in ids, f"missing reference panel element {view_id}"
 assert ids.get("heroTitle") is not None and "Browse Freely." in ids["heroTitle"].attrib.get(ANDROID + "text", ""), "reference home hero headline missing"
 assert (ROOT / "app/src/main/res/drawable-w1200dp/home_backdrop.xml").is_file(), "wide-screen scenic background variant missing"
+assert ids.get("browserRoot") is not None, "browser shell needs a clipping root for the reference window frame"
+assert ids.get("tabletRail") is not None and ids["tabletRail"].attrib.get(ANDROID + "layout_width") == "176dp", "wide navigation rail width differs from reference"
+for view_id, drawable in (("railHome", "ic_home_active"), ("railBookmarks", "ic_bookmark"), ("railHistory", "ic_history"), ("railDownloads", "ic_download"), ("railExtensions", "ic_extension"), ("railVpn", "ic_shield"), ("railSettings", "ic_settings")):
+    assert ids.get(view_id) is not None and ids[view_id].attrib.get(ANDROID + "drawableStart") == f"@drawable/{drawable}", f"{view_id} must use the reference-style navigation icon"
+for view_id, drawable in (("forward", "ic_forward"), ("refresh", "ic_refresh"), ("toolbarDownloads", "ic_download"), ("profile", "ic_profile"), ("menu", "ic_menu")):
+    assert ids.get(view_id) is not None and ids[view_id].attrib.get(ANDROID + "src") == f"@drawable/{drawable}", f"{view_id} must use the browser toolbar icon"
+assert ids["desktopVpnPanel"].attrib.get(ANDROID + "layout_width") == "284dp", "VPN panel width differs from the reference"
+assert ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_width") == "278dp", "Extensions panel width differs from the reference"
+for icon in ("ic_home_active", "ic_bookmark", "ic_history", "ic_download", "ic_extension", "ic_shield", "ic_settings", "ic_forward", "ic_refresh", "ic_profile", "ic_menu"):
+    icon_path = ROOT / f"app/src/main/res/drawable/{icon}.xml"
+    assert icon_path.is_file(), f"missing reference icon asset {icon}"
+for icon in ("ublock", "darkreader", "grammarly", "sponsorblock", "reactdevtools"):
+    assert (ROOT / f"app/src/main/res/drawable-nodpi/extension_{icon}.png").is_file(), f"missing reference extension mark {icon}"
+assert "desktopFullscreen = !desktopFullscreen" in activity and "moveTaskToBack(true)" in activity and "findViewById(R.id.windowClose).setOnClickListener(v -> finish())" in activity, "wide window controls must perform minimize/fullscreen/close actions"
 for addon_slug in ("ublock-origin", "darkreader", "sponsorblock"):
     assert addon_slug in activity, f"official Android add-on install action missing for {addon_slug}"
 extension_row = activity.split("private void addExtensionRow(", 1)[1].split("\n  private ", 1)[0]
@@ -54,7 +68,7 @@ assert "WebExtensionController.EnableSource.USER" in activity, "installed add-on
 assert "GeckoSessionSettings" in activity and "setUseTrackingProtection" in activity, "Block Trackers must control Gecko tracking protection"
 assert "Settings.ACTION_VPN_SETTINGS" in activity, "Kill Switch control must open Android VPN settings"
 on_create = activity.split("@Override public void onCreate(Bundle state)", 1)[1].split("\n  private ", 1)[0]
-assert "findViewById(R.id.desktopVpnMap).setOnClickListener" in on_create, "VPN power control artwork must open its connection controls"
+assert "findViewById(R.id.desktopVpnMap).setOnClickListener(v -> handleVpnPower())" in on_create and "private void handleVpnPower()" in activity, "VPN power artwork must connect or disconnect using the active profile"
 assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
 assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
@@ -62,7 +76,7 @@ assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].sp
 lazy_session = activity.split("private GeckoSession ensureBrowserSession(", 1)[1].split("\n  private ", 1)[0]
 assert "ensureBrowserRuntime()" in lazy_session and "tab.session.open(runtime)" in lazy_session, "first navigation must create and open its Gecko session"
 assert "GeckoRuntime.create(getApplicationContext())" in activity.split("private void ensureBrowserRuntime()", 1)[1].split("\n  private ", 1)[0], "lazy runtime must be process-scoped"
-assert "WindowInsetsControllerCompat" in activity and "insetsController.hide(WindowInsetsCompat.Type.systemBars())" in on_create, "wide browser presentation should hide Android system bars"
+assert "WindowInsetsControllerCompat" in activity and "desktopInsetsController.hide(WindowInsetsCompat.Type.systemBars())" in on_create, "wide browser presentation should hide Android system bars"
 assert 'displayTitle = "DevxyzBrowser"' in on_create and "wideLayout" in on_create, "wide browser should show the reference's branded first tab"
 assert "displayTitle == null ?" in activity and "tab.displayTitle" in activity, "branded tab label must remain functional"
 

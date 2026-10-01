@@ -53,6 +53,8 @@ public final class MainActivity extends AppCompatActivity {
   private ActivityResultLauncher<String[]> openVpnProfile;
   private ActivityResultLauncher<Intent> vpnPermission;
   private boolean vpnReceiverRegistered;
+  private WindowInsetsControllerCompat desktopInsetsController;
+  private boolean desktopFullscreen = true;
   private final BroadcastReceiver vpnStateReceiver = new BroadcastReceiver() {
     @Override public void onReceive(Context context, Intent intent) {
       if (!DevxyzVpnService.ACTION_STATE.equals(intent.getAction())) return;
@@ -91,9 +93,9 @@ public final class MainActivity extends AppCompatActivity {
   private static final AddonCard[] ADDON_CATALOG = {
     new AddonCard("uBlock Origin", "Block ads and trackers", "ublock-origin", "#B31326"),
     new AddonCard("Dark Reader", "Dark mode for all websites", "darkreader", "#168EAA"),
-    new AddonCard("Grammarly", "Not available on Android", null, "#168F70"),
+    new AddonCard("Grammarly", "Write better everywhere", null, "#168F70"),
     new AddonCard("SponsorBlock", "Skip sponsored segments", "sponsorblock", "#E73D32"),
-    new AddonCard("React Developer Tools", "Not available on Android", null, "#1497B8")
+    new AddonCard("React Developer Tools", "Debug React apps", null, "#1497B8")
   };
 
   @Override public void onCreate(Bundle state) {
@@ -140,10 +142,35 @@ public final class MainActivity extends AppCompatActivity {
     menuButton = findViewById(R.id.menu);
     boolean wideLayout = getResources().getConfiguration().screenWidthDp >= 1200;
     if (wideLayout) {
-      WindowInsetsControllerCompat insetsController = new WindowInsetsControllerCompat(
+      desktopInsetsController = new WindowInsetsControllerCompat(
         getWindow(), findViewById(android.R.id.content));
-      insetsController.hide(WindowInsetsCompat.Type.systemBars());
-      insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      desktopInsetsController.hide(WindowInsetsCompat.Type.systemBars());
+      desktopInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      View browserRoot = findViewById(R.id.browserRoot);
+      browserRoot.setBackgroundResource(R.drawable.browser_frame);
+      browserRoot.setClipToOutline(true);
+      browserRoot.setPadding(dp(1), dp(1), dp(1), dp(1));
+      FrameLayout.LayoutParams browserFrame = new FrameLayout.LayoutParams(-1, -1);
+      browserFrame.leftMargin = dp(20);
+      browserFrame.rightMargin = dp(20);
+      browserRoot.setLayoutParams(browserFrame);
+      HorizontalScrollView tabScroller = findViewById(R.id.tabScroller);
+      LinearLayout.LayoutParams tabScrollerParams = (LinearLayout.LayoutParams) tabScroller.getLayoutParams();
+      tabScrollerParams.width = dp(460);
+      tabScrollerParams.weight = 0;
+      tabScroller.setLayoutParams(tabScrollerParams);
+      TextView newTabButton = findViewById(R.id.newTab);
+      ((ViewGroup) newTabButton.getParent()).removeView(newTabButton);
+      tabStrip.addView(newTabButton, new LinearLayout.LayoutParams(dp(38), -1));
+      findViewById(R.id.tabSpacer).setVisibility(View.VISIBLE);
+      findViewById(R.id.windowControls).setVisibility(View.VISIBLE);
+      findViewById(R.id.windowMinimize).setOnClickListener(v -> moveTaskToBack(true));
+      findViewById(R.id.windowMaximize).setOnClickListener(v -> {
+        desktopFullscreen = !desktopFullscreen;
+        if (desktopFullscreen) desktopInsetsController.hide(WindowInsetsCompat.Type.systemBars());
+        else desktopInsetsController.show(WindowInsetsCompat.Type.systemBars());
+      });
+      findViewById(R.id.windowClose).setOnClickListener(v -> finish());
       BrowserTab brandTab = new BrowserTab(null);
       brandTab.displayTitle = "DevxyzBrowser";
       tabs.add(0, brandTab);
@@ -209,7 +236,7 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.railVpn).setOnClickListener(v -> showVpn());
     findViewById(R.id.railSettings).setOnClickListener(v -> showSettings());
     findViewById(R.id.desktopVpnStatus).setOnClickListener(v -> showVpn());
-    findViewById(R.id.desktopVpnMap).setOnClickListener(v -> showVpn());
+    findViewById(R.id.desktopVpnMap).setOnClickListener(v -> handleVpnPower());
     findViewById(R.id.desktopVpnAction).setOnClickListener(v -> showVpn());
     findViewById(R.id.vpnSettings).setOnClickListener(v -> showVpn());
     findViewById(R.id.desktopExtensionsAction).setOnClickListener(v -> browseMoreExtensions());
@@ -399,10 +426,13 @@ public final class MainActivity extends AppCompatActivity {
     bg.setCornerRadius(14 * getResources().getDisplayMetrics().density);
     bg.setStroke((int) getResources().getDisplayMetrics().density, getColor(R.color.stroke));
     chip.setBackground(bg);
-    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-      LinearLayout.LayoutParams.WRAP_CONTENT, (int) (38 * getResources().getDisplayMetrics().density));
+    int tabWidth = getResources().getConfiguration().screenWidthDp >= 1200
+      ? dp(210) : LinearLayout.LayoutParams.WRAP_CONTENT;
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(tabWidth, dp(38));
     lp.setMargins(3, 0, 5, 0);
-    tabStrip.addView(chip, lp);
+    int index = tabStrip.getChildCount();
+    if (findViewById(R.id.newTab).getParent() == tabStrip) index--;
+    tabStrip.addView(chip, Math.max(0, index), lp);
     chip.setOnClickListener(v -> selectTab(tab));
   }
 
@@ -644,16 +674,11 @@ public final class MainActivity extends AppCompatActivity {
     LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, dp(48));
     extensionRows.addView(row, rowLp);
 
-    TextView icon = new TextView(this);
-    icon.setGravity(Gravity.CENTER);
-    icon.setText(extensionMonogram(addon.name));
-    icon.setTextColor(0xFFFFFFFF);
-    icon.setTextSize(10);
-    GradientDrawable iconBg = new GradientDrawable();
-    iconBg.setColor(android.graphics.Color.parseColor(addon.color));
-    iconBg.setCornerRadius(12 * getResources().getDisplayMetrics().density);
-    icon.setBackground(iconBg);
-    row.addView(icon, new LinearLayout.LayoutParams(dp(30), dp(30)));
+    ImageView icon = new ImageView(this);
+    icon.setImageResource(extensionIcon(addon.name));
+    icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    icon.setContentDescription(addon.name + " icon");
+    row.addView(icon, new LinearLayout.LayoutParams(dp(32), dp(32)));
 
     LinearLayout labels = new LinearLayout(this);
     labels.setOrientation(LinearLayout.VERTICAL);
@@ -673,6 +698,8 @@ public final class MainActivity extends AppCompatActivity {
     row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
 
     Switch toggle = new Switch(this);
+    toggle.setThumbTintList(getColorStateList(R.color.switch_thumb));
+    toggle.setTrackTintList(getColorStateList(R.color.switch_track));
     if (installed != null) {
       toggle.setChecked(installed.metaData.enabled);
       toggle.setContentDescription("Enable " + addon.name);
@@ -701,18 +728,18 @@ public final class MainActivity extends AppCompatActivity {
     } else {
       toggle.setChecked(false);
       toggle.setEnabled(false);
-      toggle.setContentDescription(addon.name + " is unavailable on Android");
+      toggle.setContentDescription(addon.name + " is not compatible with this Android browser");
       row.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
     }
   }
 
-  private String extensionMonogram(String name) {
-    if (name.equals("uBlock Origin")) return "ub";
-    if (name.equals("Dark Reader")) return "◉";
-    if (name.equals("Grammarly")) return "G";
-    if (name.equals("SponsorBlock")) return "▶";
-    if (name.startsWith("React")) return "⚛";
-    return name.isEmpty() ? "✣" : name.substring(0, 1).toUpperCase(Locale.ROOT);
+  private int extensionIcon(String name) {
+    if (name.equals("uBlock Origin")) return R.drawable.extension_ublock;
+    if (name.equals("Dark Reader")) return R.drawable.extension_darkreader;
+    if (name.equals("Grammarly")) return R.drawable.extension_grammarly;
+    if (name.equals("SponsorBlock")) return R.drawable.extension_sponsorblock;
+    if (name.startsWith("React")) return R.drawable.extension_reactdevtools;
+    return R.drawable.ic_extension;
   }
 
   private void installExtension(String uri, String displayName) {
@@ -764,6 +791,22 @@ public final class MainActivity extends AppCompatActivity {
        .setNeutralButton("Replace profile", (d,w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile","application/octet-stream","text/plain"}));
     }
     b.setNegativeButton("Close",null).show();
+  }
+
+  private void handleVpnPower() {
+    if (!VpnProfileStore.hasProfile(this)) {
+      showVpn();
+      return;
+    }
+    if (DevxyzVpnService.isConnected()) {
+      Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
+      startService(stop);
+      setVpnStatus("Disconnecting • stopping OpenVPN");
+      return;
+    }
+    Intent permission = VpnService.prepare(this);
+    if (permission != null) vpnPermission.launch(permission);
+    else requestVpnCredentials();
   }
 
   private void showInfo(String title,String message) {

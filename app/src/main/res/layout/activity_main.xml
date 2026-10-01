@@ -1,6 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:id="@+id/browserRoot" android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical" android:background="@color/bg">
 
     <!-- Browser tab strip -->
@@ -16,20 +16,26 @@
         <TextView android:id="@+id/newTab" android:layout_width="38dp" android:layout_height="match_parent"
             android:gravity="center" android:text="+" android:textSize="25sp" android:textColor="@color/text"
             android:contentDescription="New tab" android:clickable="true" android:focusable="true" />
+        <View android:id="@+id/tabSpacer" android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:visibility="gone" />
+        <LinearLayout android:id="@+id/windowControls" android:layout_width="132dp" android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal" android:visibility="gone">
+            <ImageButton android:id="@+id/windowMinimize" android:layout_width="44dp" android:layout_height="match_parent" android:src="@drawable/ic_window_minimize" android:contentDescription="Minimize DevxyzBrowser" android:background="@android:color/transparent" />
+            <ImageButton android:id="@+id/windowMaximize" android:layout_width="44dp" android:layout_height="match_parent" android:src="@drawable/ic_window_maximize" android:contentDescription="Toggle fullscreen" android:background="@android:color/transparent" />
+            <ImageButton android:id="@+id/windowClose" android:layout_width="44dp" android:layout_height="match_parent" android:src="@drawable/ic_window_close" android:contentDescription="Close DevxyzBrowser" android:background="@android:color/transparent" />
+        </LinearLayout>
     </LinearLayout>
 
     <!-- Navigation and address controls -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:orientation="horizontal"
+    <LinearLayout android:layout_width="match_parent" android:layout_height="46dp" android:orientation="horizontal"
         android:gravity="center_vertical" android:paddingStart="6dp" android:paddingEnd="8dp"
         android:background="@color/panel">
         <ImageButton android:id="@+id/back" android:layout_width="36dp" android:layout_height="42dp"
             android:src="@drawable/ic_arrow_back" app:tint="@color/muted"
             android:contentDescription="Back" android:background="@android:color/transparent" />
-        <ImageButton android:id="@+id/forward" android:layout_width="32dp" android:layout_height="42dp"
-            android:src="@android:drawable/ic_media_next" app:tint="@color/muted"
+        <ImageButton android:id="@+id/forward" android:layout_width="36dp" android:layout_height="42dp"
+            android:src="@drawable/ic_forward" app:tint="@color/muted"
             android:contentDescription="Forward" android:background="@android:color/transparent" />
         <ImageButton android:id="@+id/refresh" android:layout_width="36dp" android:layout_height="42dp"
-            android:src="@android:drawable/ic_popup_sync" app:tint="@color/muted"
+            android:src="@drawable/ic_refresh" app:tint="@color/muted"
             android:contentDescription="Reload" android:background="@android:color/transparent" />
         <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="40dp"
             android:layout_weight="1" android:paddingHorizontal="13dp" android:singleLine="true"
@@ -44,13 +50,13 @@
             android:src="@drawable/ic_extension_puzzle"
             android:contentDescription="Extensions" android:background="@android:color/transparent" />
         <ImageButton android:id="@+id/toolbarDownloads" android:layout_width="36dp" android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_save" app:tint="@color/text"
+            android:src="@drawable/ic_download" app:tint="@color/text"
             android:contentDescription="Downloads" android:background="@android:color/transparent" />
         <ImageButton android:id="@+id/profile" android:layout_width="36dp" android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_myplaces" app:tint="@color/purple2"
+            android:src="@drawable/ic_profile" app:tint="@color/purple2"
             android:contentDescription="Profile" android:background="@android:color/transparent" />
         <ImageButton android:id="@+id/menu" android:layout_width="36dp" android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_more" app:tint="@color/text"
+            android:src="@drawable/ic_menu" app:tint="@color/text"
             android:background="@android:color/transparent" android:contentDescription="Browser menu" />
     </LinearLayout>
     <ProgressBar android:id="@+id/pageProgress" style="?android:attr/progressBarStyleHorizontal"
@@ -58,18 +64,18 @@
         android:progressTint="@color/purple2" android:visibility="gone" />
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
-    <LinearLayout android:id="@+id/tabletRail" android:layout_width="184dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@color/panel" android:visibility="gone">
+    <LinearLayout android:id="@+id/tabletRail" android:layout_width="176dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@color/panel" android:visibility="gone">
         <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="6dp">
             <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/devxyz_brandmark" android:contentDescription="DevxyzBrowser logo" />
             <TextView android:id="@+id/railBrandTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="15sp" />
         </LinearLayout>
-        <TextView android:id="@+id/railHome" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="⌂   Home" android:textColor="@color/purple2" android:textSize="14sp" android:clickable="true" android:focusable="true" android:background="@drawable/toolbar_chip_bg" />
-        <TextView android:id="@+id/railBookmarks" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="☆   Bookmarks" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/railHistory" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="◷   History" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/railDownloads" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="↓   Downloads" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/railExtensions" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="✣   Extensions" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/railVpn" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="◇   VPN" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/railSettings" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:paddingStart="12dp" android:text="⚙   Settings" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railHome" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_home_active" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="Home" android:textColor="@color/purple2" android:textSize="14sp" android:clickable="true" android:focusable="true" android:background="@drawable/toolbar_chip_bg" />
+        <TextView android:id="@+id/railBookmarks" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_bookmark" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="Bookmarks" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railHistory" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_history" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="History" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railDownloads" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_download" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="Downloads" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railExtensions" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_extension" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="Extensions" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railVpn" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_shield" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="VPN" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/railSettings" android:layout_width="match_parent" android:layout_height="42dp" android:gravity="center_vertical" android:drawableStart="@drawable/ic_settings" android:drawablePadding="12dp" android:paddingStart="12dp" android:text="Settings" android:textColor="@color/muted" android:textSize="14sp" android:clickable="true" android:focusable="true" />
     </LinearLayout>
     <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
         <org.mozilla.geckoview.GeckoView android:id="@+id/gecko" android:layout_width="match_parent"
@@ -153,15 +159,15 @@
             </LinearLayout>
         </ScrollView>
     </FrameLayout>
-    <LinearLayout android:id="@+id/desktopPanels" android:layout_width="600dp" android:layout_height="match_parent" android:orientation="horizontal" android:padding="8dp" android:background="@color/bg" android:visibility="gone">
-        <LinearLayout android:id="@+id/desktopVpnPanel" android:layout_width="280dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+    <LinearLayout android:id="@+id/desktopPanels" android:layout_width="574dp" android:layout_height="match_parent" android:orientation="horizontal" android:padding="0dp" android:background="@color/bg" android:visibility="gone">
+        <LinearLayout android:id="@+id/desktopVpnPanel" android:layout_width="284dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="28dp" android:gravity="center_vertical" android:orientation="horizontal">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="VPN" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
                 <TextView android:id="@+id/vpnSettings" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="⚙" android:textColor="@color/muted" android:clickable="true" android:focusable="true" android:contentDescription="VPN settings" />
             </LinearLayout>
-            <ImageView android:id="@+id/desktopVpnMap" android:layout_width="match_parent" android:layout_height="142dp" android:layout_marginTop="8dp" android:scaleType="fitCenter" android:src="@drawable/vpn_world_power" android:contentDescription="VPN connection control over world map" android:clickable="true" />
+            <ImageView android:id="@+id/desktopVpnMap" android:layout_width="match_parent" android:layout_height="128dp" android:layout_marginTop="8dp" android:scaleType="fitCenter" android:src="@drawable/vpn_world_power" android:contentDescription="VPN connection control over world map" android:clickable="true" />
             <TextView android:id="@+id/desktopVpnStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:text="Disconnected" android:textColor="@color/muted" android:textSize="13sp" />
-            <LinearLayout android:id="@+id/vpnProfileSelector" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="10dp" android:paddingHorizontal="12dp" android:gravity="center_vertical" android:orientation="horizontal" android:background="@drawable/toolbar_chip_bg" android:clickable="true" android:focusable="true">
+            <LinearLayout android:id="@+id/vpnProfileSelector" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="8dp" android:paddingHorizontal="12dp" android:gravity="center_vertical" android:orientation="horizontal" android:background="@drawable/toolbar_chip_bg" android:clickable="true" android:focusable="true">
                 <TextView android:layout_width="30dp" android:layout_height="wrap_content" android:text="◎" android:textColor="@color/purple2" android:textSize="20sp" />
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                     <TextView android:id="@+id/vpnProfileName" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No profile imported" android:textColor="@color/text" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
@@ -169,23 +175,23 @@
                 </LinearLayout>
                 <TextView android:layout_width="24dp" android:layout_height="wrap_content" android:gravity="center" android:text="⌄" android:textColor="@color/muted" android:textSize="17sp" />
             </LinearLayout>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="10dp" android:background="@color/stroke" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="8dp" android:background="@color/stroke" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:gravity="center_vertical" android:orientation="horizontal">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Auto Connect" android:textColor="@color/text" android:textSize="12sp" />
-                <Switch android:id="@+id/autoConnect" android:layout_width="wrap_content" android:layout_height="wrap_content" android:contentDescription="Automatically connect when a saved profile is ready" />
+        <Switch android:id="@+id/autoConnect" android:layout_width="wrap_content" android:layout_height="wrap_content" android:thumbTint="@color/switch_thumb" android:trackTint="@color/switch_track" android:contentDescription="Automatically connect when a saved profile is ready" />
             </LinearLayout>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center_vertical" android:orientation="horizontal" android:clickable="true" android:focusable="true" android:id="@+id/killSwitchSettings">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:gravity="center_vertical" android:orientation="horizontal" android:clickable="true" android:focusable="true" android:id="@+id/killSwitchSettings">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Kill Switch" android:textColor="@color/text" android:textSize="12sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Configure in Android Settings  ›" android:textColor="@color/purple2" android:textSize="10sp" />
             </LinearLayout>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:gravity="center_vertical" android:orientation="horizontal">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Block Trackers" android:textColor="@color/text" android:textSize="12sp" />
-                <Switch android:id="@+id/blockTrackers" android:layout_width="wrap_content" android:layout_height="wrap_content" android:contentDescription="Block web trackers" />
+                <Switch android:id="@+id/blockTrackers" android:layout_width="wrap_content" android:layout_height="wrap_content" android:thumbTint="@color/switch_thumb" android:trackTint="@color/switch_track" android:contentDescription="Block web trackers" />
             </LinearLayout>
-            <TextView android:id="@+id/vpnSecureCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:padding="10dp" android:text="◇  VPN status is verified by OpenVPN" android:textColor="@color/muted" android:textSize="10sp" android:background="@drawable/toolbar_chip_bg" />
-            <Button android:id="@+id/desktopVpnAction" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="10dp" android:text="Set up VPN" android:textAllCaps="false" android:textColor="@color/text" android:background="@drawable/accent_bg" />
+            <TextView android:id="@+id/vpnSecureCard" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="6dp" android:gravity="center_vertical" android:padding="8dp" android:text="◇  VPN status is verified by OpenVPN" android:textColor="@color/muted" android:textSize="10sp" android:background="@drawable/toolbar_chip_bg" />
+            <Button android:id="@+id/desktopVpnAction" android:layout_width="match_parent" android:layout_height="1dp" android:visibility="gone" android:importantForAccessibility="no" android:text="Set up VPN" />
         </LinearLayout>
-        <LinearLayout android:id="@+id/desktopExtensionsPane" android:layout_width="282dp" android:layout_height="match_parent" android:layout_marginStart="10dp" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
+        <LinearLayout android:id="@+id/desktopExtensionsPane" android:layout_width="278dp" android:layout_height="match_parent" android:layout_marginStart="12dp" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extensions" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
                 <TextView android:id="@+id/extensionsClose" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="×" android:textColor="@color/muted" android:textSize="22sp" android:clickable="true" android:focusable="true" android:contentDescription="Close extensions" />
