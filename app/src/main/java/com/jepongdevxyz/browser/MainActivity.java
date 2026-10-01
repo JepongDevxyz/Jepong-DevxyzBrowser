@@ -155,7 +155,7 @@ public final class MainActivity extends AppCompatActivity {
         getWindow(), findViewById(android.R.id.content));
       desktopInsetsController.hide(WindowInsetsCompat.Type.systemBars());
       desktopInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-      View browserRoot = findViewById(R.id.browserRoot);
+      ViewGroup browserRoot = findViewById(R.id.browserRoot);
       browserRoot.setBackgroundResource(R.drawable.browser_frame);
       browserRoot.setClipToOutline(true);
       browserRoot.setClipChildren(false);
