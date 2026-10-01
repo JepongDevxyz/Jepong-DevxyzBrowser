@@ -25,7 +25,7 @@
     </LinearLayout>
 
     <!-- Navigation and address controls -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="46dp" android:orientation="horizontal"
+    <LinearLayout android:id="@+id/navigationToolbar" android:layout_width="match_parent" android:layout_height="46dp" android:orientation="horizontal"
         android:gravity="center_vertical" android:paddingStart="6dp" android:paddingEnd="8dp"
         android:background="@color/panel">
         <ImageButton android:id="@+id/back" android:layout_width="36dp" android:layout_height="42dp"
@@ -108,27 +108,27 @@
                 <HorizontalScrollView android:id="@+id/quickSites" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="24dp" android:scrollbars="none" android:overScrollMode="never">
                     <LinearLayout android:id="@+id/quickSiteStrip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                        <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
                             <ImageButton android:id="@+id/siteYoutube" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/shortcut_youtube" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open YouTube" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="YouTube" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
                             <ImageButton android:id="@+id/siteFacebook" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/shortcut_facebook" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open Facebook" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Facebook" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
                             <ImageButton android:id="@+id/siteGithub" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/shortcut_github" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open GitHub" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="GitHub" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
                             <ImageButton android:id="@+id/siteReddit" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/shortcut_reddit" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open Reddit" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Reddit" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
                         <ImageButton android:id="@+id/siteX" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/shortcut_x" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Open X" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="X" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="86dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
                             <ImageButton android:id="@+id/addSite" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/shortcut_add" android:scaleType="fitCenter" android:background="@android:color/transparent" android:contentDescription="Add a site" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Add site" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
