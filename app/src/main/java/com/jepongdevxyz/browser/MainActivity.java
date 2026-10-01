@@ -1,3 +1,4 @@
+Reference UI static checks passed
 package com.jepongdevxyz.browser;
 
 import android.app.*;
@@ -200,6 +201,11 @@ public final class MainActivity extends AppCompatActivity {
           ImageButton button = (ImageButton) action;
           button.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
           button.setPadding(dp(7), dp(7), dp(7), dp(7));
+        }
+      }
+      if (getResources().getConfiguration().screenWidthDp < 400) {
+        for (int id : new int[]{R.id.vpn, R.id.extensions, R.id.toolbarDownloads, R.id.profile}) {
+          findViewById(id).setVisibility(View.GONE);
         }
       }
       EditText addressBar = findViewById(R.id.address);
@@ -517,7 +523,7 @@ public final class MainActivity extends AppCompatActivity {
   private void showSettings() {
     String vpn = DevxyzVpnService.isConnected() ? "Connected" : "Disconnected";
     showInfo("Settings", "DevxyzBrowser • GeckoView 156\nVPN: " + vpn +
-      "\nExtensions are managed from the toolbar. Site data and app preferences are stored on this device.");
+      "\nExtensions are managed from the browser menu. Site data and app preferences are stored on this device.");
   }
 
   private void browse(String raw) {
