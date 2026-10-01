@@ -38,6 +38,10 @@ adb shell wm size 720x1600
 adb shell wm density 320
 adb shell am force-stop "$PACKAGE"
 adb shell am start -n "$PACKAGE/.MainActivity"
+# Let the first phone launch complete so the next splash capture tests a warm, rendered launch.
+sleep 20
+adb shell am force-stop "$PACKAGE"
+adb shell am start -n "$PACKAGE/.MainActivity"
 sleep 1
 adb exec-out screencap -p > "$REVIEW_DIR/mobile-splash.png" 2> "$REVIEW_DIR/mobile-splash-screencap.txt"
 sleep 20
