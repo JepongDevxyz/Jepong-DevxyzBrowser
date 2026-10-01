@@ -42,6 +42,7 @@ assert ids.get("desktopExtensionsPane") is not None and ids["desktopExtensionsPa
 assert ANDROID + "padding" not in ids["desktopVpnPanel"].attrib and ids["desktopVpnPanel"].attrib.get(ANDROID + "paddingStart") == "18dp" and ids["desktopVpnPanel"].attrib.get(ANDROID + "paddingEnd") == "18dp", "VPN panel horizontal inset differs from reference"
 assert ids["desktopExtensionRows"].attrib.get(ANDROID + "layout_height") == "wrap_content" and ANDROID + "layout_weight" not in ids["desktopExtensionRows"].attrib, "extension rows must size to their content like the reference"
 assert ids["desktopExtensionsPane"].attrib.get(ANDROID + "paddingStart") == "20dp" and ids["desktopExtensionsPane"].attrib.get(ANDROID + "paddingEnd") == "20dp", "extensions pane content inset differs from reference"
+assert ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_marginBottom") == "15dp", "extensions pane should end 15dp above the browser frame bottom like the reference"
 assert ANDROID + "padding" not in ids["desktopExtensionsPane"].attrib, "extensions pane shorthand padding overrides measured horizontal insets"
 assert ids["tabletRailBrand"] is not None and "tabletRail.findViewById(R.id.tabletRailBrand).setVisibility(wideLayout ? View.GONE" in activity, "wide navigation rail must start with Home instead of a brand row"
 assert ids["desktopExtensionsAction"].tag.endswith("LinearLayout"), "extension catalog action must use a custom reference-style chip, not a tinted Android button"
