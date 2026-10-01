@@ -199,7 +199,7 @@
             <EditText android:id="@+id/extensionSearch" android:layout_width="match_parent" android:layout_height="38dp" android:layout_marginTop="2dp" android:layout_marginBottom="6dp" android:paddingHorizontal="12dp" android:singleLine="true" android:hint="⌕  Search extensions…" android:textColor="@color/text" android:textColorHint="@color/muted" android:textSize="12sp" android:background="@drawable/search_bg" />
             <LinearLayout android:id="@+id/desktopExtensionRows" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
             <LinearLayout android:id="@+id/desktopExtensionsAction" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="8dp" android:paddingHorizontal="14dp" android:gravity="center" android:orientation="horizontal" android:background="@drawable/extension_action_bg" android:clickable="true" android:focusable="true" android:contentDescription="Browse more extensions">
-                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_extension" android:tint="@color/purple2" android:contentDescription="" />
+                <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_extension" app:tint="@color/purple2" android:contentDescription="" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="Browse more extensions" android:textColor="@color/purple2" android:textSize="14sp" />
             </LinearLayout>
         </LinearLayout>
