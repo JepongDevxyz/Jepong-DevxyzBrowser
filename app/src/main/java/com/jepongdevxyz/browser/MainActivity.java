@@ -373,7 +373,6 @@ public final class MainActivity extends AppCompatActivity {
       dismissed[0] = true;
       if (splash.getParent() == content) content.removeView(splash);
       controller.show(WindowInsetsCompat.Type.systemBars());
-      ViewCompat.requestApplyWindowInsets(content);
     };
     splash.setOnClickListener(v -> dismiss.run());
     splash.postDelayed(dismiss, 2200);
