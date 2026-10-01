@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
@@ -73,6 +74,7 @@ public final class MainActivity extends AppCompatActivity {
   private static final class BrowserTab {
     GeckoSession session;
     String url = "";
+    String displayTitle;
     LinearLayout chip;
     TextView label;
     BrowserTab(GeckoSession session) { this.session = session; }
@@ -137,6 +139,16 @@ public final class MainActivity extends AppCompatActivity {
     extensionSearch = findViewById(R.id.extensionSearch);
     menuButton = findViewById(R.id.menu);
     boolean wideLayout = getResources().getConfiguration().screenWidthDp >= 1200;
+    if (wideLayout) {
+      WindowInsetsControllerCompat insetsController = new WindowInsetsControllerCompat(
+        getWindow(), findViewById(android.R.id.content));
+      insetsController.hide(WindowInsetsCompat.Type.systemBars());
+      insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      BrowserTab brandTab = new BrowserTab(null);
+      brandTab.displayTitle = "DevxyzBrowser";
+      tabs.add(0, brandTab);
+      addTabChip(brandTab);
+    }
     findViewById(R.id.tabletRail).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.desktopPanels).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.mobileNav).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
@@ -395,9 +407,19 @@ public final class MainActivity extends AppCompatActivity {
 
   private void updateTabLabel(BrowserTab tab) {
     if (tab.chip == null) return;
-    String title = tab.url.isEmpty() ? "New Tab" : Uri.parse(tab.url).getHost();
+    String title = tab.displayTitle == null ? (tab.url.isEmpty() ? "New Tab" : Uri.parse(tab.url).getHost()) : tab.displayTitle;
     if (title == null || title.isEmpty()) title = "Page";
-    tab.label.setText((tab == activeTab ? "●  " : "◉  ") + title);
+    tab.label.setText((tab.displayTitle != null ? "" : (tab == activeTab ? "●  " : "◉  ")) + title);
+    if ("DevxyzBrowser".equals(tab.displayTitle) && tab.chip.getChildCount() > 0
+        && !(tab.chip.getChildAt(0) instanceof ImageView)) {
+      ImageView brandIcon = new ImageView(this);
+      brandIcon.setImageResource(R.drawable.devxyz_brandmark);
+      brandIcon.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+      int iconSize = dp(22);
+      LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
+      iconParams.setMargins(dp(8), 0, dp(4), 0);
+      tab.chip.addView(brandIcon, 0, iconParams);
+    }
     tab.chip.setContentDescription(title + ". Long press to close tab.");
   }
 

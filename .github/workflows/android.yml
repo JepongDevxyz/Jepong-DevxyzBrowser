@@ -226,6 +226,8 @@ jobs:
           unzip -Z1 "$APK" | grep -qx 'assets/licenses/openvpn3/MPL-2.0.txt'
           unzip -Z1 "$APK" | grep -qx 'assets/licenses/third-party/openssl.txt'
           "$APKSIGNER" verify --verbose "$APK"
+          mkdir -p installable-apk
+          cp "$APK" installable-apk/devxyzbrowser.apk
       - name: Prepare emulator-only screenshot build without ARM64 VPN library
         run: |
           mv app/src/main/jniLibs/arm64-v8a "$RUNNER_TEMP/arm64-v8a-vpn-libraries"
@@ -242,11 +244,12 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -no-metrics
           disable-animations: true
           script: bash scripts/capture_emulator_visuals.sh
-      - name: Upload visual review screenshots (no APK)
-        if: always()
+      - name: Upload verified installable APK and visual review screenshots
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: DevxyzBrowser-visual-review-only
+          name: DevxyzBrowser-verified-installable
           path: |
             visual-review/**
+            installable-apk/devxyzbrowser.apk
           if-no-files-found: error

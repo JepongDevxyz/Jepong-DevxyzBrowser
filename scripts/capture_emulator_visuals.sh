@@ -6,7 +6,7 @@ REVIEW_DIR="visual-review"
 PACKAGE="com.jepongdevxyz.browser"
 mkdir -p "$REVIEW_DIR"
 
-adb shell wm size 1536x1024
+adb shell wm size 1536x550
 adb shell wm density 160
 adb install app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n "$PACKAGE/.MainActivity"

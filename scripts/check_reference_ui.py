@@ -58,6 +58,9 @@ assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].sp
 lazy_session = activity.split("private GeckoSession ensureBrowserSession(", 1)[1].split("\n  private ", 1)[0]
 assert "ensureBrowserRuntime()" in lazy_session and "tab.session.open(runtime)" in lazy_session, "first navigation must create and open its Gecko session"
 assert "GeckoRuntime.create(getApplicationContext())" in activity.split("private void ensureBrowserRuntime()", 1)[1].split("\n  private ", 1)[0], "lazy runtime must be process-scoped"
+assert "WindowInsetsControllerCompat" in activity and "insetsController.hide(WindowInsetsCompat.Type.systemBars())" in on_create, "wide browser presentation should hide Android system bars"
+assert 'displayTitle = "DevxyzBrowser"' in on_create and "wideLayout" in on_create, "wide browser should show the reference's branded first tab"
+assert "displayTitle == null ?" in activity and "tab.displayTitle" in activity, "branded tab label must remain functional"
 
 shortcut_ids = ("siteYoutube", "siteFacebook", "siteGithub", "siteReddit", "siteX", "addSite")
 for view_id in shortcut_ids:
@@ -80,10 +83,13 @@ assert "api-level: 30" in workflow and "arch: x86_64" in workflow, "visual revie
 assert "dumpsys window" in capture and "com.jepongdevxyz.browser" in capture, "visual review must verify the browser is foregrounded"
 assert capture.count("uiautomator dump") >= 2 and capture.count("am force-stop") == 1, "desktop and phone screenshots must reject ANR overlays and restart at phone dimensions"
 assert "scripts/verify_emulator_screen.py" in capture, "emulator screenshot flow must use the tested ANR verifier"
-assert "DevxyzBrowser-visual-review-only" in workflow, "verification workflow should publish screenshots only"
+assert "DevxyzBrowser-verified-installable" in workflow, "verification workflow should publish the verified APK with screenshots"
+assert "if: success()" in workflow, "publish an APK only after all build and emulator checks pass"
+assert 'cp "$APK" installable-apk/devxyzbrowser.apk' in workflow, "verified installable APK must be staged in the CI artifact"
 assert capture.count("screencap -p") == 2 and "set +e" in capture, "capture both form factors before running failure gates"
 assert 'REVIEW_DIR="visual-review"' in capture, "emulator diagnostics must use a stable workspace path"
 assert capture.count("System UI isn't responding") == 2 and capture.count("KEYCODE_DPAD_DOWN") == 2, "wait for boot-time System UI ANRs before capturing, without hiding browser ANRs"
+assert "wm size 1536x550" in capture, "wide screenshot viewport should match the reference browser window proportions"
 assert "name: DevxyzBrowser-debug-apk" not in workflow, "verification workflow must not expose an unreviewed APK"
 assert 'providers.gradleProperty("devxyz.abi")' in build, "APK must select one target ABI to avoid packaging all GeckoView binaries"
 assert 'abiFilters += browserAbi' in build, "selected GeckoView ABI must be enforced in the APK"
