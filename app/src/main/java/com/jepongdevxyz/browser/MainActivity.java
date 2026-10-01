@@ -895,7 +895,7 @@ public final class MainActivity extends AppCompatActivity {
       desktopStatus.setTextColor(getColor(connected ? R.color.green : R.color.muted));
     }
     TextView secure = findViewById(R.id.vpnSecureCard);
-    if (secure != null) secure.setText(connected ? "✓  Your VPN tunnel is connected" : "◇  VPN status is verified by OpenVPN");
+    if (secure != null) secure.setText(connected ? "✓  Your connection is secure" : "◇  VPN disconnected • import a profile to connect");
     if (secure != null) secure.setTextColor(getColor(connected ? R.color.green : R.color.muted));
     TextView profileName = findViewById(R.id.vpnProfileName);
     TextView profileSubtitle = findViewById(R.id.vpnProfileSubtitle);
