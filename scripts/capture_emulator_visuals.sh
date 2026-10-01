@@ -13,14 +13,22 @@ adb shell am start -n "$PACKAGE/.MainActivity"
 sleep 20
 adb shell dumpsys window > "$REVIEW_DIR/desktop-window.txt" 2>&1
 adb shell pidof "$PACKAGE" > "$REVIEW_DIR/desktop-pid.txt" 2>&1
-adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
-adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+for attempt in 1 2 3; do
+  adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
+  adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+  python3 -c 'import sys, xml.etree.ElementTree as ET; ET.parse(sys.argv[1])' "$REVIEW_DIR/desktop-window.xml" >/dev/null 2>&1 && break
+  sleep 3
+done
 if grep -Fq "System UI isn't responding" "$REVIEW_DIR/desktop-window.xml"; then
   adb shell input keyevent KEYCODE_DPAD_DOWN
   adb shell input keyevent KEYCODE_ENTER
   sleep 10
-  adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
-  adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+  for attempt in 1 2 3; do
+    adb shell uiautomator dump /sdcard/window.xml > "$REVIEW_DIR/desktop-uiautomator.txt" 2>&1
+    adb shell cat /sdcard/window.xml > "$REVIEW_DIR/desktop-window.xml" 2>&1
+    python3 -c 'import sys, xml.etree.ElementTree as ET; ET.parse(sys.argv[1])' "$REVIEW_DIR/desktop-window.xml" >/dev/null 2>&1 && break
+    sleep 3
+  done
 fi
 adb exec-out screencap -p > "$REVIEW_DIR/devxyz-desktop-reference.png" 2> "$REVIEW_DIR/desktop-screencap.txt"
 adb logcat -d -v time > "$REVIEW_DIR/desktop-logcat.txt" 2>&1
@@ -33,14 +41,22 @@ adb shell am start -n "$PACKAGE/.MainActivity"
 sleep 20
 adb shell dumpsys window > "$REVIEW_DIR/phone-window.txt" 2>&1
 adb shell pidof "$PACKAGE" > "$REVIEW_DIR/phone-pid.txt" 2>&1
-adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
-adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+for attempt in 1 2 3; do
+  adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
+  adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+  python3 -c 'import sys, xml.etree.ElementTree as ET; ET.parse(sys.argv[1])' "$REVIEW_DIR/phone-window.xml" >/dev/null 2>&1 && break
+  sleep 3
+done
 if grep -Fq "System UI isn't responding" "$REVIEW_DIR/phone-window.xml"; then
   adb shell input keyevent KEYCODE_DPAD_DOWN
   adb shell input keyevent KEYCODE_ENTER
   sleep 10
-  adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
-  adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+  for attempt in 1 2 3; do
+    adb shell uiautomator dump /sdcard/phone-window.xml > "$REVIEW_DIR/phone-uiautomator.txt" 2>&1
+    adb shell cat /sdcard/phone-window.xml > "$REVIEW_DIR/phone-window.xml" 2>&1
+    python3 -c 'import sys, xml.etree.ElementTree as ET; ET.parse(sys.argv[1])' "$REVIEW_DIR/phone-window.xml" >/dev/null 2>&1 && break
+    sleep 3
+  done
 fi
 adb exec-out screencap -p > "$REVIEW_DIR/devxyz-phone-reference.png" 2> "$REVIEW_DIR/phone-screencap.txt"
 adb logcat -d -v time > "$REVIEW_DIR/phone-logcat.txt" 2>&1
