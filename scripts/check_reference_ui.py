@@ -127,7 +127,7 @@ assert "script: bash scripts/capture_emulator_visuals.sh" in workflow, "emulator
 capture = EMULATOR_CAPTURE.read_text()
 assert "api-level: 30" in workflow and "arch: x86_64" in workflow, "visual review emulator must use the runner's supported ABI"
 assert "dumpsys window" in capture and "com.jepongdevxyz.browser" in capture, "visual review must verify the browser is foregrounded"
-assert capture.count("uiautomator dump") >= 2 and capture.count("am force-stop") == 1, "desktop and phone screenshots must reject ANR overlays and restart at phone dimensions"
+assert capture.count("uiautomator dump") >= 2 and capture.count("am force-stop") >= 2, "desktop and phone screenshots must reject ANR overlays and warm-start the phone splash capture"
 assert "scripts/verify_emulator_screen.py" in capture, "emulator screenshot flow must use the tested ANR verifier"
 assert "DevxyzBrowser-verified-installable" in workflow, "verification workflow should publish the verified APK with screenshots"
 assert "if: success()" in workflow, "publish an APK only after all build and emulator checks pass"
