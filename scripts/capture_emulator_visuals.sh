@@ -41,9 +41,15 @@ adb shell am start -n "$PACKAGE/.MainActivity"
 # Let the first phone launch complete so the next splash capture tests a warm, rendered launch.
 sleep 20
 adb shell am force-stop "$PACKAGE"
-adb shell am start -n "$PACKAGE/.MainActivity"
-sleep 1
+adb shell am start -n "$PACKAGE/.MainActivity" --ez visual_test_splash true
+sleep 4
 adb exec-out screencap -p > "$REVIEW_DIR/mobile-splash.png" 2> "$REVIEW_DIR/mobile-splash-screencap.txt"
+mobile_splash_size=$(wc -c < "$REVIEW_DIR/mobile-splash.png")
+mobile_splash_status=0
+if [ "$mobile_splash_size" -le 20000 ]; then
+  echo "Mobile reference splash did not render before capture."
+  mobile_splash_status=1
+fi
 sleep 20
 adb shell dumpsys window > "$REVIEW_DIR/phone-window.txt" 2>&1
 adb shell pidof "$PACKAGE" > "$REVIEW_DIR/phone-pid.txt" 2>&1
@@ -82,7 +88,8 @@ test -s "$REVIEW_DIR/desktop-pid.txt" || desktop_foreground_status=1
 test -s "$REVIEW_DIR/phone-pid.txt" || phone_foreground_status=1
 
 if [ "$desktop_xml_status" -ne 0 ] || [ "$phone_xml_status" -ne 0 ] || \
-   [ "$desktop_foreground_status" -ne 0 ] || [ "$phone_foreground_status" -ne 0 ]; then
+   [ "$desktop_foreground_status" -ne 0 ] || [ "$phone_foreground_status" -ne 0 ] || \
+   [ "$mobile_splash_status" -ne 0 ]; then
   echo "Visual review gate failed; screenshots and diagnostics are saved under $REVIEW_DIR/"
   exit 1
 fi
