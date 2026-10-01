@@ -63,7 +63,7 @@
         android:layout_width="match_parent" android:layout_height="2dp" android:max="100"
         android:progressTint="@color/purple2" android:visibility="gone" />
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+    <LinearLayout android:id="@+id/mainBrowserArea" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
     <LinearLayout android:id="@+id/tabletRail" android:layout_width="176dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@color/panel" android:visibility="gone">
         <LinearLayout android:id="@+id/tabletRailBrand" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="6dp">
             <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/devxyz_brandmark" android:contentDescription="DevxyzBrowser logo" />
@@ -95,8 +95,8 @@
                     android:textColor="@color/text" android:textStyle="bold" android:textSize="34sp" />
                 <TextView android:id="@+id/desktopHomeTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center"
                     android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="40sp" android:visibility="gone" />
-                <TextView android:id="@+id/desktopHomeSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:gravity="center"
-                    android:text="Browse Freely. Securely. Your Way." android:textColor="@color/muted" android:textSize="15sp" android:visibility="gone" />
+                <TextView android:id="@+id/desktopHomeSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:gravity="center"
+                    android:text="Browse Freely. Securely. Your Way." android:textColor="@color/muted" android:textSize="17sp" android:visibility="gone" />
                 <TextView android:id="@+id/heroSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
                     android:gravity="center" android:text="Fast. Private. Flexible."
                     android:textColor="@color/muted" android:textSize="17sp" />
@@ -160,7 +160,7 @@
         </ScrollView>
     </FrameLayout>
     <LinearLayout android:id="@+id/desktopPanels" android:layout_width="574dp" android:layout_height="match_parent" android:orientation="horizontal" android:padding="0dp" android:background="@color/bg" android:visibility="gone">
-        <LinearLayout android:id="@+id/desktopVpnPanel" android:layout_width="284dp" android:layout_height="match_parent" android:orientation="vertical" android:paddingTop="14dp" android:paddingBottom="14dp" android:paddingStart="18dp" android:paddingEnd="18dp" android:background="@drawable/panel_bg">
+        <LinearLayout android:id="@+id/desktopVpnPanel" android:layout_width="284dp" android:layout_height="match_parent" android:layout_marginTop="-7dp" android:orientation="vertical" android:paddingTop="14dp" android:paddingBottom="14dp" android:paddingStart="18dp" android:paddingEnd="18dp" android:background="@drawable/panel_bg">
             <LinearLayout android:layout_width="match_parent" android:layout_height="28dp" android:gravity="center_vertical" android:orientation="horizontal">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="VPN" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
                 <TextView android:id="@+id/vpnSettings" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="⚙" android:textColor="@color/muted" android:clickable="true" android:focusable="true" android:contentDescription="VPN settings" />

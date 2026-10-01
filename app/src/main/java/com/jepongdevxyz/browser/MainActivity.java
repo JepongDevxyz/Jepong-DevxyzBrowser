@@ -158,7 +158,11 @@ public final class MainActivity extends AppCompatActivity {
       View browserRoot = findViewById(R.id.browserRoot);
       browserRoot.setBackgroundResource(R.drawable.browser_frame);
       browserRoot.setClipToOutline(true);
+      browserRoot.setClipChildren(false);
       browserRoot.setPadding(dp(1), dp(1), dp(1), dp(1));
+      LinearLayout mainBrowserArea = findViewById(R.id.mainBrowserArea);
+      mainBrowserArea.setClipChildren(false);
+      mainBrowserArea.setClipToPadding(false);
       FrameLayout.LayoutParams browserFrame = new FrameLayout.LayoutParams(-1, -1);
       browserFrame.leftMargin = dp(20);
       browserFrame.rightMargin = dp(20);
