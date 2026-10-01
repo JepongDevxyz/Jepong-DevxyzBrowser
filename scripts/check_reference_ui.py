@@ -39,6 +39,10 @@ assert desktop_panels is not None and desktop_panels.attrib.get(ANDROID + "orien
 assert desktop_panels.attrib.get(ANDROID + "layout_width") == "574dp", "desktop panels should match the reference right-column width"
 assert ids.get("desktopVpnPanel") is not None and ids["desktopVpnPanel"].attrib.get(ANDROID + "layout_width") == "284dp", "VPN panel width differs from reference"
 assert ids.get("desktopExtensionsPane") is not None and ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_width") == "278dp", "Extensions panel width differs from reference"
+assert ids["desktopExtensionRows"].attrib.get(ANDROID + "layout_height") == "wrap_content" and ANDROID + "layout_weight" not in ids["desktopExtensionRows"].attrib, "extension rows must size to their content like the reference"
+assert ids["desktopExtensionsAction"].tag.endswith("LinearLayout"), "extension catalog action must use a custom reference-style chip, not a tinted Android button"
+assert ids["desktopExtensionsAction"].attrib.get(ANDROID + "background") == "@drawable/extension_action_bg", "extension action chip background differs from reference"
+assert any(node.attrib.get(ANDROID + "src") == "@drawable/ic_extension" for node in ids["desktopExtensionsAction"].iter()), "extension action chip needs the puzzle icon shown in the reference"
 assert (ROOT / "app/src/main/res/drawable-nodpi/vpn_world_power.png").is_file(), "reference VPN map/power artwork missing"
 assert "@drawable/vpn_world_power" in ET.tostring(layout, encoding="unicode"), "VPN reference artwork not used"
 for view_id in ("desktopVpnMap", "desktopVpnAction", "desktopVpnStatus", "vpnProfileSelector", "autoConnect", "killSwitchSettings", "blockTrackers", "extensionSearch", "desktopExtensionRows"):
