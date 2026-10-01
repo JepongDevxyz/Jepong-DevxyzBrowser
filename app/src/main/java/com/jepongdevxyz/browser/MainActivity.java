@@ -94,7 +94,7 @@ public final class MainActivity extends AppCompatActivity {
     new AddonCard("uBlock Origin", "Block ads and trackers", "ublock-origin", "#B31326"),
     new AddonCard("Dark Reader", "Dark mode for all websites", "darkreader", "#168EAA"),
     new AddonCard("Grammarly", "Write better everywhere", null, "#168F70"),
-    new AddonCard("SponsorBlock", "Skip sponsored segments", "sponsorblock", "#E73D32"),
+    new AddonCard("SponsorBlock", "Skip sponsored content", "sponsorblock", "#E73D32"),
     new AddonCard("React Developer Tools", "Debug React apps", null, "#1497B8")
   };
 
@@ -184,6 +184,28 @@ public final class MainActivity extends AppCompatActivity {
     findViewById(R.id.heroSubtitle).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
     findViewById(R.id.desktopHomeTitle).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.desktopHomeSubtitle).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    if (!wideLayout) {
+      LinearLayout navigationToolbar = findViewById(R.id.navigationToolbar);
+      navigationToolbar.setPadding(dp(2), 0, dp(2), 0);
+      int[] actionIds = {R.id.back, R.id.forward, R.id.refresh, R.id.vpn,
+        R.id.extensions, R.id.toolbarDownloads, R.id.profile, R.id.menu};
+      int[] actionWidths = {34, 34, 34, 42, 34, 34, 34, 34};
+      for (int index = 0; index < actionIds.length; index++) {
+        View action = findViewById(actionIds[index]);
+        ViewGroup.LayoutParams params = action.getLayoutParams();
+        params.width = dp(actionWidths[index]);
+        params.height = dp(40);
+        action.setLayoutParams(params);
+        if (action instanceof ImageButton) {
+          ImageButton button = (ImageButton) action;
+          button.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+          button.setPadding(dp(7), dp(7), dp(7), dp(7));
+        }
+      }
+      EditText addressBar = findViewById(R.id.address);
+      addressBar.setPadding(dp(9), 0, dp(9), 0);
+      addressBar.setTextSize(12);
+    }
     View homeContent = ((android.widget.ScrollView) startPage).getChildAt(0);
     homeContent.setPadding(homeContent.getPaddingLeft(), dp(wideLayout ? 66 : 42), homeContent.getPaddingRight(), homeContent.getPaddingBottom());
     int shortcutSize = wideLayout ? 72 : 58;
