@@ -4,9 +4,14 @@ import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.content.ContentValues;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
+import android.provider.MediaStore;
+import android.webkit.URLUtil;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -32,6 +37,9 @@ import android.content.Intent;
 import android.net.VpnService;
 import org.mozilla.geckoview.*;
 import java.util.*;
+import java.io.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import androidx.appcompat.widget.PopupMenu;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -39,6 +47,7 @@ import android.text.TextWatcher;
 
 public final class MainActivity extends AppCompatActivity {
   private static GeckoRuntime runtime;
+  private static final ExecutorService DOWNLOAD_EXECUTOR = Executors.newSingleThreadExecutor();
   private GeckoSession session;
   private EditText address, heroSearch;
   private ProgressBar progress;
@@ -401,6 +410,11 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void attachSession(BrowserTab tab) {
+    tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
+      @Override public void onExternalResponse(GeckoSession source, WebResponse response) {
+        requestDownload(response);
+      }
+    });
     tab.session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
       @Override public void onPageStart(GeckoSession s, String url) {
         tab.url = url;
@@ -525,8 +539,128 @@ public final class MainActivity extends AppCompatActivity {
     menu.show();
   }
 
+  private void requestDownload(WebResponse response) {
+    if (response == null || response.uri == null) return;
+    String contentType = response.headers == null ? null : response.headers.get("Content-Type");
+    String disposition = response.headers == null ? null : response.headers.get("Content-Disposition");
+    String fileName = URLUtil.guessFileName(response.uri, disposition, contentType);
+    fileName = new File(fileName == null ? "download" : fileName).getName();
+    final String downloadName = fileName;
+    new AlertDialog.Builder(this).setTitle("Download file?")
+      .setMessage(downloadName + (contentType == null ? "" : "\n" + contentType))
+      .setPositiveButton("Download", (dialog, which) -> saveDownload(response, downloadName, contentType))
+      .setNegativeButton("Cancel", null).show();
+  }
+
+  private void saveDownload(WebResponse response, String fileName, String contentType) {
+    if (response.body == null) {
+      try {
+        DownloadManager manager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(response.uri))
+          .setTitle(fileName).setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        if (contentType != null) request.setMimeType(contentType);
+        manager.enqueue(request);
+        Toast.makeText(this, "Download started: " + fileName, Toast.LENGTH_LONG).show();
+      } catch (Exception error) {
+        Toast.makeText(this, "Could not start download: " + error.getMessage(), Toast.LENGTH_LONG).show();
+      }
+      return;
+    }
+    DOWNLOAD_EXECUTOR.execute(() -> {
+      Uri saved = null;
+      try (InputStream input = response.body) {
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+          ContentValues values = new ContentValues();
+          values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+          values.put(MediaStore.Downloads.MIME_TYPE, contentType == null ? "application/octet-stream" : contentType);
+          values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/DevxyzBrowser");
+          values.put(MediaStore.Downloads.IS_PENDING, 1);
+          saved = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+          if (saved == null) throw new IOException("Could not create the Downloads file");
+          try (OutputStream output = getContentResolver().openOutputStream(saved)) {
+            if (output == null) throw new IOException("Could not open the Downloads file");
+            copyStream(input, output);
+          }
+          ContentValues complete = new ContentValues();
+          complete.put(MediaStore.Downloads.IS_PENDING, 0);
+          getContentResolver().update(saved, complete, null, null);
+        } else {
+          File directory = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+          if (directory == null || (!directory.exists() && !directory.mkdirs())) throw new IOException("Downloads folder unavailable");
+          File destination = uniqueDownloadFile(directory, fileName);
+          try (OutputStream output = new FileOutputStream(destination)) { copyStream(input, output); }
+          saved = androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".files", destination);
+        }
+        rememberDownload(saved);
+        runOnUiThread(() -> Toast.makeText(this, "Downloaded: " + fileName, Toast.LENGTH_LONG).show());
+      } catch (Exception error) {
+        if (saved != null && android.os.Build.VERSION.SDK_INT >= 29) getContentResolver().delete(saved, null, null);
+        runOnUiThread(() -> Toast.makeText(this, "Download failed: " + error.getMessage(), Toast.LENGTH_LONG).show());
+      }
+    });
+  }
+
+  private void copyStream(InputStream input, OutputStream output) throws IOException {
+    byte[] buffer = new byte[32768];
+    int count;
+    while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+  }
+
+  private File uniqueDownloadFile(File directory, String name) {
+    File target = new File(directory, name);
+    if (!target.exists()) return target;
+    String base = name, extension = "";
+    int dot = name.lastIndexOf('.');
+    if (dot > 0) { base = name.substring(0, dot); extension = name.substring(dot); }
+    for (int suffix = 1; suffix < 10000; suffix++) {
+      target = new File(directory, base + " (" + suffix + ")" + extension);
+      if (!target.exists()) return target;
+    }
+    return new File(directory, System.currentTimeMillis() + "-" + name);
+  }
+
+  private void rememberDownload(Uri uri) {
+    Set<String> current = getPreferences(MODE_PRIVATE).getStringSet("download_uris", Collections.emptySet());
+    Set<String> updated = new LinkedHashSet<>(current);
+    updated.add(uri.toString());
+    getPreferences(MODE_PRIVATE).edit().putStringSet("download_uris", updated).apply();
+  }
+
   private void showDownloads() {
-    showInfo("Downloads", "This browser build does not yet include a download manager. No download list is being shown as if it were available.");
+    Set<String> stored = getPreferences(MODE_PRIVATE).getStringSet("download_uris", Collections.emptySet());
+    ArrayList<Uri> files = new ArrayList<>();
+    for (String value : stored) try { files.add(Uri.parse(value)); } catch (Exception ignored) { }
+    Collections.reverse(files);
+    if (files.isEmpty()) {
+      new AlertDialog.Builder(this).setTitle("Downloads").setMessage("No downloaded files yet.")
+        .setPositiveButton("OK", null).show();
+      return;
+    }
+    String[] labels = new String[files.size()];
+    for (int index = 0; index < files.size(); index++) labels[index] = downloadDisplayName(files.get(index));
+    new AlertDialog.Builder(this).setTitle("Downloads").setItems(labels, (dialog, which) -> openDownloadedFile(files.get(which)))
+      .setNegativeButton("Close", null).show();
+  }
+
+  private String downloadDisplayName(Uri uri) {
+    if ("file".equals(uri.getScheme())) return new File(uri.getPath()).getName();
+    try (Cursor cursor = getContentResolver().query(uri, new String[]{MediaStore.Downloads.DISPLAY_NAME}, null, null, null)) {
+      if (cursor != null && cursor.moveToFirst()) return cursor.getString(0);
+    } catch (Exception ignored) { }
+    return uri.getLastPathSegment() == null ? "Downloaded file" : uri.getLastPathSegment();
+  }
+
+  private void openDownloadedFile(Uri uri) {
+    String name = downloadDisplayName(uri);
+    String mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+      android.webkit.MimeTypeMap.getFileExtensionFromUrl(name));
+    try {
+      Intent view = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime == null ? "*/*" : mime)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+      startActivity(Intent.createChooser(view, "Open downloaded file"));
+    } catch (Exception error) {
+      Toast.makeText(this, "No app can open this file", Toast.LENGTH_LONG).show();
+    }
   }
 
   private void showSettings() {
