@@ -93,6 +93,8 @@ assert "Settings.ACTION_VPN_SETTINGS" in activity, "Kill Switch control must ope
 on_create = activity.split("@Override public void onCreate(Bundle state)", 1)[1].split("\n  private ", 1)[0]
 assert "findViewById(R.id.desktopVpnMap).setOnClickListener(v -> handleVpnPower())" in on_create and "private void handleVpnPower()" in activity, "VPN power artwork must connect or disconnect using the active profile"
 assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
+assert "if (!wideLayout) showReferenceMobileSplash();" in on_create and "mobile_reference_splash" in activity, "mobile launch must show the reference splash before the functional browser home"
+assert (ROOT / "app/src/main/res/drawable-nodpi/mobile_reference_splash.jpg").is_file(), "mobile reference splash image is missing"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
 assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
 assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].split("\n  private ", 1)[0], "navigating to a site must start Gecko on demand"
@@ -130,7 +132,7 @@ assert "scripts/verify_emulator_screen.py" in capture, "emulator screenshot flow
 assert "DevxyzBrowser-verified-installable" in workflow, "verification workflow should publish the verified APK with screenshots"
 assert "if: success()" in workflow, "publish an APK only after all build and emulator checks pass"
 assert 'cp "$APK" installable-apk/devxyzbrowser.apk' in workflow, "verified installable APK must be staged in the CI artifact"
-assert capture.count("screencap -p") == 2 and "set +e" in capture, "capture both form factors before running failure gates"
+assert capture.count("screencap -p") == 3 and "mobile-splash.png" in capture and "set +e" in capture, "capture mobile splash plus both form factors before running failure gates"
 assert 'REVIEW_DIR="visual-review"' in capture, "emulator diagnostics must use a stable workspace path"
 assert capture.count("System UI isn't responding") == 2 and capture.count("KEYCODE_DPAD_DOWN") == 2, "wait for boot-time System UI ANRs before capturing, without hiding browser ANRs"
 assert "wm size 1536x550" in capture, "wide screenshot viewport should match the reference browser window proportions"

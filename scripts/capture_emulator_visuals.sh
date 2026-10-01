@@ -38,6 +38,8 @@ adb shell wm size 720x1600
 adb shell wm density 320
 adb shell am force-stop "$PACKAGE"
 adb shell am start -n "$PACKAGE/.MainActivity"
+sleep 1
+adb exec-out screencap -p > "$REVIEW_DIR/mobile-splash.png" 2> "$REVIEW_DIR/mobile-splash-screencap.txt"
 sleep 20
 adb shell dumpsys window > "$REVIEW_DIR/phone-window.txt" 2>&1
 adb shell pidof "$PACKAGE" > "$REVIEW_DIR/phone-pid.txt" 2>&1

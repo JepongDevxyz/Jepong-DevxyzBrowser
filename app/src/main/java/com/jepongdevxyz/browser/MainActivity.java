@@ -351,6 +351,32 @@ public final class MainActivity extends AppCompatActivity {
       }
     });
     showHome();
+    if (!wideLayout) showReferenceMobileSplash();
+  }
+
+  private void showReferenceMobileSplash() {
+    FrameLayout content = findViewById(android.R.id.content);
+    FrameLayout splash = new FrameLayout(this);
+    splash.setBackgroundColor(android.graphics.Color.BLACK);
+    ImageView image = new ImageView(this);
+    image.setImageResource(R.drawable.mobile_reference_splash);
+    image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    splash.addView(image, new FrameLayout.LayoutParams(-1, -1));
+    content.addView(splash, new FrameLayout.LayoutParams(-1, -1));
+    WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), content);
+    controller.hide(WindowInsetsCompat.Type.systemBars());
+    controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+    splash.setClickable(true);
+    final boolean[] dismissed = {false};
+    Runnable dismiss = () -> {
+      if (dismissed[0]) return;
+      dismissed[0] = true;
+      if (splash.getParent() == content) content.removeView(splash);
+      controller.show(WindowInsetsCompat.Type.systemBars());
+      ViewCompat.requestApplyWindowInsets(content);
+    };
+    splash.setOnClickListener(v -> dismiss.run());
+    splash.postDelayed(dismiss, 2200);
   }
 
   private void showHome() {
