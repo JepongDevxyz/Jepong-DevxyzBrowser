@@ -185,7 +185,10 @@ public final class MainActivity extends AppCompatActivity {
       tabs.add(0, brandTab);
       addTabChip(brandTab);
     }
-    findViewById(R.id.tabletRail).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    LinearLayout tabletRail = findViewById(R.id.tabletRail);
+    tabletRail.setVisibility(wideLayout ? View.VISIBLE : View.GONE);
+    tabletRail.findViewById(R.id.tabletRailBrand).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
+    if (wideLayout) tabletRail.setPadding(dp(10), dp(21), dp(10), dp(10));
     findViewById(R.id.desktopPanels).setVisibility(wideLayout ? View.VISIBLE : View.GONE);
     findViewById(R.id.mobileNav).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
     findViewById(R.id.homeBrandLockup).setVisibility(wideLayout ? View.GONE : View.VISIBLE);
@@ -240,6 +243,7 @@ public final class MainActivity extends AppCompatActivity {
     quickStripParams.width = wideLayout ? ViewGroup.LayoutParams.MATCH_PARENT : ViewGroup.LayoutParams.WRAP_CONTENT;
     quickSiteStrip.setLayoutParams(quickStripParams);
     quickSiteStrip.setGravity(wideLayout ? Gravity.CENTER : Gravity.CENTER_VERTICAL);
+    quickSiteStrip.setTranslationX(wideLayout ? -dp(5) : 0);
     ((android.widget.HorizontalScrollView) findViewById(R.id.quickSites)).setFillViewport(wideLayout);
     for (int index = 0; index < quickSiteStrip.getChildCount(); index++) {
       View cell = quickSiteStrip.getChildAt(index);
@@ -842,7 +846,7 @@ public final class MainActivity extends AppCompatActivity {
     LinearLayout row = new LinearLayout(this);
     row.setGravity(Gravity.CENTER_VERTICAL);
     row.setOrientation(LinearLayout.HORIZONTAL);
-    LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, dp(48));
+    LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, dp(50));
     extensionRows.addView(row, rowLp);
 
     ImageView icon = new ImageView(this);

@@ -40,6 +40,8 @@ assert desktop_panels.attrib.get(ANDROID + "layout_width") == "574dp", "desktop 
 assert ids.get("desktopVpnPanel") is not None and ids["desktopVpnPanel"].attrib.get(ANDROID + "layout_width") == "284dp", "VPN panel width differs from reference"
 assert ids.get("desktopExtensionsPane") is not None and ids["desktopExtensionsPane"].attrib.get(ANDROID + "layout_width") == "278dp", "Extensions panel width differs from reference"
 assert ids["desktopExtensionRows"].attrib.get(ANDROID + "layout_height") == "wrap_content" and ANDROID + "layout_weight" not in ids["desktopExtensionRows"].attrib, "extension rows must size to their content like the reference"
+assert ids["desktopExtensionsPane"].attrib.get(ANDROID + "paddingStart") == "20dp" and ids["desktopExtensionsPane"].attrib.get(ANDROID + "paddingEnd") == "20dp", "extensions pane content inset differs from reference"
+assert ids["tabletRailBrand"] is not None and "tabletRail.findViewById(R.id.tabletRailBrand).setVisibility(wideLayout ? View.GONE" in activity, "wide navigation rail must start with Home instead of a brand row"
 assert ids["desktopExtensionsAction"].tag.endswith("LinearLayout"), "extension catalog action must use a custom reference-style chip, not a tinted Android button"
 assert ids["desktopExtensionsAction"].attrib.get(ANDROID + "background") == "@drawable/extension_action_bg", "extension action chip background differs from reference"
 assert any(node.attrib.get(ANDROID + "src") == "@drawable/ic_extension" for node in ids["desktopExtensionsAction"].iter()), "extension action chip needs the puzzle icon shown in the reference"

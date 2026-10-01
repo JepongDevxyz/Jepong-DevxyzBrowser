@@ -65,7 +65,7 @@
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
     <LinearLayout android:id="@+id/tabletRail" android:layout_width="176dp" android:layout_height="match_parent" android:orientation="vertical" android:padding="10dp" android:background="@color/panel" android:visibility="gone">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="6dp">
+        <LinearLayout android:id="@+id/tabletRailBrand" android:layout_width="match_parent" android:layout_height="48dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="6dp">
             <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/devxyz_brandmark" android:contentDescription="DevxyzBrowser logo" />
             <TextView android:id="@+id/railBrandTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="15sp" />
         </LinearLayout>
@@ -191,14 +191,14 @@
             <TextView android:id="@+id/vpnSecureCard" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="6dp" android:gravity="center_vertical" android:padding="8dp" android:text="◇  Import a VPN profile to connect" android:textColor="@color/muted" android:textSize="10sp" android:background="@drawable/toolbar_chip_bg" />
             <Button android:id="@+id/desktopVpnAction" android:layout_width="match_parent" android:layout_height="1dp" android:visibility="gone" android:importantForAccessibility="no" android:text="Set up VPN" />
         </LinearLayout>
-        <LinearLayout android:id="@+id/desktopExtensionsPane" android:layout_width="278dp" android:layout_height="match_parent" android:layout_marginStart="12dp" android:orientation="vertical" android:padding="14dp" android:background="@drawable/panel_bg">
+        <LinearLayout android:id="@+id/desktopExtensionsPane" android:layout_width="278dp" android:layout_height="match_parent" android:layout_marginStart="12dp" android:orientation="vertical" android:padding="14dp" android:paddingStart="20dp" android:paddingEnd="20dp" android:background="@drawable/panel_bg">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Extensions" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
                 <TextView android:id="@+id/extensionsClose" android:layout_width="36dp" android:layout_height="36dp" android:gravity="center" android:text="×" android:textColor="@color/muted" android:textSize="22sp" android:clickable="true" android:focusable="true" android:contentDescription="Close extensions" />
             </LinearLayout>
             <EditText android:id="@+id/extensionSearch" android:layout_width="match_parent" android:layout_height="38dp" android:layout_marginTop="2dp" android:layout_marginBottom="6dp" android:paddingHorizontal="12dp" android:singleLine="true" android:hint="⌕  Search extensions…" android:textColor="@color/text" android:textColorHint="@color/muted" android:textSize="12sp" android:background="@drawable/search_bg" />
             <LinearLayout android:id="@+id/desktopExtensionRows" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
-            <LinearLayout android:id="@+id/desktopExtensionsAction" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="8dp" android:paddingHorizontal="14dp" android:gravity="center" android:orientation="horizontal" android:background="@drawable/extension_action_bg" android:clickable="true" android:focusable="true" android:contentDescription="Browse more extensions">
+            <LinearLayout android:id="@+id/desktopExtensionsAction" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="22dp" android:paddingHorizontal="14dp" android:gravity="center" android:orientation="horizontal" android:background="@drawable/extension_action_bg" android:clickable="true" android:focusable="true" android:contentDescription="Browse more extensions">
                 <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_extension" app:tint="@color/purple2" android:contentDescription="" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:text="Browse more extensions" android:textColor="@color/purple2" android:textSize="14sp" />
             </LinearLayout>
