@@ -93,4 +93,20 @@ public final class VpnProfileStore {
         }
         return "OpenVPN profile";
     }
+
+    /** Returns "host:port" of the first remote line, or "" when unavailable. */
+    public static String remoteEndpoint(Context context) {
+        try {
+            String profile = read(context);
+            for (String line : profile.split("\\r?\\n")) {
+                String s = line.trim();
+                if (s.toLowerCase(java.util.Locale.ROOT).startsWith("remote ")) {
+                    String[] parts = s.substring(7).trim().split("\\s+");
+                    if (parts.length == 0 || parts[0].isEmpty()) return "";
+                    return parts.length > 1 ? parts[0] + ":" + parts[1] : parts[0];
+                }
+            }
+        } catch (Exception ignored) { }
+        return "";
+    }
 }

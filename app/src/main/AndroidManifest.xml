@@ -7,13 +7,21 @@
     <application android:theme="@style/Theme.DevxyzBrowser" android:label="DevxyzBrowser"
         android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="false" android:allowBackup="true">
-        <activity android:name=".MainActivity" android:screenOrientation="unspecified"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|uiMode"
-            android:exported="true">
+        <activity android:name=".SplashActivity" android:exported="true"
+            android:theme="@style/Theme.DevxyzBrowser.Splash"
+            android:screenOrientation="unspecified"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+        </activity>
+        <activity android:name=".WelcomeActivity" android:exported="false"
+            android:screenOrientation="unspecified"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|uiMode" />
+        <activity android:name=".MainActivity" android:screenOrientation="unspecified"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|uiMode"
+            android:exported="false">
         </activity>
         <service android:name=".vpn.DevxyzVpnService" android:exported="false"
             android:permission="android.permission.BIND_VPN_SERVICE"
