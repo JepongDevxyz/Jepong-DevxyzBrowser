@@ -95,6 +95,7 @@ assert "findViewById(R.id.desktopVpnMap).setOnClickListener(v -> handleVpnPower(
 assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
 assert "if (!wideLayout) showReferenceMobileSplash();" in on_create and "devxyz_splash_logo" in activity, "mobile launch must show the sharp native reference splash before the functional browser home"
 assert (ROOT / "app/src/main/res/drawable-nodpi/devxyz_splash_logo.png").is_file(), "high-resolution mobile splash logo is missing"
+assert (ROOT / "app/src/main/res/drawable-nodpi/reference_earth_horizon.png").is_file() and "R.drawable.reference_earth_horizon" in activity, "mobile splash must use the Earth horizon texture from the supplied reference"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
 assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
 assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].split("\n  private ", 1)[0], "navigating to a site must start Gecko on demand"

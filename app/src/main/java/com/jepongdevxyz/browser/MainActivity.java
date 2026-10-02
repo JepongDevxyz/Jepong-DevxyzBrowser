@@ -364,6 +364,11 @@ public final class MainActivity extends AppCompatActivity {
     ));
     splash.addView(new SplashBackdrop(this), new FrameLayout.LayoutParams(-1, -1));
 
+    ImageView earthHorizon = new ImageView(this);
+    earthHorizon.setImageResource(R.drawable.reference_earth_horizon);
+    earthHorizon.setScaleType(ImageView.ScaleType.FIT_XY);
+    splash.addView(earthHorizon, new FrameLayout.LayoutParams(-1, dp(180), Gravity.BOTTOM));
+
     ImageView logo = new ImageView(this);
     logo.setImageResource(R.drawable.devxyz_splash_logo);
     logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -408,8 +413,8 @@ public final class MainActivity extends AppCompatActivity {
       int height = splash.getHeight();
       int width = splash.getWidth();
       FrameLayout.LayoutParams logoParams = (FrameLayout.LayoutParams) logo.getLayoutParams();
-      logoParams.width = Math.min(dp(212), (int) (width * 0.56f));
-      logoParams.height = Math.min(dp(218), (int) (height * 0.285f));
+      logoParams.width = Math.min(dp(184), (int) (width * 0.51f));
+      logoParams.height = Math.min(dp(188), (int) (height * 0.235f));
       logoParams.topMargin = (int) (height * 0.225f);
       logo.setLayoutParams(logoParams);
 
