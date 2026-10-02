@@ -1,0 +1,10 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/bg" />
+        </shape>
+    </item>
+    <item android:gravity="center">
+        <bitmap android:src="@drawable/ic_fox" android:gravity="center" />
+    </item>
+</layer-list>

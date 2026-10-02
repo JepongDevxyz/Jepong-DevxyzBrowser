@@ -4,4 +4,10 @@
     <item name="android:navigationBarColor">@color/bg</item><item name="android:statusBarColor">@color/bg</item>
     <item name="colorPrimary">@color/purple</item>
 </style>
+<style name="Theme.DevxyzBrowser.Splash" parent="Theme.Material3.Dark.NoActionBar">
+    <item name="android:windowBackground">@drawable/splash_window</item>
+    <item name="android:windowLightStatusBar">false</item>
+    <item name="android:statusBarColor">@color/bg</item>
+    <item name="android:navigationBarColor">@color/bg</item>
+</style>
 </resources>

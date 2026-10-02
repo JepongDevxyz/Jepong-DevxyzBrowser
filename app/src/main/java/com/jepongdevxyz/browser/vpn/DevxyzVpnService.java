@@ -28,10 +28,14 @@ public final class DevxyzVpnService extends VpnService {
     private static final String CHANNEL = "devxyz_openvpn";
     private static final int NOTIFICATION_ID = 4107;
     private static volatile boolean connected;
+    /** When true, apps cannot bypass the tunnel and unexpected drops auto-reconnect. */
+    public static volatile boolean killSwitch;
 
     private Builder tunBuilder;
     private volatile boolean foreground;
     private volatile boolean nativeStarted;
+    private volatile boolean userStopped;
+    private volatile boolean destroyed;
 
     public static boolean isConnected() { return connected; }
 
@@ -40,6 +44,7 @@ public final class DevxyzVpnService extends VpnService {
         if (ACTION_DISCONNECT.equals(action)) {
             NativeOpenVpn.stop();
             connected = false;
+            userStopped = true;
             publish("DISCONNECTED", "Stopped by user", false);
             stopForeground(STOP_FOREGROUND_REMOVE);
             stopSelf();
@@ -49,6 +54,7 @@ public final class DevxyzVpnService extends VpnService {
             stopSelf(startId);
             return START_NOT_STICKY;
         }
+        userStopped = false;
 
         if (nativeStarted) {
             publish(connected ? "CONNECTED" : "CONNECTING", "OpenVPN client is already running.", false);
@@ -127,6 +133,16 @@ public final class DevxyzVpnService extends VpnService {
                 foreground = false;
             }
         }
+        if (killSwitch && !userStopped && !destroyed && (error || "DISCONNECTED".equals(state))) {
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                if (destroyed || userStopped || connected || !killSwitch) return;
+                try {
+                    if (!VpnProfileStore.hasProfile(this) || VpnProfileStore.requiresCredentials(this)) return;
+                    Intent retry = new Intent(this, DevxyzVpnService.class).setAction(ACTION_CONNECT);
+                    startService(retry);
+                } catch (Exception ignored) { }
+            }, 4000);
+        }
     }
 
     /** Called on OpenVPN's worker thread for every client event. */
@@ -146,6 +162,7 @@ public final class DevxyzVpnService extends VpnService {
 
     public synchronized boolean nativeTunNew() {
         tunBuilder = new Builder().setSession("DevxyzBrowser OpenVPN");
+        if (killSwitch) tunBuilder.allowBypass(false);
         return true;
     }
     public synchronized boolean nativeTunAddAddress(String address, int prefix) {
@@ -207,12 +224,14 @@ public final class DevxyzVpnService extends VpnService {
     @Override public void onRevoke() {
         NativeOpenVpn.stop();
         connected = false;
+        userStopped = true;
         publish("DISCONNECTED", "VPN permission revoked", false);
         stopSelf();
         super.onRevoke();
     }
 
     @Override public void onDestroy() {
+        destroyed = true;
         if (nativeStarted) NativeOpenVpn.stop();
         nativeStarted = false;
         connected = false;
