@@ -380,7 +380,7 @@ public final class MainActivity extends AppCompatActivity {
     brand.setSpan(new ForegroundColorSpan(0xFF7435F4), 6, brand.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     wordmark.setText(brand);
     wordmark.setTextColor(0xFFF6F5FF);
-    wordmark.setTextSize(29);
+    wordmark.setTextSize(32);
     wordmark.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
     wordmark.setGravity(Gravity.CENTER);
     splash.addView(wordmark, new FrameLayout.LayoutParams(-1, -2, Gravity.TOP));
@@ -388,21 +388,21 @@ public final class MainActivity extends AppCompatActivity {
     TextView subtitle = new TextView(this);
     subtitle.setText("Browse Freely. Securely. Your Way.");
     subtitle.setTextColor(0xFFB9B9D1);
-    subtitle.setTextSize(12);
+    subtitle.setTextSize(13);
     subtitle.setGravity(Gravity.CENTER);
     splash.addView(subtitle, new FrameLayout.LayoutParams(-1, -2, Gravity.TOP));
 
     ProgressBar loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
     loading.setMax(100);
-    loading.setProgress(48);
+    loading.setProgress(56);
     loading.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF7A32F4));
     loading.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF211A62));
-    splash.addView(loading, new FrameLayout.LayoutParams(dp(172), dp(6), Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+    splash.addView(loading, new FrameLayout.LayoutParams(dp(190), dp(6), Gravity.TOP | Gravity.CENTER_HORIZONTAL));
 
     TextView footer = new TextView(this);
     footer.setText("Built for a more open internet.");
     footer.setTextColor(0xFF9A9AB6);
-    footer.setTextSize(9);
+    footer.setTextSize(10);
     footer.setGravity(Gravity.CENTER);
     FrameLayout.LayoutParams footerParams = new FrameLayout.LayoutParams(-1, dp(22), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
     footerParams.bottomMargin = dp(9);
@@ -413,8 +413,8 @@ public final class MainActivity extends AppCompatActivity {
       int height = splash.getHeight();
       int width = splash.getWidth();
       FrameLayout.LayoutParams logoParams = (FrameLayout.LayoutParams) logo.getLayoutParams();
-      logoParams.width = Math.min(dp(184), (int) (width * 0.51f));
-      logoParams.height = Math.min(dp(188), (int) (height * 0.235f));
+      logoParams.width = Math.min(dp(164), (int) (width * 0.455f));
+      logoParams.height = Math.min(dp(176), (int) (height * 0.22f));
       logoParams.topMargin = (int) (height * 0.225f);
       logo.setLayoutParams(logoParams);
 

@@ -98,6 +98,7 @@ assert (ROOT / "app/src/main/res/drawable-nodpi/devxyz_splash_logo.png").is_file
 assert (ROOT / "app/src/main/res/drawable-nodpi/reference_earth_horizon.png").is_file() and "R.drawable.reference_earth_horizon" in activity, "mobile splash must use the Earth horizon texture from the supplied reference"
 backdrop_class = activity.split("private static final class SplashBackdrop", 1)[1].split("private void showHome()", 1)[0]
 assert "canvas.drawPath" not in backdrop_class and "dp(220), Gravity.BOTTOM" in activity, "remove the duplicate vector horizon and show the textured reference horizon at the bottom"
+assert "wordmark.setTextSize(32)" in activity and "subtitle.setTextSize(13)" in activity and "loading.setProgress(56)" in activity, "mobile splash typography and progress must match reference scale"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
 assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
 assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].split("\n  private ", 1)[0], "navigating to a site must start Gecko on demand"
