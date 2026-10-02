@@ -93,8 +93,8 @@ assert "Settings.ACTION_VPN_SETTINGS" in activity, "Kill Switch control must ope
 on_create = activity.split("@Override public void onCreate(Bundle state)", 1)[1].split("\n  private ", 1)[0]
 assert "findViewById(R.id.desktopVpnMap).setOnClickListener(v -> handleVpnPower())" in on_create and "private void handleVpnPower()" in activity, "VPN power artwork must connect or disconnect using the active profile"
 assert "GeckoRuntime.create(this)" not in on_create, "Gecko startup must not block the first home-screen frame"
-assert "if (!wideLayout) showReferenceMobileSplash();" in on_create and "mobile_reference_splash" in activity, "mobile launch must show the reference splash before the functional browser home"
-assert (ROOT / "app/src/main/res/drawable-nodpi/mobile_reference_splash.jpg").is_file(), "mobile reference splash image is missing"
+assert "if (!wideLayout) showReferenceMobileSplash();" in on_create and "devxyz_splash_logo" in activity, "mobile launch must show the sharp native reference splash before the functional browser home"
+assert (ROOT / "app/src/main/res/drawable-nodpi/devxyz_splash_logo.png").is_file(), "high-resolution mobile splash logo is missing"
 assert "session.open(runtime)" not in on_create, "browser sessions must be opened lazily after the home screen is ready"
 assert "attachSession(activeTab)" not in on_create, "do not attach a null Gecko session during home-screen creation"
 assert "ensureBrowserSession" in activity.split("private void browse(", 1)[1].split("\n  private ", 1)[0], "navigating to a site must start Gecko on demand"
