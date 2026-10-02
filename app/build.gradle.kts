@@ -1,5 +1,7 @@
 plugins { id("com.android.application") }
 
+val browserAbi = providers.gradleProperty("devxyz.abi").orElse("arm64-v8a").get()
+
 android {
     namespace = "com.jepongdevxyz.browser"
     compileSdk = 37
@@ -9,6 +11,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        ndk { abiFilters += browserAbi }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
