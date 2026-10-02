@@ -360,14 +360,73 @@ public final class MainActivity extends AppCompatActivity {
     FrameLayout splash = new FrameLayout(this);
     splash.setBackground(new GradientDrawable(
       GradientDrawable.Orientation.TOP_BOTTOM,
-      new int[] {0xFF050618, 0xFF06091E, 0xFF030617}
+      new int[] {0xFF030514, 0xFF070923, 0xFF030615}
     ));
-    ImageView image = new ImageView(this);
-    image.setImageResource(R.drawable.mobile_reference_splash);
-    image.setContentDescription("DevxyzBrowser mobile reference splash");
-    image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-    splash.addView(image, new FrameLayout.LayoutParams(-1, -1));
+    splash.addView(new SplashBackdrop(this), new FrameLayout.LayoutParams(-1, -1));
+
+    ImageView logo = new ImageView(this);
+    logo.setImageResource(R.drawable.devxyz_splash_logo);
+    logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    logo.setContentDescription("DevxyzBrowser fox and globe logo");
+    splash.addView(logo, new FrameLayout.LayoutParams(dp(200), dp(210), Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+
+    TextView wordmark = new TextView(this);
+    SpannableString brand = new SpannableString("DevxyzBrowser");
+    brand.setSpan(new ForegroundColorSpan(0xFF7435F4), 6, brand.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    wordmark.setText(brand);
+    wordmark.setTextColor(0xFFF6F5FF);
+    wordmark.setTextSize(29);
+    wordmark.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
+    wordmark.setGravity(Gravity.CENTER);
+    splash.addView(wordmark, new FrameLayout.LayoutParams(-1, -2, Gravity.TOP));
+
+    TextView subtitle = new TextView(this);
+    subtitle.setText("Browse Freely. Securely. Your Way.");
+    subtitle.setTextColor(0xFFB9B9D1);
+    subtitle.setTextSize(12);
+    subtitle.setGravity(Gravity.CENTER);
+    splash.addView(subtitle, new FrameLayout.LayoutParams(-1, -2, Gravity.TOP));
+
+    ProgressBar loading = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+    loading.setMax(100);
+    loading.setProgress(48);
+    loading.setProgressTintList(android.content.res.ColorStateList.valueOf(0xFF7A32F4));
+    loading.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF211A62));
+    splash.addView(loading, new FrameLayout.LayoutParams(dp(172), dp(6), Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+
+    TextView footer = new TextView(this);
+    footer.setText("Built for a more open internet.");
+    footer.setTextColor(0xFF9A9AB6);
+    footer.setTextSize(9);
+    footer.setGravity(Gravity.CENTER);
+    FrameLayout.LayoutParams footerParams = new FrameLayout.LayoutParams(-1, dp(22), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+    footerParams.bottomMargin = dp(9);
+    splash.addView(footer, footerParams);
+
+    splash.post(() -> {
+      if (splash.getParent() != content) return;
+      int height = splash.getHeight();
+      int width = splash.getWidth();
+      FrameLayout.LayoutParams logoParams = (FrameLayout.LayoutParams) logo.getLayoutParams();
+      logoParams.width = Math.min(dp(212), (int) (width * 0.56f));
+      logoParams.height = Math.min(dp(218), (int) (height * 0.285f));
+      logoParams.topMargin = (int) (height * 0.225f);
+      logo.setLayoutParams(logoParams);
+
+      FrameLayout.LayoutParams wordmarkParams = (FrameLayout.LayoutParams) wordmark.getLayoutParams();
+      wordmarkParams.topMargin = (int) (height * 0.535f);
+      wordmark.setLayoutParams(wordmarkParams);
+
+      FrameLayout.LayoutParams subtitleParams = (FrameLayout.LayoutParams) subtitle.getLayoutParams();
+      subtitleParams.topMargin = (int) (height * 0.592f);
+      subtitle.setLayoutParams(subtitleParams);
+
+      FrameLayout.LayoutParams loadingParams = (FrameLayout.LayoutParams) loading.getLayoutParams();
+      loadingParams.topMargin = (int) (height * 0.69f);
+      loading.setLayoutParams(loadingParams);
+    });
     content.addView(splash, new FrameLayout.LayoutParams(-1, -1));
+
     WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), content);
     controller.hide(WindowInsetsCompat.Type.systemBars());
     controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
@@ -382,6 +441,54 @@ public final class MainActivity extends AppCompatActivity {
     splash.setOnClickListener(v -> dismiss.run());
     long splashDuration = getIntent().getBooleanExtra("visual_test_splash", false) ? 30000L : 2200L;
     splash.postDelayed(dismiss, splashDuration);
+  }
+
+  private static final class SplashBackdrop extends View {
+    private final android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+    private final android.graphics.Path horizon = new android.graphics.Path();
+
+    SplashBackdrop(Context context) { super(context); }
+
+    @Override protected void onDraw(android.graphics.Canvas canvas) {
+      super.onDraw(canvas);
+      float width = getWidth();
+      float height = getHeight();
+
+      for (int i = 0; i < 34; i++) {
+        float x = ((i * 97) % 997) / 997f * width;
+        float y = ((i * 67 + 13) % 691) / 691f * height * 0.68f;
+        paint.setColor((i % 4 == 0) ? 0x558DA9FF : 0x337D8CDB);
+        paint.setStyle(android.graphics.Paint.Style.FILL);
+        canvas.drawCircle(x, y, i % 5 == 0 ? 1.4f : 0.8f, paint);
+      }
+
+      float horizonY = height * 0.775f;
+      horizon.reset();
+      horizon.moveTo(0, horizonY);
+      horizon.cubicTo(width * 0.24f, height * 0.695f, width * 0.75f, height * 0.695f, width, horizonY);
+      horizon.lineTo(width, height);
+      horizon.lineTo(0, height);
+      horizon.close();
+      paint.setStyle(android.graphics.Paint.Style.FILL);
+      paint.setShader(new android.graphics.LinearGradient(0, horizonY, 0, height,
+        new int[] {0xFF0B1B55, 0xFF050A20, 0xFF02040E}, null, android.graphics.Shader.TileMode.CLAMP));
+      canvas.drawPath(horizon, paint);
+      paint.setShader(null);
+
+      android.graphics.Path rim = new android.graphics.Path();
+      rim.moveTo(0, horizonY);
+      rim.cubicTo(width * 0.24f, height * 0.695f, width * 0.75f, height * 0.695f, width, horizonY);
+      paint.setStyle(android.graphics.Paint.Style.STROKE);
+      paint.setStrokeWidth(getResources().getDisplayMetrics().density * 7f);
+      paint.setColor(0x557433F5);
+      canvas.drawPath(rim, paint);
+      paint.setStrokeWidth(getResources().getDisplayMetrics().density * 1.6f);
+      paint.setShader(new android.graphics.LinearGradient(0, 0, width, 0,
+        new int[] {0xFF1E4DFF, 0xFF7C2FFF, 0xFF315BFF}, null, android.graphics.Shader.TileMode.CLAMP));
+      canvas.drawPath(rim, paint);
+      paint.setShader(null);
+      paint.setStyle(android.graphics.Paint.Style.FILL);
+    }
   }
 
   private void showHome() {
