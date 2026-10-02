@@ -162,7 +162,6 @@ public final class DevxyzVpnService extends VpnService {
 
     public synchronized boolean nativeTunNew() {
         tunBuilder = new Builder().setSession("DevxyzBrowser OpenVPN");
-        if (killSwitch) tunBuilder.allowBypass(false);
         return true;
     }
     public synchronized boolean nativeTunAddAddress(String address, int prefix) {

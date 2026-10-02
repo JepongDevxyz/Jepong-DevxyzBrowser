@@ -167,7 +167,9 @@ public final class MainActivity extends AppCompatActivity {
     if (runtime == null) {
       GeckoRuntimeSettings.Builder rsb = new GeckoRuntimeSettings.Builder();
       if (prefs.getBoolean("block_trackers", false)) {
-        rsb.enhancedTrackingProtectionLevel(GeckoRuntimeSettings.EnhancedTrackingProtectionLevel.STRICT);
+        rsb.contentBlocking(new ContentBlocking.Settings.Builder()
+            .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
+            .build());
       }
       runtime = GeckoRuntime.create(this, rsb.build());
     }
@@ -715,6 +717,11 @@ public final class MainActivity extends AppCompatActivity {
     attachSession(tab);
     addTabChip(tab);
     selectTab(tab);
+  }
+
+  private void newTab(String url) {
+    newTab();
+    load(url);
   }
 
   private void attachSession(BrowserTab tab) {
