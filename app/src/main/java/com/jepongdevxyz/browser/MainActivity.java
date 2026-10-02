@@ -367,7 +367,7 @@ public final class MainActivity extends AppCompatActivity {
     ImageView earthHorizon = new ImageView(this);
     earthHorizon.setImageResource(R.drawable.reference_earth_horizon);
     earthHorizon.setScaleType(ImageView.ScaleType.FIT_XY);
-    splash.addView(earthHorizon, new FrameLayout.LayoutParams(-1, dp(180), Gravity.BOTTOM));
+    splash.addView(earthHorizon, new FrameLayout.LayoutParams(-1, dp(220), Gravity.BOTTOM));
 
     ImageView logo = new ImageView(this);
     logo.setImageResource(R.drawable.devxyz_splash_logo);
@@ -450,13 +450,11 @@ public final class MainActivity extends AppCompatActivity {
 
   private static final class SplashBackdrop extends View {
     private final android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
-    private final android.graphics.Path horizon = new android.graphics.Path();
 
     SplashBackdrop(Context context) { super(context); }
 
     @Override protected void onDraw(android.graphics.Canvas canvas) {
       super.onDraw(canvas);
-      float width = getWidth();
       float height = getHeight();
 
       for (int i = 0; i < 34; i++) {
@@ -467,31 +465,6 @@ public final class MainActivity extends AppCompatActivity {
         canvas.drawCircle(x, y, i % 5 == 0 ? 1.4f : 0.8f, paint);
       }
 
-      float horizonY = height * 0.775f;
-      horizon.reset();
-      horizon.moveTo(0, horizonY);
-      horizon.cubicTo(width * 0.24f, height * 0.695f, width * 0.75f, height * 0.695f, width, horizonY);
-      horizon.lineTo(width, height);
-      horizon.lineTo(0, height);
-      horizon.close();
-      paint.setStyle(android.graphics.Paint.Style.FILL);
-      paint.setShader(new android.graphics.LinearGradient(0, horizonY, 0, height,
-        new int[] {0xFF0B1B55, 0xFF050A20, 0xFF02040E}, null, android.graphics.Shader.TileMode.CLAMP));
-      canvas.drawPath(horizon, paint);
-      paint.setShader(null);
-
-      android.graphics.Path rim = new android.graphics.Path();
-      rim.moveTo(0, horizonY);
-      rim.cubicTo(width * 0.24f, height * 0.695f, width * 0.75f, height * 0.695f, width, horizonY);
-      paint.setStyle(android.graphics.Paint.Style.STROKE);
-      paint.setStrokeWidth(getResources().getDisplayMetrics().density * 7f);
-      paint.setColor(0x557433F5);
-      canvas.drawPath(rim, paint);
-      paint.setStrokeWidth(getResources().getDisplayMetrics().density * 1.6f);
-      paint.setShader(new android.graphics.LinearGradient(0, 0, width, 0,
-        new int[] {0xFF1E4DFF, 0xFF7C2FFF, 0xFF315BFF}, null, android.graphics.Shader.TileMode.CLAMP));
-      canvas.drawPath(rim, paint);
-      paint.setShader(null);
       paint.setStyle(android.graphics.Paint.Style.FILL);
     }
   }
