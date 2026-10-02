@@ -362,7 +362,7 @@ public final class MainActivity extends AppCompatActivity {
     ImageView image = new ImageView(this);
     image.setImageResource(R.drawable.mobile_reference_splash);
     image.setContentDescription("DevxyzBrowser mobile reference splash");
-    image.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    image.setScaleType(ImageView.ScaleType.CENTER_CROP);
     splash.addView(image, new FrameLayout.LayoutParams(-1, -1));
     content.addView(splash, new FrameLayout.LayoutParams(-1, -1));
     WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), content);
