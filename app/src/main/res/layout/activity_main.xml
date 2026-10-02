@@ -51,15 +51,21 @@
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
         <org.mozilla.geckoview.GeckoView android:id="@+id/gecko" android:layout_width="match_parent"
             android:layout_height="match_parent" />
+        <FrameLayout android:id="@+id/startPageWrap" android:layout_width="match_parent" android:layout_height="match_parent">
+            <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+                android:src="@drawable/bg_home_mountains" android:scaleType="centerCrop"
+                android:contentDescription="@null" />
         <ScrollView android:id="@+id/startPage" android:layout_width="match_parent"
-            android:layout_height="match_parent" android:fillViewport="true" android:background="@drawable/home_backdrop">
+            android:layout_height="match_parent" android:fillViewport="true">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:gravity="center_horizontal"
                 android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingTop="24dp" android:paddingBottom="24dp">
                 <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:gravity="center" android:orientation="horizontal">
                     <ImageView android:layout_width="28dp" android:layout_height="28dp"
-                        android:src="@drawable/devxyz_launcher_foreground" android:contentDescription="DevxyzBrowser logo" />
+                        android:src="@drawable/ic_fox" android:background="@drawable/rounded_28"
+                        android:clipToOutline="true" android:scaleType="centerCrop"
+                        android:contentDescription="DevxyzBrowser logo" />
                     <TextView android:id="@+id/brandTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:text="DevxyzBrowser" android:textColor="@color/text" android:textStyle="bold" android:textSize="18sp" />
                 </LinearLayout>
@@ -76,29 +82,29 @@
                     android:background="@drawable/search_bg" />
                 <HorizontalScrollView android:id="@+id/quickSites" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="20dp" android:scrollbars="none" android:overScrollMode="never">
-                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <LinearLayout android:id="@+id/tileRow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteYoutube" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="▶" android:textColor="@color/text" android:textSize="24sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageView android:id="@+id/siteYoutube" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_brand_youtube" android:background="@drawable/shortcut_bg" android:padding="13dp" android:clickable="true" android:focusable="true" android:contentDescription="YouTube" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="YouTube" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteFacebook" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="f" android:textColor="@color/text" android:textSize="25sp" android:textStyle="bold" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageView android:id="@+id/siteFacebook" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_brand_facebook" android:background="@drawable/shortcut_bg" android:padding="13dp" android:clickable="true" android:focusable="true" android:contentDescription="Facebook" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Facebook" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteGithub" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="⌘" android:textColor="@color/text" android:textSize="23sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageView android:id="@+id/siteGithub" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_brand_github" android:background="@drawable/shortcut_bg" android:padding="13dp" android:clickable="true" android:focusable="true" android:contentDescription="GitHub" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="GitHub" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/siteReddit" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="●" android:textColor="@color/orange" android:textSize="23sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageView android:id="@+id/siteReddit" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_brand_reddit" android:background="@drawable/shortcut_bg" android:padding="13dp" android:clickable="true" android:focusable="true" android:contentDescription="Reddit" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Reddit" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                        <TextView android:id="@+id/siteX" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="X" android:textColor="@color/text" android:textSize="22sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                        <ImageView android:id="@+id/siteX" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_brand_x" android:background="@drawable/shortcut_bg" android:padding="15dp" android:clickable="true" android:focusable="true" android:contentDescription="X" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="X" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                         <LinearLayout android:layout_width="56dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
-                            <TextView android:id="@+id/addSite" android:layout_width="50dp" android:layout_height="50dp" android:gravity="center" android:text="+" android:textColor="@color/purple2" android:textSize="26sp" android:background="@drawable/shortcut_bg" android:clickable="true" android:focusable="true" />
+                            <ImageView android:id="@+id/addSite" android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_plus" android:background="@drawable/shortcut_bg" android:padding="15dp" android:clickable="true" android:focusable="true" android:contentDescription="Add site" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Add site" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                     </LinearLayout>
@@ -124,6 +130,7 @@
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>
+        </FrameLayout>
     </FrameLayout>
 
     <!-- Phone navigation; tablet/desktop rail becomes visible in layout-sw600dp -->
