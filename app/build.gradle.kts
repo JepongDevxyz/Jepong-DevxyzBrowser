@@ -15,12 +15,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { buildConfig = true }
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
-            isUniversalApk = false
+    // Slim build: package arm64 native libs only (Honor 400 is arm64).
+    // Drops the other ABIs' .so files (~316MB) so the APK installs cleanly.
+    defaultConfig {
+        ndk {
+            abiFilters += "arm64-v8a"
         }
     }
 }
