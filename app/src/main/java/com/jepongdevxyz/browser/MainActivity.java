@@ -358,11 +358,14 @@ public final class MainActivity extends AppCompatActivity {
   private void showReferenceMobileSplash() {
     FrameLayout content = findViewById(android.R.id.content);
     FrameLayout splash = new FrameLayout(this);
-    splash.setBackgroundColor(android.graphics.Color.BLACK);
+    splash.setBackground(new GradientDrawable(
+      GradientDrawable.Orientation.TOP_BOTTOM,
+      new int[] {0xFF050618, 0xFF06091E, 0xFF030617}
+    ));
     ImageView image = new ImageView(this);
     image.setImageResource(R.drawable.mobile_reference_splash);
     image.setContentDescription("DevxyzBrowser mobile reference splash");
-    image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    image.setScaleType(ImageView.ScaleType.FIT_CENTER);
     splash.addView(image, new FrameLayout.LayoutParams(-1, -1));
     content.addView(splash, new FrameLayout.LayoutParams(-1, -1));
     WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), content);
