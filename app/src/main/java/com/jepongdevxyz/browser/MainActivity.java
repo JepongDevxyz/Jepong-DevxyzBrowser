@@ -439,7 +439,7 @@ public final class MainActivity extends AppCompatActivity {
       controller.show(WindowInsetsCompat.Type.systemBars());
     };
     splash.setOnClickListener(v -> dismiss.run());
-    long splashDuration = getIntent().getBooleanExtra("visual_test_splash", false) ? 30000L : 2200L;
+    long splashDuration = getIntent().getBooleanExtra("visual_test_splash", false) ? 120000L : 2200L;
     splash.postDelayed(dismiss, splashDuration);
   }
 
