@@ -455,6 +455,7 @@ public final class MainActivity extends AppCompatActivity {
 
     @Override protected void onDraw(android.graphics.Canvas canvas) {
       super.onDraw(canvas);
+      float width = getWidth();
       float height = getHeight();
 
       for (int i = 0; i < 34; i++) {
