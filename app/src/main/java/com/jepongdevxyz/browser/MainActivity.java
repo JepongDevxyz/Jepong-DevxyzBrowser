@@ -98,14 +98,20 @@ public final class MainActivity extends AppCompatActivity {
   private static final class RecExt {
     final String name, desc, slug;
     final int icon;
+    final boolean searchOnly;
     RecExt(String name, String desc, String slug, int icon) {
+      this(name, desc, slug, icon, false);
+    }
+    RecExt(String name, String desc, String slug, int icon, boolean searchOnly) {
       this.name = name; this.desc = desc; this.slug = slug; this.icon = icon;
+      this.searchOnly = searchOnly;
     }
   }
 
   private static final RecExt[] RECOMMENDED = {
     new RecExt("uBlock Origin", "Block ads and trackers", "ublock-origin", R.drawable.ic_ext_ublock),
     new RecExt("Dark Reader", "Dark mode for all websites", "darkreader", R.drawable.ic_ext_darkreader),
+    new RecExt("Grammarly", "Write better everywhere", "grammarly", R.drawable.ic_ext_grammarly, true),
     new RecExt("SponsorBlock", "Skip sponsored content", "sponsorblock", R.drawable.ic_ext_sponsorblock),
     new RecExt("React Developer Tools", "Debug React apps", "react-devtools", R.drawable.ic_ext_react),
   };
@@ -421,8 +427,35 @@ public final class MainActivity extends AppCompatActivity {
         renderExtensionLists();
       }
     });
+    extSearch.setOnTouchListener((v, event) -> {
+      if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+        android.graphics.drawable.Drawable[] ds = extSearch.getCompoundDrawablesRelative();
+        if (ds[2] != null) {
+          int x = (int) event.getX();
+          int w = extSearch.getWidth() - extSearch.getPaddingEnd() - ds[2].getIntrinsicWidth();
+          if (x >= w) {
+            showExtSortMenu();
+            return true;
+          }
+        }
+      }
+      return false;
+    });
     root.findViewById(R.id.ext_close).setOnClickListener(v -> togglePanel(R.id.ext_panel_root));
     root.findViewById(R.id.ext_browse_more).setOnClickListener(v -> newTab("https://addons.mozilla.org/en-US/firefox/"));
+  }
+
+  private void showExtSortMenu() {
+    android.widget.PopupMenu menu = new android.widget.PopupMenu(this, extSearch);
+    boolean az = prefs.getBoolean("ext_sort_az", false);
+    menu.getMenu().add(0, 1, 0, (az ? "✓ " : "") + "Default order");
+    menu.getMenu().add(0, 2, 1, (!az ? "✓ " : "") + "Name A–Z");
+    menu.setOnMenuItemClickListener(item -> {
+      prefs.edit().putBoolean("ext_sort_az", item.getItemId() == 2).apply();
+      renderExtensionLists();
+      return true;
+    });
+    menu.show();
   }
 
   private void refreshExtensionLists() {
@@ -453,8 +486,12 @@ public final class MainActivity extends AppCompatActivity {
       anyInstalled = true;
       extInstalledList.addView(installedExtRow(ext, name));
     }
-    if (!anyInstalled) extInstalledList.addView(emptyExtRow("No extensions installed yet."));
-    for (RecExt rec : RECOMMENDED) {
+    if (!anyInstalled && !f.isEmpty()) extInstalledList.addView(emptyExtRow("No extensions match your search."));
+    java.util.List<RecExt> recs = new java.util.ArrayList<>(java.util.Arrays.asList(RECOMMENDED));
+    if (prefs.getBoolean("ext_sort_az", false)) {
+      java.util.Collections.sort(recs, (a, b) -> a.name.compareToIgnoreCase(b.name));
+    }
+    for (RecExt rec : recs) {
       if (!f.isEmpty() && !rec.name.toLowerCase(Locale.ROOT).contains(f)) continue;
       extRecommendedList.addView(recommendedExtRow(rec, recInstalled.contains(rec.slug)));
     }
@@ -513,8 +550,24 @@ public final class MainActivity extends AppCompatActivity {
   private View recommendedExtRow(RecExt rec, boolean installed) {
     LinearLayout row = extRowBase(rec.icon, rec.name, rec.desc);
     SwitchMaterial toggle = new SwitchMaterial(this);
-    toggle.setChecked(installed);
+    toggle.setChecked(installed && !rec.searchOnly);
     toggle.setContentDescription(rec.name);
+    if (rec.searchOnly) {
+      android.view.View.OnClickListener openSearch = v -> {
+        newTab("https://addons.mozilla.org/en-US/firefox/search/?q=" + rec.slug);
+        Toast.makeText(this, "Find " + rec.name + " on addons.mozilla.org", Toast.LENGTH_LONG).show();
+      };
+      toggle.setOnCheckedChangeListener((button, checked) -> {
+        if (checked) {
+          openSearch.onClick(button);
+          button.setChecked(false);
+        }
+      });
+      row.setClickable(true);
+      row.setFocusable(true);
+      row.setOnClickListener(openSearch);
+      return row;
+    }
     toggle.setOnCheckedChangeListener((button, checked) -> {
       if (checked == installed) return;
       if (checked) installRecommended(rec);

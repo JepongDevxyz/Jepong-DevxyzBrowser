@@ -21,17 +21,13 @@
         android:textColorHint="@color/muted" android:singleLine="true"
         android:imeOptions="actionSearch" android:inputType="text"
         android:paddingStart="14dp" android:paddingEnd="14dp"
-        android:drawableStart="@drawable/ic_tb_search" android:drawablePadding="10dp" />
+        android:drawableStart="@drawable/ic_tb_search" android:drawablePadding="10dp"
+        android:drawableEnd="@drawable/ic_filter" android:drawableTint="@color/muted" />
 
-    <TextView android:id="@+id/ext_installed_label" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="16dp" android:text="Installed"
-        android:textColor="@color/muted" android:textSize="12sp" android:textStyle="bold" />
     <LinearLayout android:id="@+id/ext_installed_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:orientation="vertical" />
 
-    <TextView android:id="@+id/ext_recommended_label" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="14dp" android:text="Recommended"
-        android:textColor="@color/muted" android:textSize="12sp" android:textStyle="bold" />
     <LinearLayout android:id="@+id/ext_recommended_list" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" />
 
