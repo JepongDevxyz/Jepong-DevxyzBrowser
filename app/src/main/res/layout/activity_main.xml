@@ -3,54 +3,26 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical" android:background="@color/bg">
 
-    <!-- Browser tab strip -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="42dp"
-        android:gravity="center_vertical" android:orientation="horizontal"
-        android:paddingStart="8dp" android:paddingEnd="8dp" android:background="@color/panel">
-        <HorizontalScrollView android:id="@+id/tabScroller" android:layout_width="0dp"
-            android:layout_height="match_parent" android:layout_weight="1" android:fillViewport="false"
-            android:scrollbars="none">
-            <LinearLayout android:id="@+id/tabStrip" android:layout_width="wrap_content"
-                android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal" />
-        </HorizontalScrollView>
-        <TextView android:id="@+id/newTab" android:layout_width="38dp" android:layout_height="match_parent"
-            android:gravity="center" android:text="+" android:textSize="25sp" android:textColor="@color/text"
-            android:contentDescription="New tab" android:clickable="true" android:focusable="true" />
-        <ImageButton android:id="@+id/menu" android:layout_width="40dp" android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_more" app:tint="@color/text"
-            android:background="@android:color/transparent" android:contentDescription="Browser menu" />
-    </LinearLayout>
-
-    <!-- Navigation and address controls -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:orientation="horizontal"
-        android:gravity="center_vertical" android:paddingStart="6dp" android:paddingEnd="8dp"
+    <!-- Chrome-style top toolbar: omnibox + tab count + menu -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingStart="12dp" android:paddingEnd="4dp"
         android:background="@color/panel">
-        <ImageButton android:id="@+id/back" android:layout_width="36dp" android:layout_height="42dp"
-            android:src="@drawable/ic_arrow_back" app:tint="@color/muted"
-            android:contentDescription="Back" android:background="@android:color/transparent" />
-        <ImageButton android:id="@+id/forward" android:layout_width="36dp" android:layout_height="42dp"
-            android:src="@drawable/ic_tb_forward" app:tint="@color/muted"
-            android:contentDescription="Forward" android:background="@android:color/transparent" />
-        <ImageButton android:id="@+id/refresh" android:layout_width="36dp" android:layout_height="42dp"
-            android:src="@android:drawable/ic_popup_sync" app:tint="@color/muted"
-            android:contentDescription="Reload" android:background="@android:color/transparent" />
-        <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="40dp"
-            android:layout_weight="1" android:paddingHorizontal="13dp" android:singleLine="true"
+        <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="42dp"
+            android:layout_weight="1" android:paddingHorizontal="14dp" android:singleLine="true"
             android:imeOptions="actionGo" android:inputType="textUri" android:selectAllOnFocus="true"
             android:hint="Search or enter address" android:textColor="@color/text"
             android:textColorHint="@color/muted" android:background="@drawable/search_bg"
             android:drawableStart="@drawable/ic_tb_search" android:drawablePadding="10dp"
             android:drawableTint="@color/muted" />
-        <TextView android:id="@+id/vpn" android:layout_width="wrap_content" android:layout_height="40dp"
-            android:layout_marginStart="6dp" android:gravity="center" android:paddingStart="12dp" android:paddingEnd="12dp"
-            android:text="VPN" android:textSize="11sp" android:textStyle="bold"
-            android:textColor="@color/purple2" android:background="@drawable/toolbar_chip_bg"
-            android:drawableStart="@drawable/ic_feat_shield" android:drawablePadding="6dp"
-            android:drawableTint="@color/purple2"
-            android:contentDescription="Open VPN" android:clickable="true" android:focusable="true" />
-        <ImageButton android:id="@+id/extensions" android:layout_width="36dp" android:layout_height="40dp"
-            android:src="@drawable/ic_extension_puzzle" app:tint="@color/purple2"
-            android:contentDescription="Extensions" android:background="@android:color/transparent" />
+        <TextView android:id="@+id/tabCount" android:layout_width="42dp" android:layout_height="42dp"
+            android:layout_marginStart="4dp" android:gravity="center"
+            android:text="1" android:textSize="13sp" android:textStyle="bold" android:textColor="@color/text"
+            android:background="@drawable/toolbar_chip_bg"
+            android:contentDescription="Tabs" android:clickable="true" android:focusable="true" />
+        <ImageButton android:id="@+id/menu" android:layout_width="44dp" android:layout_height="44dp"
+            android:src="@drawable/ic_more_vert" app:tint="@color/text"
+            android:background="@android:color/transparent" android:contentDescription="Browser menu" />
     </LinearLayout>
     <ProgressBar android:id="@+id/pageProgress" style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent" android:layout_height="2dp" android:max="100"
@@ -69,8 +41,10 @@
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:gravity="center_horizontal"
                 android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingTop="24dp" android:paddingBottom="24dp">
+                <ImageView android:id="@+id/ntpLogo" android:layout_width="110dp" android:layout_height="110dp"
+                    android:layout_marginTop="30dp" android:contentDescription="DevxyzBrowser logo" />
                 <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:layout_marginTop="22dp" android:orientation="horizontal" android:gravity="center">
+                    android:layout_marginTop="14dp" android:orientation="horizontal" android:gravity="center">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:text="Devxyz" android:textColor="@color/text"
                         android:textStyle="bold" android:textSize="31sp" />
@@ -123,12 +97,4 @@
     </FrameLayout>
 
     <!-- Phone navigation; tablet/desktop rail becomes visible in layout-sw600dp -->
-    <LinearLayout android:id="@+id/mobileNav" android:layout_width="match_parent" android:layout_height="62dp"
-        android:gravity="center" android:orientation="horizontal" android:background="@color/panel">
-        <TextView android:id="@+id/home" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Home" android:textColor="@color/purple2" android:textSize="10sp" android:drawableTop="@drawable/ic_nav_home" android:drawablePadding="4dp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/bookmarks" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Saved" android:textColor="@color/muted" android:textSize="10sp" android:drawableTop="@drawable/ic_nav_bookmark" android:drawablePadding="4dp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/history" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="History" android:textColor="@color/muted" android:textSize="10sp" android:drawableTop="@drawable/ic_nav_history" android:drawablePadding="4dp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/downloads" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Downloads" android:textColor="@color/muted" android:textSize="10sp" android:drawableTop="@drawable/ic_nav_download" android:drawablePadding="4dp" android:clickable="true" android:focusable="true" />
-        <TextView android:id="@+id/settings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Settings" android:textColor="@color/muted" android:textSize="10sp" android:drawableTop="@drawable/ic_nav_gear" android:drawablePadding="4dp" android:clickable="true" android:focusable="true" />
-    </LinearLayout>
 </LinearLayout>
