@@ -164,7 +164,18 @@ public final class MainActivity extends AppCompatActivity {
     });
     if (runtime == null) {
       GeckoRuntimeSettings.Builder rsb = new GeckoRuntimeSettings.Builder();
-      if (prefs.getBoolean("block_trackers", false)) {
+      // Firefox-style Enhanced Tracking Protection: 0=Off, 1=Standard (default), 2=Strict.
+      // Migrates the legacy block_trackers boolean (true -> Strict).
+      int etp = prefs.getInt("etp_level", -1);
+      if (etp < 0) {
+        etp = prefs.getBoolean("block_trackers", false) ? 2 : 1;
+        prefs.edit().putInt("etp_level", etp).apply();
+      }
+      if (etp == 1) {
+        rsb.contentBlocking(new ContentBlocking.Settings.Builder()
+            .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
+            .build());
+      } else if (etp == 2) {
         rsb.contentBlocking(new ContentBlocking.Settings.Builder()
             .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
             .build());
@@ -187,6 +198,20 @@ public final class MainActivity extends AppCompatActivity {
     addTabChip(activeTab);
     attachSession(activeTab);
     selectTab(activeTab);
+    // Firefox-style: restore tabs from the previous session (default ON).
+    if (prefs.getBoolean("restore_tabs", true)) {
+      String saved = prefs.getString("saved_tabs", "");
+      if (!saved.isEmpty()) {
+        String[] urls = saved.split("\n");
+        if (urls.length > 0 && !urls[0].isEmpty()) {
+          newTab(); load(urls[0]);
+          for (int i = 1; i < urls.length; i++) {
+            if (!urls[i].isEmpty()) { newTab(); load(urls[i]); }
+          }
+          if (tabs.size() > 1) selectTab(tabs.get(0));
+        }
+      }
+    }
     IntentFilter vpnFilter = new IntentFilter(DevxyzVpnService.ACTION_STATE);
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
@@ -333,14 +358,14 @@ public final class MainActivity extends AppCompatActivity {
     root.findViewById(R.id.vpn_gear).setOnClickListener(importProfile);
     swAuto.setChecked(prefs.getBoolean("auto_connect", false));
     swKill.setChecked(prefs.getBoolean("kill_switch", false));
-    swTrack.setChecked(prefs.getBoolean("block_trackers", false));
+    swTrack.setChecked(prefs.getInt("etp_level", 1) == 2);
     swAuto.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("auto_connect", c).apply());
     swKill.setOnCheckedChangeListener((b, c) -> {
       prefs.edit().putBoolean("kill_switch", c).apply();
       DevxyzVpnService.killSwitch = c;
     });
     swTrack.setOnCheckedChangeListener((b, c) -> {
-      prefs.edit().putBoolean("block_trackers", c).apply();
+      prefs.edit().putInt("etp_level", c ? 2 : 1).apply();
       Toast.makeText(this, c ? "Tracker blocking turns on after you restart the app"
         : "Tracker blocking turns off after you restart the app", Toast.LENGTH_LONG).show();
     });
@@ -755,7 +780,12 @@ public final class MainActivity extends AppCompatActivity {
       activeTab.url = "";
       updateTabLabel(activeTab);
     }
-    startPage.setVisibility(View.VISIBLE);
+    if ("Blank page".equals(prefs.getString("homepage", "Devxyz Home"))) {
+      startPage.setVisibility(View.GONE);
+      session.loadUri("about:blank");
+    } else {
+      startPage.setVisibility(View.VISIBLE);
+    }
     address.setText("");
     progress.setVisibility(View.GONE);
     progress.setProgress(0);
@@ -784,7 +814,7 @@ public final class MainActivity extends AppCompatActivity {
           address.setText(url); progress.setVisibility(View.VISIBLE); progress.setProgress(5);
         }
         updateTabLabel(tab);
-        if (!historyItems.contains(url)) historyItems.add(0, url);
+        if (prefs.getBoolean("remember_history", true) && !historyItems.contains(url)) historyItems.add(0, url);
       }
       @Override public void onPageStop(GeckoSession s, boolean ok) {
         if (tab == activeTab) {
@@ -915,10 +945,79 @@ public final class MainActivity extends AppCompatActivity {
     showInfo("Downloads", "This browser build does not yet include a download manager. No download list is being shown as if it were available.");
   }
 
+  private BottomSheetDialog settingsDialog;
+
   private void showSettings() {
-    String vpn = DevxyzVpnService.isConnected() ? "Connected" : "Disconnected";
-    showInfo("Settings", "DevxyzBrowser • GeckoView 156\nVPN: " + vpn +
-      "\nExtensions are managed from the toolbar. Site data and app preferences are stored on this device.");
+    if (isDesktop) {
+      showInfo("Settings", "DevxyzBrowser • GeckoView 156\nFirefox-compatible settings are available on the mobile layout.");
+      return;
+    }
+    if (settingsDialog == null) {
+      View root = getLayoutInflater().inflate(R.layout.panel_settings, null);
+      settingsDialog = makeSheet(root);
+      initSettingsPanel(root);
+    } else {
+      refreshSettingsPanel();
+    }
+    settingsDialog.show();
+  }
+
+  private void initSettingsPanel(View root) {
+    root.findViewById(R.id.settings_close).setOnClickListener(v -> settingsDialog.dismiss());
+    com.google.android.material.switchmaterial.SwitchMaterial swRestore = root.findViewById(R.id.sw_restore_tabs);
+    com.google.android.material.switchmaterial.SwitchMaterial swHist = root.findViewById(R.id.sw_remember_history);
+    com.google.android.material.switchmaterial.SwitchMaterial swClear = root.findViewById(R.id.sw_clear_on_quit);
+    swRestore.setChecked(prefs.getBoolean("restore_tabs", true));
+    swHist.setChecked(prefs.getBoolean("remember_history", true));
+    swClear.setChecked(prefs.getBoolean("clear_on_quit", false));
+    swRestore.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("restore_tabs", c).apply());
+    swHist.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("remember_history", c).apply());
+    swClear.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("clear_on_quit", c).apply());
+    root.findViewById(R.id.set_search_engine_row).setOnClickListener(v -> pickOption(
+        "Default search engine",
+        new String[]{"Google", "Bing", "DuckDuckGo"},
+        prefs.getString("search_engine", "Google"),
+        val -> { prefs.edit().putString("search_engine", val).apply(); refreshSettingsPanel(); }));
+    root.findViewById(R.id.set_homepage_row).setOnClickListener(v -> pickOption(
+        "Homepage",
+        new String[]{"Devxyz Home", "Blank page"},
+        prefs.getString("homepage", "Devxyz Home"),
+        val -> { prefs.edit().putString("homepage", val).apply(); refreshSettingsPanel(); }));
+    root.findViewById(R.id.set_etp_row).setOnClickListener(v -> {
+      String[] labels = {"Off", "Standard", "Strict"};
+      int cur = prefs.getInt("etp_level", 1);
+      pickOption("Enhanced Tracking Protection", labels, labels[cur], val -> {
+        int level = val.equals("Strict") ? 2 : val.equals("Off") ? 0 : 1;
+        prefs.edit().putInt("etp_level", level).apply();
+        refreshSettingsPanel();
+        Toast.makeText(this, "Applies after you restart the app", Toast.LENGTH_SHORT).show();
+      });
+    });
+    refreshSettingsPanel();
+  }
+
+  private void refreshSettingsPanel() {
+    if (settingsDialog == null) return;
+    TextView se = settingsDialog.findViewById(R.id.set_search_engine_val);
+    TextView hp = settingsDialog.findViewById(R.id.set_homepage_val);
+    TextView etp = settingsDialog.findViewById(R.id.set_etp_val);
+    if (se != null) se.setText(prefs.getString("search_engine", "Google"));
+    if (hp != null) hp.setText(prefs.getString("homepage", "Devxyz Home"));
+    if (etp != null) {
+      String[] labels = {"Off", "Standard", "Strict"};
+      etp.setText(labels[prefs.getInt("etp_level", 1)]);
+    }
+  }
+
+  private void pickOption(String title, String[] options, String current, java.util.function.Consumer<String> onPick) {
+    int checked = 0;
+    for (int i = 0; i < options.length; i++) if (options[i].equals(current)) checked = i;
+    new AlertDialog.Builder(this).setTitle(title)
+        .setSingleChoiceItems(options, checked, (d, which) -> {
+          onPick.accept(options[which]);
+          d.dismiss();
+        })
+        .setNegativeButton("Cancel", null).show();
   }
 
   private void browse(String raw) {
@@ -932,9 +1031,15 @@ public final class MainActivity extends AppCompatActivity {
     String q = raw.trim();
     if (!q.matches("^[a-zA-Z][a-zA-Z0-9+.-]*://.*$")) {
       if (q.contains(".") && !q.contains(" ")) q = "https://" + q;
-      else q = "https://www.google.com/search?q=" + Uri.encode(q);
+      else q = searchUrl(prefs.getString("search_engine", "Google")) + Uri.encode(q);
     }
     session.loadUri(q);
+  }
+
+  private String searchUrl(String engine) {
+    if ("Bing".equals(engine)) return "https://www.bing.com/search?q=";
+    if ("DuckDuckGo".equals(engine)) return "https://duckduckgo.com/?q=";
+    return "https://www.google.com/search?q=";
   }
 
   private void showBookmarks() {
@@ -1032,8 +1137,25 @@ public final class MainActivity extends AppCompatActivity {
 
   private String safe(String value) { return value == null || value.trim().isEmpty() ? "OpenVPN" : value; }
 
+  @Override protected void onPause() {
+    super.onPause();
+    // Firefox-style: remember open tabs so they can be restored on startup.
+    StringBuilder sb = new StringBuilder();
+    for (BrowserTab tab : tabs) {
+      if (tab.url != null && !tab.url.isEmpty() && !tab.url.startsWith("about:")) {
+        if (sb.length() > 0) sb.append('\n');
+        sb.append(tab.url);
+      }
+    }
+    prefs.edit().putString("saved_tabs", sb.toString()).apply();
+  }
+
   @Override protected void onDestroy() {
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
+    if (prefs.getBoolean("clear_on_quit", false)) {
+      historyItems.clear();
+      prefs.edit().remove("saved_tabs").apply();
+    }
     for (BrowserTab tab : tabs) tab.session.close();
     tabs.clear();
     super.onDestroy();
