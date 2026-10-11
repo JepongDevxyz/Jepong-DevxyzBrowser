@@ -5,8 +5,10 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import androidx.appcompat.app.AppCompatActivity;
+import com.jepongdevxyz.browser.util.ImgUtil;
 
 /** Branded launch screen: fox logo, tagline and loading bar over the Earth backdrop. */
 public final class SplashActivity extends AppCompatActivity {
@@ -18,6 +20,8 @@ public final class SplashActivity extends AppCompatActivity {
   @Override protected void onCreate(Bundle state) {
     super.onCreate(state);
     setContentView(R.layout.activity_splash);
+    ImgUtil.setB64((ImageView) findViewById(R.id.splash_bg), this, "img/bg_splash.b64");
+    ImgUtil.setB64((ImageView) findViewById(R.id.splash_fox), this, "img/fox.b64");
     progress = findViewById(R.id.splash_progress);
     startedAt = System.currentTimeMillis();
     tick();
