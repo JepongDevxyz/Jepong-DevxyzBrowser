@@ -815,7 +815,17 @@ public final class MainActivity extends AppCompatActivity {
     tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
       @Override public void onExternalResponse(GeckoSession s, WebResponse response) {
         String url = response.uri;
-        String name = response.filename;
+        String name = null;
+        try {
+          if (response.headers != null) {
+            String disp = response.headers.get("Content-Disposition");
+            if (disp == null) disp = response.headers.get("content-disposition");
+            if (disp != null) {
+              java.util.regex.Matcher m = java.util.regex.Pattern.compile("filename=\"?([^\";]+)\"?").matcher(disp);
+              if (m.find()) name = m.group(1).trim();
+            }
+          }
+        } catch (Exception ignored) {}
         if (name == null || name.isEmpty()) {
           try { name = Uri.parse(url).getLastPathSegment(); } catch (Exception ignored) {}
         }
