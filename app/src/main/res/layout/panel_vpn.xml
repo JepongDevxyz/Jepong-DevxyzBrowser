@@ -15,10 +15,16 @@
             android:contentDescription="VPN settings" android:clickable="true" android:focusable="true" />
     </LinearLayout>
 
-    <ImageButton android:id="@+id/vpn_power" android:layout_width="92dp" android:layout_height="92dp"
-        android:layout_gravity="center_horizontal" android:layout_marginTop="18dp"
-        android:src="@drawable/ic_power" android:background="@drawable/vpn_power_bg"
-        android:padding="24dp" android:contentDescription="Toggle VPN connection" />
+    <FrameLayout android:layout_width="160dp" android:layout_height="160dp"
+        android:layout_gravity="center_horizontal" android:layout_marginTop="6dp">
+        <ImageView android:layout_width="160dp" android:layout_height="160dp"
+            android:layout_gravity="center" android:src="@drawable/vpn_glow"
+            android:contentDescription="@null" />
+        <ImageButton android:id="@+id/vpn_power" android:layout_width="92dp" android:layout_height="92dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_power" android:background="@drawable/vpn_power_bg"
+            android:padding="24dp" android:contentDescription="Toggle VPN connection" />
+    </FrameLayout>
 
     <TextView android:id="@+id/vpn_state" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="10dp" android:gravity="center"
