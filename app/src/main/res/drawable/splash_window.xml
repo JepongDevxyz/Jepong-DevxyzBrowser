@@ -5,6 +5,6 @@
         </shape>
     </item>
     <item android:gravity="center">
-        <bitmap android:src="@drawable/ic_fox" android:gravity="center" />
+        <bitmap android:src="@drawable/devxyz_launcher_foreground" android:gravity="center" />
     </item>
 </layer-list>
