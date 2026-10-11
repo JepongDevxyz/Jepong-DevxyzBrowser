@@ -12,7 +12,7 @@
             android:scrollbars="none">
             <LinearLayout android:id="@+id/tabStrip" android:layout_width="wrap_content"
                 android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal" />
-        </LinearLayout>
+        </HorizontalScrollView>
         <TextView android:id="@+id/newTab" android:layout_width="38dp" android:layout_height="match_parent"
             android:gravity="center" android:text="+" android:textSize="25sp" android:textColor="@color/text"
             android:contentDescription="New tab" android:clickable="true" android:focusable="true" />
@@ -116,7 +116,7 @@
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Add site" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
                     </LinearLayout>
-                </HorizontalScrollView>
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
         </FrameLayout>
