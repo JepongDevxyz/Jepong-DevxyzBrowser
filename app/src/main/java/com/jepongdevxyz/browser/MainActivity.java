@@ -813,7 +813,7 @@ public final class MainActivity extends AppCompatActivity {
       }
     });
     tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
-      @Override public void onExternalResponse(GeckoSession s, GeckoSession.WebResponse response) {
+      @Override public void onExternalResponse(GeckoSession s, WebResponse response) {
         String url = response.uri;
         String name = response.filename;
         if (name == null || name.isEmpty()) {
