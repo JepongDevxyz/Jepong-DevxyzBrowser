@@ -35,7 +35,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="10dp" android:gravity="center"
                     android:text="Built-in VPN" android:textColor="@color/text"
-                    android:textStyle="bold" android:textSize="14sp" />
+                    android:textStyle="bold" android:textSize="12sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="4dp" android:gravity="center"
                     android:text="Browse securely with one click."
@@ -51,7 +51,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="10dp" android:gravity="center"
                     android:text="Extensions" android:textColor="@color/text"
-                    android:textStyle="bold" android:textSize="14sp" />
+                    android:textStyle="bold" android:textSize="12sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="4dp" android:gravity="center"
                     android:text="Customize with your favorite add-ons."
@@ -71,7 +71,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="10dp" android:gravity="center"
                     android:text="Fast &amp; Lightweight" android:textColor="@color/text"
-                    android:textStyle="bold" android:textSize="14sp" />
+                    android:textStyle="bold" android:textSize="12sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="4dp" android:gravity="center"
                     android:text="Smooth and modern browsing."
@@ -87,7 +87,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="10dp" android:gravity="center"
                     android:text="Privacy Focused" android:textColor="@color/text"
-                    android:textStyle="bold" android:textSize="14sp" />
+                    android:textStyle="bold" android:textSize="12sp" />
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:layout_marginTop="4dp" android:gravity="center"
                     android:text="No tracking. More control."
