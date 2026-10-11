@@ -12,7 +12,7 @@
             android:scrollbars="none">
             <LinearLayout android:id="@+id/tabStrip" android:layout_width="wrap_content"
                 android:layout_height="match_parent" android:gravity="center_vertical" android:orientation="horizontal" />
-        </HorizontalScrollView>
+        </LinearLayout>
         <TextView android:id="@+id/newTab" android:layout_width="38dp" android:layout_height="match_parent"
             android:gravity="center" android:text="+" android:textSize="25sp" android:textColor="@color/text"
             android:contentDescription="New tab" android:clickable="true" android:focusable="true" />
@@ -37,7 +37,7 @@
         <EditText android:id="@+id/address" android:layout_width="0dp" android:layout_height="40dp"
             android:layout_weight="1" android:paddingHorizontal="13dp" android:singleLine="true"
             android:imeOptions="actionGo" android:inputType="textUri" android:selectAllOnFocus="true"
-            android:hint="Search with Devxyz or enter address" android:textColor="@color/text"
+            android:hint="Search or enter address" android:textColor="@color/text"
             android:textColorHint="@color/muted" android:background="@drawable/search_bg"
             android:drawableStart="@drawable/ic_tb_search" android:drawablePadding="10dp"
             android:drawableTint="@color/muted" />
@@ -88,30 +88,30 @@
                     android:background="@drawable/search_bg"
                     android:drawableStart="@drawable/ic_tb_search" android:drawableEnd="@drawable/ic_tb_search"
                     android:drawablePadding="12dp" android:drawableTint="@color/muted" />
-                <HorizontalScrollView android:id="@+id/quickSites" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp" android:scrollbars="none" android:overScrollMode="never">
-                    <LinearLayout android:id="@+id/tileRow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
-                        <LinearLayout android:layout_width="64dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                <LinearLayout android:id="@+id/quickSites" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp" android:orientation="horizontal" android:gravity="center">
+                    <LinearLayout android:id="@+id/tileRow" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
                             <ImageView android:id="@+id/siteYoutube" android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_brand_youtube" android:background="@drawable/shortcut_bg" android:padding="14dp" android:clickable="true" android:focusable="true" android:contentDescription="YouTube" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="YouTube" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="64dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
                             <ImageView android:id="@+id/siteFacebook" android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_brand_facebook" android:background="@drawable/shortcut_bg" android:padding="14dp" android:clickable="true" android:focusable="true" android:contentDescription="Facebook" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Facebook" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="64dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
                             <ImageView android:id="@+id/siteGithub" android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_brand_github" android:background="@drawable/shortcut_bg" android:padding="14dp" android:clickable="true" android:focusable="true" android:contentDescription="GitHub" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="GitHub" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="64dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
                             <ImageView android:id="@+id/siteReddit" android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_brand_reddit" android:background="@drawable/shortcut_bg" android:padding="14dp" android:clickable="true" android:focusable="true" android:contentDescription="Reddit" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Reddit" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="64dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
                         <ImageView android:id="@+id/siteX" android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_brand_x" android:background="@drawable/shortcut_bg" android:padding="16dp" android:clickable="true" android:focusable="true" android:contentDescription="X" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="X" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
-                        <LinearLayout android:layout_width="64dp" android:layout_height="wrap_content" android:gravity="center" android:orientation="vertical">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
                             <ImageView android:id="@+id/addSite" android:layout_width="56dp" android:layout_height="56dp" android:src="@drawable/ic_plus" android:background="@drawable/shortcut_bg" android:padding="16dp" android:clickable="true" android:focusable="true" android:contentDescription="Add site" />
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Add site" android:textColor="@color/muted" android:textSize="10sp" />
                         </LinearLayout>
