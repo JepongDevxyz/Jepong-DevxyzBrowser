@@ -662,7 +662,7 @@ public final class MainActivity extends AppCompatActivity {
     for (int i = tileRow.getChildCount() - 1; i >= 0; i--) {
       if ("custom".equals(tileRow.getChildAt(i).getTag())) tileRow.removeViewAt(i);
     }
-    int iconDp = isDesktop ? 56 : 50;
+    int iconDp = isDesktop ? 56 : 48;
     for (Tile t : customTiles) {
       final Tile tile = t;
       LinearLayout col = new LinearLayout(this);
