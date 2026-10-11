@@ -216,22 +216,10 @@ public final class MainActivity extends AppCompatActivity {
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
 
-    onClick(R.id.back, v -> session.goBack());
-    onClick(R.id.forward, v -> session.goForward());
-    onClick(R.id.refresh, v -> session.reload());
-    onClick(R.id.newTab, v -> newTab());
-    onClick(R.id.menu, this::showBrowserMenu);
-    onClick(R.id.home, v -> { showHome(); setSidebarActive(R.id.home); });
-    onClick(R.id.bookmarks, v -> { showBookmarks(); setSidebarActive(R.id.bookmarks); });
-    onClick(R.id.history, v -> { showList("History", historyItems); setSidebarActive(R.id.history); });
-    onClick(R.id.downloads, v -> { showDownloads(); setSidebarActive(R.id.downloads); });
-    onClick(R.id.dl_toolbar, v -> showDownloads());
-    onClick(R.id.extensions, v -> showExtensions());
-    onClick(R.id.ext_toolbar, v -> showExtensions());
-    onClick(R.id.vpn, v -> showVpn());
-    onClick(R.id.vpn_chip, v -> showVpn());
-    onClick(R.id.settings, v -> { showSettings(); setSidebarActive(R.id.settings); });
-    onClick(R.id.profile_btn, v -> showProfile());
+    // Chrome-style: omnibox + tab count + menu. All actions live in the menu.
+    onClick(R.id.menu, v -> showChromeMenu(v));
+    onClick(R.id.tabCount, v -> showTabs());
+    ImgUtil.setB64((ImageView) findViewById(R.id.ntpLogo), this, "img/fox.b64");
     onClick(R.id.addSite, v -> showAddSite());
 
     View.OnClickListener quick = v -> {
@@ -836,6 +824,11 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void addTabChip(BrowserTab tab) {
+    if (!isDesktop) {
+      // Chrome-style mobile: no tab strip chips, just the count badge.
+      updateTabCount();
+      return;
+    }
     LinearLayout chip = new LinearLayout(this);
     chip.setGravity(Gravity.CENTER_VERTICAL);
     chip.setOrientation(LinearLayout.HORIZONTAL);
@@ -911,23 +904,92 @@ public final class MainActivity extends AppCompatActivity {
     int index = tabs.indexOf(tab);
     if (index < 0) return;
     tabs.remove(index);
-    tabStrip.removeView(tab.chip);
+    if (tab.chip != null && tabStrip != null) tabStrip.removeView(tab.chip);
     tab.session.close();
     if (tabs.isEmpty()) newTab();
     else if (activeTab == tab) selectTab(tabs.get(Math.max(0, index - 1)));
+    updateTabCount();
   }
 
-  private void showBrowserMenu(View anchor) {
+  private void updateTabCount() {
+    if (isDesktop) return;
+    TextView tc = findViewById(R.id.tabCount);
+    if (tc != null) tc.setText(String.valueOf(tabs.size()));
+    refreshTabsSheet();
+  }
+
+  private BottomSheetDialog tabsDialog;
+
+  private void showTabs() {
+    if (isDesktop) return;
+    if (tabsDialog == null) {
+      View root = getLayoutInflater().inflate(R.layout.panel_tabs, null);
+      tabsDialog = makeSheet(root);
+      root.findViewById(R.id.tabs_close).setOnClickListener(v -> tabsDialog.dismiss());
+      root.findViewById(R.id.tabs_new).setOnClickListener(v -> { newTab(); tabsDialog.dismiss(); });
+    }
+    refreshTabsSheet();
+    tabsDialog.show();
+  }
+
+  private void refreshTabsSheet() {
+    if (tabsDialog == null) return;
+    LinearLayout list = tabsDialog.findViewById(R.id.tabs_list);
+    if (list == null) return;
+    list.removeAllViews();
+    for (BrowserTab tab : new ArrayList<>(tabs)) {
+      LinearLayout row = new LinearLayout(this);
+      row.setOrientation(LinearLayout.HORIZONTAL);
+      row.setGravity(Gravity.CENTER_VERTICAL);
+      row.setPadding(dp(12), dp(10), dp(12), dp(10));
+      GradientDrawable bg = new GradientDrawable();
+      bg.setColor(getColor(tab == activeTab ? R.color.panel2 : 0x00000000));
+      bg.setCornerRadius(dp(12));
+      if (tab == activeTab) bg.setStroke(dp(1), getColor(R.color.purple));
+      row.setBackground(bg);
+
+      TextView label = new TextView(this);
+      String title = tab.url.isEmpty() ? "New Tab" : Uri.parse(tab.url).getHost();
+      if (title == null || title.isEmpty()) title = "Page";
+      label.setText(title);
+      label.setTextSize(14);
+      label.setTextColor(getColor(R.color.text));
+      label.setSingleLine(true);
+      label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+      row.addView(label, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+      TextView close = new TextView(this);
+      close.setText("×");
+      close.setTextSize(20);
+      close.setTextColor(getColor(R.color.muted));
+      close.setGravity(Gravity.CENTER);
+      close.setPadding(dp(12), 0, dp(4), 0);
+      close.setContentDescription("Close tab");
+      close.setOnClickListener(v -> { closeTab(tab); });
+      row.addView(close);
+
+      row.setOnClickListener(v -> { selectTab(tab); tabsDialog.dismiss(); });
+      list.addView(row);
+    }
+  }
+
+  private void showChromeMenu(View anchor) {
     PopupMenu menu = new PopupMenu(this, anchor);
-    menu.getMenu().add(0, 1, 0, "New tab");
-    menu.getMenu().add(0, 2, 1, "Bookmarks");
-    menu.getMenu().add(0, 3, 2, "History");
-    menu.getMenu().add(0, 4, 3, "Downloads");
-    menu.getMenu().add(0, 5, 4, "Extensions");
-    menu.getMenu().add(0, 6, 5, "VPN");
-    menu.getMenu().add(0, 7, 6, "Settings");
+    menu.getMenu().add(0, 10, 0, "Back");
+    menu.getMenu().add(0, 11, 1, "Forward");
+    menu.getMenu().add(0, 12, 2, "Refresh");
+    menu.getMenu().add(0, 1, 3, "New tab");
+    menu.getMenu().add(0, 2, 4, "Bookmarks");
+    menu.getMenu().add(0, 3, 5, "History");
+    menu.getMenu().add(0, 4, 6, "Downloads");
+    menu.getMenu().add(0, 5, 7, "Extensions");
+    menu.getMenu().add(0, 6, 8, "VPN");
+    menu.getMenu().add(0, 7, 9, "Settings");
     menu.setOnMenuItemClickListener(item -> {
       switch (item.getItemId()) {
+        case 10: session.goBack(); return true;
+        case 11: session.goForward(); return true;
+        case 12: session.reload(); return true;
         case 1: newTab(); return true;
         case 2: showBookmarks(); return true;
         case 3: showList("History", historyItems); return true;
