@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins { id("com.android.application") }
 
 android {
@@ -37,7 +39,7 @@ dependencies {
 val foxResDir = layout.buildDirectory.dir("generated/foxres")
 android {
     sourceSets.named("main") {
-        res.srcDir(foxResDir)
+        res.srcDirs(foxResDir)
     }
 }
 val genFoxLauncherIcon by tasks.registering {
@@ -49,7 +51,7 @@ val genFoxLauncherIcon by tasks.registering {
         val dir = outDir.get().asFile
         dir.mkdirs()
         val clean = b64File.readText().filter { !it.isWhitespace() }
-        val png = java.util.Base64.getDecoder().decode(clean)
+        val png = Base64.getDecoder().decode(clean)
         dir.resolve("ic_launcher_fox.png").writeBytes(png)
     }
 }
