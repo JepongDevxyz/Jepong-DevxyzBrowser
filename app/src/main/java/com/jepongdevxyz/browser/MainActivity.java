@@ -663,7 +663,6 @@ public final class MainActivity extends AppCompatActivity {
       if ("custom".equals(tileRow.getChildAt(i).getTag())) tileRow.removeViewAt(i);
     }
     int iconDp = isDesktop ? 56 : 50;
-    int colDp = isDesktop ? 72 : 56;
     for (Tile t : customTiles) {
       final Tile tile = t;
       LinearLayout col = new LinearLayout(this);
@@ -685,7 +684,10 @@ public final class MainActivity extends AppCompatActivity {
       lp.topMargin = dp(5);
       col.addView(label, lp);
       int insertAt = Math.max(0, tileRow.getChildCount() - 1);
-      tileRow.addView(col, insertAt, new LinearLayout.LayoutParams(dp(colDp), LinearLayout.LayoutParams.WRAP_CONTENT));
+      LinearLayout.LayoutParams tlp = isDesktop
+          ? new LinearLayout.LayoutParams(dp(72), LinearLayout.LayoutParams.WRAP_CONTENT)
+          : new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+      tileRow.addView(col, insertAt, tlp);
       icon.setOnClickListener(v -> browse(tile.url));
       col.setOnLongClickListener(v -> {
         new AlertDialog.Builder(this).setTitle(tile.name)
