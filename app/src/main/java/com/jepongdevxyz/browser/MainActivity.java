@@ -813,16 +813,9 @@ public final class MainActivity extends AppCompatActivity {
       }
     });
     tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
-      @Override public void onExternalResponse(GeckoSession s, GeckoSession.WebResponseInfo response) {
+      @Override public void onExternalResponse(GeckoSession s, GeckoSession.WebResponse response) {
         String url = response.uri;
-        String name = null;
-        try {
-          String disp = response.headers != null ? response.headers.get("Content-Disposition") : null;
-          if (disp != null) {
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("filename=\"?([^\";]+)\"?").matcher(disp);
-            if (m.find()) name = m.group(1);
-          }
-        } catch (Exception ignored) {}
+        String name = response.filename;
         if (name == null || name.isEmpty()) {
           try { name = Uri.parse(url).getLastPathSegment(); } catch (Exception ignored) {}
         }
