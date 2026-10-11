@@ -46,7 +46,6 @@ public final class MainActivity extends AppCompatActivity {
   private ProgressBar progress;
   private View startPage;
   private View menuButton;
-  private TextView vpnStatus;
   private LinearLayout tabStrip;
   private org.mozilla.geckoview.GeckoView geckoView;
   private ActivityResultLauncher<String[]> openVpnProfile;
@@ -76,10 +75,6 @@ public final class MainActivity extends AppCompatActivity {
       String state = intent.getStringExtra("state");
       String detail = intent.getStringExtra("detail");
       boolean error = intent.getBooleanExtra("error", false);
-      if ("CONNECTED".equals(state)) setVpnStatus("Connected • " + safe(detail));
-      else if ("CONNECTING".equals(state) || "WAIT".equals(state) || "RECONNECTING".equals(state)) setVpnStatus("Connecting • " + safe(detail));
-      else if (error) setVpnStatus("Failed • " + safe(detail));
-      else setVpnStatus(VpnProfileStore.hasProfile(MainActivity.this) ? "Disconnected • profile ready" : "Disconnected • No profile imported");
       if (error) Toast.makeText(MainActivity.this, safe(detail), Toast.LENGTH_LONG).show();
       refreshVpnPanel();
     }
@@ -128,10 +123,6 @@ public final class MainActivity extends AppCompatActivity {
     R.id.home, R.id.bookmarks, R.id.history, R.id.downloads, R.id.extensions, R.id.vpn, R.id.settings
   };
 
-  private void setVpnStatus(String s) {
-    if (vpnStatus != null) vpnStatus.setText(s);
-  }
-
   private void onClick(int id, View.OnClickListener l) {
     View v = findViewById(id);
     if (v != null) v.setOnClickListener(l);
@@ -164,8 +155,7 @@ public final class MainActivity extends AppCompatActivity {
     openVpnProfile = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
       if (uri == null) return;
       try {
-        String endpoint = VpnProfileStore.importProfile(this, uri);
-        setVpnStatus("Ready • " + endpoint);
+        VpnProfileStore.importProfile(this, uri);
         Toast.makeText(this, "OpenVPN profile imported", Toast.LENGTH_LONG).show();
       } catch (Exception ex) {
         Toast.makeText(this, "Profile rejected: " + ex.getMessage(), Toast.LENGTH_LONG).show();
@@ -192,14 +182,11 @@ public final class MainActivity extends AppCompatActivity {
     startPage = findViewById(R.id.startPageWrap);
     if (startPage == null) startPage = findViewById(R.id.startPage);
     ImgUtil.setB64((ImageView) findViewById(R.id.home_bg), this, "img/bg_home.b64");
-    vpnStatus = findViewById(R.id.vpnStatus);
     tabStrip = findViewById(R.id.tabStrip);
     menuButton = findViewById(R.id.menu);
     addTabChip(activeTab);
     attachSession(activeTab);
     selectTab(activeTab);
-    setVpnStatus(DevxyzVpnService.isConnected() ? "Connected • OpenVPN" :
-      (VpnProfileStore.hasProfile(this) ? "Ready • profile imported" : "Disconnected • No profile imported"));
     IntentFilter vpnFilter = new IntentFilter(DevxyzVpnService.ACTION_STATE);
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
@@ -216,10 +203,8 @@ public final class MainActivity extends AppCompatActivity {
     onClick(R.id.dl_toolbar, v -> showDownloads());
     onClick(R.id.extensions, v -> showExtensions());
     onClick(R.id.ext_toolbar, v -> showExtensions());
-    onClick(R.id.extensionsPanel, v -> showExtensions());
     onClick(R.id.vpn, v -> showVpn());
     onClick(R.id.vpn_chip, v -> showVpn());
-    onClick(R.id.vpnPanel, v -> showVpn());
     onClick(R.id.settings, v -> { showSettings(); setSidebarActive(R.id.settings); });
     onClick(R.id.profile_btn, v -> showProfile());
     onClick(R.id.addSite, v -> showAddSite());
@@ -1037,7 +1022,6 @@ public final class MainActivity extends AppCompatActivity {
       .putExtra(DevxyzVpnService.EXTRA_KEY_PASSWORD, keyPassword);
     try {
       ContextCompat.startForegroundService(this, connect);
-      setVpnStatus("Connecting • starting OpenVPN");
     } catch (Exception e) {
       Toast.makeText(this, "Could not start VPN: " + e.getMessage(), Toast.LENGTH_LONG).show();
     }
