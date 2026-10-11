@@ -4,7 +4,9 @@
             <solid android:color="@color/bg" />
         </shape>
     </item>
-    <item android:gravity="center">
-        <bitmap android:src="@drawable/devxyz_launcher_foreground" android:gravity="center" />
-    </item>
+    <item
+        android:width="120dp"
+        android:height="120dp"
+        android:gravity="center"
+        android:drawable="@drawable/devxyz_launcher_foreground" />
 </layer-list>
