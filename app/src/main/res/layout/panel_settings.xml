@@ -1,0 +1,143 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:background="@drawable/panel_bg">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="18dp">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Settings" android:textColor="@color/text"
+                android:textStyle="bold" android:textSize="18sp" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <ImageView android:id="@+id/settings_close" android:layout_width="34dp" android:layout_height="34dp"
+                android:padding="6dp" android:src="@drawable/ic_close" app:tint="@color/muted"
+                android:contentDescription="Close settings" android:clickable="true" android:focusable="true" />
+        </LinearLayout>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="GENERAL"
+            android:textColor="@color/purple2" android:textSize="12sp" android:textStyle="bold" />
+
+        <LinearLayout android:id="@+id/set_search_engine_row" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_tb_search" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Default search engine" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_search_engine_val" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Google" android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/set_homepage_row" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_home" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Homepage" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_homepage_val" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Devxyz Home" android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:paddingTop="12dp" android:paddingBottom="12dp">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_history" app:tint="@color/muted" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:layout_marginStart="10dp" android:text="Restore tabs on startup"
+                android:textColor="@color/text" android:textSize="14sp" />
+            <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/sw_restore_tabs"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:text="PRIVACY &amp; SECURITY"
+            android:textColor="@color/purple2" android:textSize="12sp" android:textStyle="bold" />
+
+        <LinearLayout android:id="@+id/set_etp_row" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_feat_shield" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Enhanced Tracking Protection" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_etp_val" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Standard" android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:paddingTop="12dp" android:paddingBottom="12dp">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_history" app:tint="@color/muted" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:layout_marginStart="10dp" android:text="Remember browsing history"
+                android:textColor="@color/text" android:textSize="14sp" />
+            <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/sw_remember_history"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:paddingTop="12dp" android:paddingBottom="12dp">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_download" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Clear browsing data on quit" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp" android:text="History and site data are erased when the app closes"
+                    android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/sw_clear_on_quit"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:text="ABOUT"
+            android:textColor="@color/purple2" android:textSize="12sp" android:textStyle="bold" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:background="@drawable/card_bg"
+            android:padding="12dp" android:gravity="center_vertical">
+            <ImageView android:layout_width="30dp" android:layout_height="30dp"
+                android:src="@drawable/ic_feat_shield" app:tint="@color/purple2" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="DevxyzBrowser" android:textColor="@color/text"
+                    android:textStyle="bold" android:textSize="14sp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp" android:text="GeckoView 156 • Firefox-compatible settings"
+                    android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+        <View android:layout_width="match_parent" android:layout_height="18dp" />
+    </LinearLayout>
+</ScrollView>
