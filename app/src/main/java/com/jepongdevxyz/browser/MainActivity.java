@@ -256,6 +256,7 @@ public final class MainActivity extends AppCompatActivity {
     initVpnPanel(findViewById(R.id.vpn_panel_root));
     initExtPanel(findViewById(R.id.ext_panel_root), () -> togglePanel(R.id.ext_panel_root));
     loadCustomTiles();
+    loadDownloads();
     setSidebarActive(R.id.home);
 
     DevxyzVpnService.killSwitch = prefs.getBoolean("kill_switch", false);
@@ -811,6 +812,24 @@ public final class MainActivity extends AppCompatActivity {
         }
       }
     });
+    tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
+      @Override public void onExternalResponse(GeckoSession s, GeckoSession.WebResponseInfo response) {
+        String url = response.uri;
+        String name = null;
+        try {
+          String disp = response.headers != null ? response.headers.get("Content-Disposition") : null;
+          if (disp != null) {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("filename=\"?([^\";]+)\"?").matcher(disp);
+            if (m.find()) name = m.group(1);
+          }
+        } catch (Exception ignored) {}
+        if (name == null || name.isEmpty()) {
+          try { name = Uri.parse(url).getLastPathSegment(); } catch (Exception ignored) {}
+        }
+        if (name == null || name.isEmpty()) name = "download";
+        startDownload(url, name);
+      }
+    });
   }
 
   private void selectTab(BrowserTab tab) {
@@ -974,37 +993,216 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showChromeMenu(View anchor) {
-    PopupMenu menu = new PopupMenu(this, anchor);
-    menu.getMenu().add(0, 10, 0, "Back");
-    menu.getMenu().add(0, 11, 1, "Forward");
-    menu.getMenu().add(0, 12, 2, "Refresh");
-    menu.getMenu().add(0, 1, 3, "New tab");
-    menu.getMenu().add(0, 2, 4, "Bookmarks");
-    menu.getMenu().add(0, 3, 5, "History");
-    menu.getMenu().add(0, 4, 6, "Downloads");
-    menu.getMenu().add(0, 5, 7, "Extensions");
-    menu.getMenu().add(0, 6, 8, "VPN");
-    menu.getMenu().add(0, 7, 9, "Settings");
-    menu.setOnMenuItemClickListener(item -> {
-      switch (item.getItemId()) {
-        case 10: session.goBack(); return true;
-        case 11: session.goForward(); return true;
-        case 12: session.reload(); return true;
-        case 1: newTab(); return true;
-        case 2: showBookmarks(); return true;
-        case 3: showList("History", historyItems); return true;
-        case 4: showDownloads(); return true;
-        case 5: showExtensions(); return true;
-        case 6: showVpn(); return true;
-        case 7: showSettings(); return true;
-        default: return false;
+    // Chrome-style popup menu with icons, anchored top-right like Chrome.
+    final android.app.Dialog dialog = new android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar);
+    View root = getLayoutInflater().inflate(R.layout.panel_menu, null);
+    dialog.setContentView(root);
+    android.view.Window w = dialog.getWindow();
+    if (w != null) {
+      w.setGravity(Gravity.TOP | Gravity.END);
+      android.view.WindowManager.LayoutParams lp = w.getAttributes();
+      lp.y = dp(64); lp.x = dp(8);
+      w.setAttributes(lp);
+      w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0x00000000));
+    }
+    dialog.setCanceledOnTouchOutside(true);
+
+    // Top circular action row
+    root.findViewById(R.id.m_back).setOnClickListener(v -> { dialog.dismiss(); session.goBack(); });
+    root.findViewById(R.id.m_forward).setOnClickListener(v -> { dialog.dismiss(); session.goForward(); });
+    root.findViewById(R.id.m_bookmark).setOnClickListener(v -> { dialog.dismiss(); bookmarkCurrent(); });
+    root.findViewById(R.id.m_download).setOnClickListener(v -> { dialog.dismiss(); showDownloads(); });
+    root.findViewById(R.id.m_refresh).setOnClickListener(v -> { dialog.dismiss(); session.reload(); });
+
+    // Menu items
+    root.findViewById(R.id.m_newtab).setOnClickListener(v -> { dialog.dismiss(); newTab(); });
+    root.findViewById(R.id.m_history).setOnClickListener(v -> { dialog.dismiss(); showList("History", historyItems); });
+    root.findViewById(R.id.m_cleardata).setOnClickListener(v -> { dialog.dismiss(); confirmClearData(); });
+    root.findViewById(R.id.m_downloads).setOnClickListener(v -> { dialog.dismiss(); showDownloads(); });
+    root.findViewById(R.id.m_bookmarks).setOnClickListener(v -> { dialog.dismiss(); showBookmarks(); });
+    root.findViewById(R.id.m_extensions).setOnClickListener(v -> { dialog.dismiss(); showExtensions(); });
+    root.findViewById(R.id.m_vpn).setOnClickListener(v -> { dialog.dismiss(); showVpn(); });
+    root.findViewById(R.id.m_settings).setOnClickListener(v -> { dialog.dismiss(); showSettings(); });
+    root.findViewById(R.id.m_about).setOnClickListener(v -> { dialog.dismiss(); showInfo("DevxyzBrowser",
+        "DevxyzBrowser • GeckoView 156\nFast. Private. Flexible.\nFirefox-compatible settings, built-in VPN and extensions."); });
+
+    dialog.show();
+    // Size the dialog to wrap the menu card
+    if (w != null) {
+      w.setLayout(dp(300), android.view.WindowManager.LayoutParams.WRAP_CONTENT);
+    }
+  }
+
+  private void bookmarkCurrent() {
+    String current = address.getText().toString().trim();
+    if (current.startsWith("http") && !bookmarks.contains(current)) {
+      bookmarks.add(0, current);
+      Toast.makeText(this, "Bookmarked", Toast.LENGTH_SHORT).show();
+    } else if (current.startsWith("http")) {
+      Toast.makeText(this, "Already bookmarked", Toast.LENGTH_SHORT).show();
+    } else {
+      Toast.makeText(this, "Open a page first to bookmark it", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  private void confirmClearData() {
+    new AlertDialog.Builder(this).setTitle("Delete browsing data")
+        .setMessage("Clear browsing history?")
+        .setPositiveButton("Delete", (d, which) -> {
+          historyItems.clear();
+          Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show();
+        })
+        .setNegativeButton("Cancel", null).show();
+  }
+
+  // ---- Download manager ----
+  private static final class DownloadItem {
+    String name, url, time; long id;
+    DownloadItem(String name, String url, String time, long id) {
+      this.name = name; this.url = url; this.time = time; this.id = id;
+    }
+  }
+  private final ArrayList<DownloadItem> downloads = new ArrayList<>();
+  private BottomSheetDialog downloadsDialog;
+
+  private void loadDownloads() {
+    downloads.clear();
+    String saved = prefs.getString("downloads", "");
+    if (!saved.isEmpty()) {
+      for (String line : saved.split("\n")) {
+        String[] p = line.split("\t", -1);
+        if (p.length == 4) {
+          try { downloads.add(new DownloadItem(p[0], p[1], p[2], Long.parseLong(p[3]))); }
+          catch (Exception ignored) {}
+        }
+      }
+    }
+  }
+
+  private void saveDownloads() {
+    StringBuilder sb = new StringBuilder();
+    for (DownloadItem d : downloads) {
+      if (sb.length() > 0) sb.append('\n');
+      sb.append(d.name.replace("\t", " ")).append('\t').append(d.url).append('\t').append(d.time).append('\t').append(d.id);
+    }
+    prefs.edit().putString("downloads", sb.toString()).apply();
+  }
+
+  private void startDownload(String url, String filename) {
+    runOnUiThread(() -> {
+      try {
+        // Storage permission needed only on Android 8-9 (API 26-28).
+        if (android.os.Build.VERSION.SDK_INT < 29 &&
+            checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+              != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+          pendingDownloadUrl = url; pendingDownloadName = filename;
+          requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 9001);
+          return;
+        }
+        enqueueDownload(url, filename);
+      } catch (Exception e) {
+        Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
       }
     });
-    menu.show();
+  }
+
+  private String pendingDownloadUrl, pendingDownloadName;
+
+  @Override public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
+    super.onRequestPermissionsResult(code, perms, results);
+    if (code == 9001 && results.length > 0 &&
+        results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+        pendingDownloadUrl != null) {
+      enqueueDownload(pendingDownloadUrl, pendingDownloadName);
+      pendingDownloadUrl = null;
+    }
+  }
+
+  private void enqueueDownload(String url, String filename) {
+    try {
+      android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+      android.app.DownloadManager.Request req = new android.app.DownloadManager.Request(Uri.parse(url));
+      req.setTitle(filename);
+      req.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+      req.setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, filename);
+      req.allowScanningByMediaScanner();
+      long id = dm.enqueue(req);
+      String time = new java.text.SimpleDateFormat("MMM d, yyyy h:mm a", java.util.Locale.getDefault())
+          .format(new java.util.Date());
+      downloads.add(0, new DownloadItem(filename, url, time, id));
+      saveDownloads();
+      Toast.makeText(this, "Downloading " + filename, Toast.LENGTH_SHORT).show();
+      refreshDownloadsSheet();
+    } catch (Exception e) {
+      Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
   }
 
   private void showDownloads() {
-    showInfo("Downloads", "This browser build does not yet include a download manager. No download list is being shown as if it were available.");
+    if (isDesktop) { showInfo("Downloads", downloads.isEmpty() ? "No downloads yet." : downloads.size() + " file(s) downloaded."); return; }
+    loadDownloads();
+    if (downloadsDialog == null) {
+      View root = getLayoutInflater().inflate(R.layout.panel_downloads, null);
+      downloadsDialog = makeSheet(root);
+      root.findViewById(R.id.dl_close).setOnClickListener(v -> downloadsDialog.dismiss());
+    }
+    refreshDownloadsSheet();
+    downloadsDialog.show();
+  }
+
+  private void refreshDownloadsSheet() {
+    if (downloadsDialog == null) return;
+    LinearLayout list = downloadsDialog.findViewById(R.id.dl_list);
+    TextView empty = downloadsDialog.findViewById(R.id.dl_empty);
+    if (list == null) return;
+    list.removeAllViews();
+    empty.setVisibility(downloads.isEmpty() ? View.VISIBLE : View.GONE);
+    android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+    for (DownloadItem d : new ArrayList<>(downloads)) {
+      LinearLayout row = new LinearLayout(this);
+      row.setOrientation(LinearLayout.HORIZONTAL);
+      row.setGravity(Gravity.CENTER_VERTICAL);
+      row.setPadding(dp(4), dp(10), dp(4), dp(10));
+
+      ImageView icon = new ImageView(this);
+      icon.setImageResource(R.drawable.ic_nav_download);
+      icon.setColorFilter(getColor(R.color.muted));
+      row.addView(icon, new LinearLayout.LayoutParams(dp(28), dp(28)));
+
+      LinearLayout texts = new LinearLayout(this);
+      texts.setOrientation(LinearLayout.VERTICAL);
+      LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+      tp.setMargins(dp(12), 0, dp(8), 0);
+      row.addView(texts, tp);
+
+      TextView name = new TextView(this);
+      name.setText(d.name); name.setTextSize(14); name.setTextColor(getColor(R.color.text));
+      name.setSingleLine(true); name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+      texts.addView(name);
+
+      TextView sub = new TextView(this);
+      sub.setText(downloadStatus(dm, d.id) + " • " + d.time);
+      sub.setTextSize(12); sub.setTextColor(getColor(R.color.muted));
+      texts.addView(sub);
+
+      list.addView(row);
+    }
+  }
+
+  private String downloadStatus(android.app.DownloadManager dm, long id) {
+    try (android.database.Cursor c = dm.query(new android.app.DownloadManager.Query().setFilterById(id))) {
+      if (c != null && c.moveToFirst()) {
+        int st = c.getInt(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS));
+        switch (st) {
+          case android.app.DownloadManager.STATUS_SUCCESSFUL: return "Completed";
+          case android.app.DownloadManager.STATUS_FAILED: return "Failed";
+          case android.app.DownloadManager.STATUS_RUNNING: return "Downloading";
+          case android.app.DownloadManager.STATUS_PAUSED: return "Paused";
+          default: return "Pending";
+        }
+      }
+    } catch (Exception ignored) {}
+    return "Unknown";
   }
 
   private BottomSheetDialog settingsDialog;
