@@ -1,0 +1,27 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:background="@drawable/panel_bg"
+    android:padding="18dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Downloads" android:textColor="@color/text"
+            android:textStyle="bold" android:textSize="18sp" />
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <ImageView android:id="@+id/dl_close" android:layout_width="34dp" android:layout_height="34dp"
+            android:padding="6dp" android:src="@drawable/ic_close" app:tint="@color/muted"
+            android:contentDescription="Close" android:clickable="true" android:focusable="true" />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/dl_list" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_marginTop="8dp"
+        android:orientation="vertical" />
+
+    <TextView android:id="@+id/dl_empty" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:gravity="center"
+        android:text="No downloads yet" android:textColor="@color/muted" android:textSize="14sp" />
+
+    <View android:layout_width="match_parent" android:layout_height="18dp" />
+</LinearLayout>
