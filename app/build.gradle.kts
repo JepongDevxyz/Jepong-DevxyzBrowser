@@ -36,7 +36,8 @@ dependencies {
 // Real fox launcher icon: the repo cannot host binary drawables, so the fox
 // ships as base64 text (assets/img/fox_icon.b64). This task decodes it at build
 // time into a generated drawable so the launcher shows the real fox.
-val foxResDir = layout.buildDirectory.dir("generated/foxres")
+// (Plain string paths: AGP rejects Provider instances in the SourceSet API.)
+val foxResDir = "build/generated/foxres"
 android {
     sourceSets.named("main") {
         res.srcDirs(foxResDir)
@@ -44,15 +45,14 @@ android {
 }
 val genFoxLauncherIcon by tasks.registering {
     val b64File = file("src/main/assets/img/fox_icon.b64")
-    val outDir = foxResDir.map { it.dir("drawable-xxxhdpi") }
+    val outDir = file("$foxResDir/drawable-xxxhdpi")
     inputs.file(b64File)
     outputs.dir(outDir)
     doLast {
-        val dir = outDir.get().asFile
-        dir.mkdirs()
+        outDir.mkdirs()
         val clean = b64File.readText().filter { !it.isWhitespace() }
         val png = Base64.getDecoder().decode(clean)
-        dir.resolve("ic_launcher_fox.png").writeBytes(png)
+        outDir.resolve("ic_launcher_fox.png").writeBytes(png)
     }
 }
 tasks.named("preBuild") { dependsOn(genFoxLauncherIcon) }
