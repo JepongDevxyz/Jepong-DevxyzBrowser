@@ -24,7 +24,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.jepongdevxyz.browser.util.ImgUtil;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 import android.content.Intent;
@@ -189,6 +191,7 @@ public final class MainActivity extends AppCompatActivity {
     progress = findViewById(R.id.pageProgress);
     startPage = findViewById(R.id.startPageWrap);
     if (startPage == null) startPage = findViewById(R.id.startPage);
+    ImgUtil.setB64((ImageView) findViewById(R.id.home_bg), this, "img/bg_home.b64");
     vpnStatus = findViewById(R.id.vpnStatus);
     tabStrip = findViewById(R.id.tabStrip);
     menuButton = findViewById(R.id.menu);
@@ -252,8 +255,8 @@ public final class MainActivity extends AppCompatActivity {
     });
 
     recInstalled.addAll(prefs.getStringSet("rec_exts", new HashSet<>()));
-    initVpnPanel();
-    initExtPanel();
+    initVpnPanel(findViewById(R.id.vpn_panel_root));
+    initExtPanel(findViewById(R.id.ext_panel_root), () -> togglePanel(R.id.ext_panel_root));
     loadCustomTiles();
     setSidebarActive(R.id.home);
 
@@ -314,8 +317,18 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   // ---------- VPN panel ----------
-  private void initVpnPanel() {
-    View root = findViewById(R.id.vpn_panel_root);
+  private BottomSheetDialog vpnDialog, extDialog;
+
+  /** Wraps an inflated panel view in a dark bottom sheet on phones. */
+  private BottomSheetDialog makeSheet(View root) {
+    BottomSheetDialog dialog = new BottomSheetDialog(this);
+    dialog.setContentView(root);
+    View sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+    if (sheet != null) sheet.setBackgroundResource(R.drawable.bottomsheet_bg);
+    return dialog;
+  }
+
+  private void initVpnPanel(View root) {
     if (root == null) return;
     vpnPanelRoot = root;
     vpnPower = root.findViewById(R.id.vpn_power);
@@ -412,8 +425,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   // ---------- Extensions panel ----------
-  private void initExtPanel() {
-    View root = findViewById(R.id.ext_panel_root);
+  private void initExtPanel(View root, Runnable onClose) {
     if (root == null) return;
     extPanelRoot = root;
     extSearch = root.findViewById(R.id.ext_search);
@@ -441,7 +453,7 @@ public final class MainActivity extends AppCompatActivity {
       }
       return false;
     });
-    root.findViewById(R.id.ext_close).setOnClickListener(v -> togglePanel(R.id.ext_panel_root));
+    root.findViewById(R.id.ext_close).setOnClickListener(v -> onClose.run());
     root.findViewById(R.id.ext_browse_more).setOnClickListener(v -> newTab("https://addons.mozilla.org/en-US/firefox/"));
   }
 
@@ -813,7 +825,7 @@ public final class MainActivity extends AppCompatActivity {
     tab.chip = chip;
     if (isDesktop) {
       ImageView fox = new ImageView(this);
-      fox.setImageResource(R.drawable.ic_fox);
+      fox.setImageResource(R.drawable.devxyz_launcher_foreground);
       LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(dp(18), dp(18));
       fp.setMargins(dp(10), 0, 0, 0);
       chip.addView(fox, fp);
@@ -958,27 +970,13 @@ public final class MainActivity extends AppCompatActivity {
       setSidebarActive(R.id.extensions);
       return;
     }
-    final EditText xpi = new EditText(this);
-    xpi.setHint("Mozilla-signed .xpi URL");
-    new AlertDialog.Builder(this).setTitle("Extensions")
-      .setMessage("Install a Mozilla-signed WebExtension. Installed add-ons persist across restarts.")
-      .setView(xpi).setPositiveButton("Install", (d, w) -> {
-        String uri = xpi.getText().toString().trim();
-        if (uri.startsWith("https://")) runtime.getWebExtensionController().install(uri)
-          .accept(ext -> runOnUiThread(() -> Toast.makeText(this, "Installed: " + extName(ext), Toast.LENGTH_LONG).show()),
-                  err -> runOnUiThread(() -> Toast.makeText(this, "Install failed: " + err.getMessage(), Toast.LENGTH_LONG).show()));
-        else Toast.makeText(this, "Use a secure HTTPS .xpi URL", Toast.LENGTH_LONG).show();
-      }).setNeutralButton("Manage", (d, w) -> runtime.getWebExtensionController().list()
-        .accept(list -> runOnUiThread(() -> {
-          if (list == null || list.isEmpty()) {
-            Toast.makeText(this, "No extensions installed", Toast.LENGTH_SHORT).show();
-            return;
-          }
-          String[] names = new String[list.size()];
-          for (int i = 0; i < list.size(); i++) names[i] = extName(list.get(i));
-          new AlertDialog.Builder(this).setTitle("Installed extensions").setItems(names, null).setPositiveButton("Done", null).show();
-        }), err -> runOnUiThread(() -> Toast.makeText(this, "Unable to list extensions", Toast.LENGTH_LONG).show())))
-      .setNegativeButton("Cancel", null).show();
+    if (extDialog == null) {
+      View root = getLayoutInflater().inflate(R.layout.panel_extensions, null);
+      extDialog = makeSheet(root);
+      initExtPanel(root, extDialog::dismiss);
+    }
+    refreshExtensionLists();
+    extDialog.show();
   }
 
   private void showVpn() {
@@ -987,26 +985,14 @@ public final class MainActivity extends AppCompatActivity {
       setSidebarActive(R.id.vpn);
       return;
     }
-    AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("OpenVPN");
-    if (!VpnProfileStore.hasProfile(this)) {
-      b.setMessage("Import an authorized .ovpn profile. DevxyzBrowser validates and stores it privately on this device.")
-       .setPositiveButton("Import .ovpn", (d, w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile", "application/octet-stream", "text/plain"}));
-    } else if (DevxyzVpnService.isConnected()) {
-      b.setMessage("Connected through OpenVPN.")
-       .setPositiveButton("Disconnect", (d, w) -> {
-         Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
-         startService(stop); setVpnStatus("Disconnecting • stopping OpenVPN");
-       });
+    if (vpnDialog == null) {
+      View root = getLayoutInflater().inflate(R.layout.panel_vpn, null);
+      vpnDialog = makeSheet(root);
+      initVpnPanel(root);
     } else {
-      b.setMessage("Connect with the imported OpenVPN profile. DevxyzBrowser will show Connected only after the OpenVPN core reports a connected tunnel.")
-       .setPositiveButton("Connect", (d, w) -> {
-         Intent permission = VpnService.prepare(this);
-         if (permission != null) vpnPermission.launch(permission);
-         else requestVpnCredentials();
-       })
-       .setNeutralButton("Replace profile", (d, w) -> openVpnProfile.launch(new String[]{"application/x-openvpn-profile", "application/octet-stream", "text/plain"}));
+      refreshVpnPanel();
     }
-    b.setNegativeButton("Close", null).show();
+    vpnDialog.show();
   }
 
   private void showInfo(String title, String message) {
