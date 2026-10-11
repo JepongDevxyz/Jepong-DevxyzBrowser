@@ -1029,7 +1029,7 @@ public final class MainActivity extends AppCompatActivity {
     dialog.show();
     // Size the dialog to wrap the menu card
     if (w != null) {
-      w.setLayout(dp(300), android.view.WindowManager.LayoutParams.WRAP_CONTENT);
+      w.setLayout(dp(260), android.view.WindowManager.LayoutParams.WRAP_CONTENT);
     }
   }
 
