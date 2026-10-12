@@ -533,12 +533,6 @@ public class AiChatActivity extends Activity {
     row.setOnClickListener(v -> {
       prefs.edit().putString("gemini_model", modelValue).apply();
       updateModelLabel();
-      View parent = (View) row.getParent();
-      while (parent != null && !(parent.getTag() instanceof BottomSheetDialog))
-        parent = (View) parent.getParent();
-      // Dismiss via tag lookup
-      android.view.View root = (android.view.View) row.getParent();
-      while (root.getParent() instanceof View) root = (View) root.getParent();
       Ui.toast(this, "Model: " + (isAuto ? "Automatic" : name));
     });
     return row;
@@ -578,12 +572,6 @@ public class AiChatActivity extends Activity {
         "Manage shared conversations", "Advanced Settings"};
     for (String item : items) {
       TextView row = drawerItem("  " + item);
-      row.setOnClickListener(v -> {
-        // Dismiss dialog via parent traversal
-        View p = (View) row.getParent();
-        while (p != null && !(p instanceof android.widget.PopupWindow)) p = (View) p.getParent();
-        handleChatMenu(item);
-      });
       root.addView(row);
     }
     BottomSheetDialog dialog = new BottomSheetDialog(this);
