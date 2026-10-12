@@ -122,6 +122,15 @@ public class AiChatActivity extends Activity {
     LinearLayout inputWrap = new LinearLayout(this);
     inputWrap.setOrientation(LinearLayout.VERTICAL);
     inputWrap.setPadding(dp(12), dp(4), dp(12), dp(14));
+    // Respect system navigation bar so input is never cut off
+    inputWrap.setFitsSystemWindows(true);
+    if (android.os.Build.VERSION.SDK_INT >= 20) {
+      inputWrap.setOnApplyWindowInsetsListener((v, insets) -> {
+        int bottom = insets.getSystemWindowInsetBottom();
+        v.setPadding(dp(12), dp(4), dp(12), dp(14) + bottom);
+        return insets.consumeSystemWindowInsets();
+      });
+    }
     LinearLayout box = new LinearLayout(this);
     box.setOrientation(LinearLayout.VERTICAL);
     box.setBackgroundResource(R.drawable.leo_input_bg);
@@ -140,7 +149,7 @@ public class AiChatActivity extends Activity {
     LinearLayout iconRow = new LinearLayout(this);
     iconRow.setOrientation(LinearLayout.HORIZONTAL);
     iconRow.setGravity(Gravity.CENTER_VERTICAL);
-    iconRow.setPadding(dp(2), dp(2), dp(2), dp(2));
+    iconRow.setPadding(dp(2), dp(2), dp(6), dp(2));
 
     ImageButton sparkBtn = iconBtn(R.drawable.ic_ai_sparkle);
     sparkBtn.setOnClickListener(v -> openQuickActionsDrawer());
@@ -160,7 +169,10 @@ public class AiChatActivity extends Activity {
     updateModelLabel();
     modelLabel.setTextSize(13);
     modelLabel.setTextColor(0xFFB0ADC7);
-    modelLabel.setPadding(dp(8), dp(8), dp(4), dp(8));
+    modelLabel.setPadding(dp(4), dp(8), dp(4), dp(8));
+    modelLabel.setSingleLine(true);
+    modelLabel.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    modelLabel.setMaxWidth(dp(150));
     modelLabel.setOnClickListener(v -> showModelSheet());
     iconRow.addView(modelLabel);
 
@@ -207,7 +219,7 @@ public class AiChatActivity extends Activity {
     ImageButton btn = new ImageButton(this);
     btn.setImageResource(resId);
     btn.setBackground(null);
-    btn.setPadding(dp(12), dp(12), dp(12), dp(12));
+    btn.setPadding(dp(10), dp(10), dp(10), dp(10));
     btn.setColorFilter(0xFFFFFFFF);
     return btn;
   }
