@@ -1046,56 +1046,66 @@ public final class MainActivity extends AppCompatActivity {
 
   private void showChromeMenu(View anchor) {
     // Chrome-style popup menu with icons, anchored top-right like Chrome.
-    final android.app.Dialog dialog = new android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar);
-    View root = getLayoutInflater().inflate(R.layout.panel_menu, null);
-    dialog.setContentView(root);
-    android.view.Window w = dialog.getWindow();
-    if (w != null) {
-      w.setGravity(Gravity.TOP | Gravity.END);
-      android.view.WindowManager.LayoutParams lp = w.getAttributes();
-      lp.y = dp(64); lp.x = dp(8);
-      w.setAttributes(lp);
-      w.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0x00000000));
-    }
-    dialog.setCanceledOnTouchOutside(true);
+    // Uses PopupWindow (like real Chrome) instead of Dialog for stability.
+    try {
+      View root = getLayoutInflater().inflate(R.layout.panel_menu, null);
+      final android.widget.PopupWindow popup = new android.widget.PopupWindow(
+          root, dp(260), android.view.WindowManager.LayoutParams.WRAP_CONTENT, true);
+      popup.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0x00000000));
+      popup.setOutsideTouchable(true);
 
-    // Top circular action row
-    root.findViewById(R.id.m_back).setOnClickListener(v -> { dialog.dismiss(); session.goBack(); });
-    root.findViewById(R.id.m_forward).setOnClickListener(v -> { dialog.dismiss(); session.goForward(); });
-    root.findViewById(R.id.m_bookmark).setOnClickListener(v -> { dialog.dismiss(); bookmarkCurrent(); });
-    root.findViewById(R.id.m_download).setOnClickListener(v -> { dialog.dismiss(); showDownloads(); });
-    root.findViewById(R.id.m_refresh).setOnClickListener(v -> { dialog.dismiss(); session.reload(); });
+      // Dismiss helper that safely runs the action after popup closes.
+      final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+      java.util.function.Consumer<Runnable> runAfterDismiss = action -> {
+        try { popup.dismiss(); } catch (Exception ignored) {}
+        handler.post(() -> {
+          try { action.run(); } catch (Exception e) {
+            Toast.makeText(this, "Action failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+          }
+        });
+      };
 
-    // Menu items
-    root.findViewById(R.id.m_newtab).setOnClickListener(v -> { dialog.dismiss(); newTab(); });
-    root.findViewById(R.id.m_incognito).setOnClickListener(v -> { dialog.dismiss(); newIncognitoTab(); });
-    root.findViewById(R.id.m_history).setOnClickListener(v -> { dialog.dismiss(); showList("History", historyItems); });
-    root.findViewById(R.id.m_cleardata).setOnClickListener(v -> { dialog.dismiss(); confirmClearData(); });
-    root.findViewById(R.id.m_site).setOnClickListener(v -> { dialog.dismiss(); showSiteControls(); });
-    root.findViewById(R.id.m_downloads).setOnClickListener(v -> { dialog.dismiss(); showDownloads(); });
-    root.findViewById(R.id.m_bookmarks).setOnClickListener(v -> { dialog.dismiss(); showBookmarks(); });
-    root.findViewById(R.id.m_recent).setOnClickListener(v -> { dialog.dismiss(); showRecentTabs(); });
-    root.findViewById(R.id.m_share).setOnClickListener(v -> { dialog.dismiss(); sharePage(); });
-    root.findViewById(R.id.m_find).setOnClickListener(v -> { dialog.dismiss(); showFindInPage(); });
-    root.findViewById(R.id.m_translate).setOnClickListener(v -> { dialog.dismiss(); translatePage(); });
-    android.widget.CheckBox desktopCheck = root.findViewById(R.id.m_desktop_check);
-    desktopCheck.setChecked(prefs.getBoolean("desktop_site", false));
-    root.findViewById(R.id.m_desktop).setOnClickListener(v -> {
-      boolean on = !prefs.getBoolean("desktop_site", false);
-      prefs.edit().putBoolean("desktop_site", on).apply();
-      desktopCheck.setChecked(on);
-      applyDesktopSite(on);
-      dialog.dismiss();
-    });
-    root.findViewById(R.id.m_extensions).setOnClickListener(v -> { dialog.dismiss(); showExtensions(); });
-    root.findViewById(R.id.m_vpn).setOnClickListener(v -> { dialog.dismiss(); showVpn(); });
-    root.findViewById(R.id.m_settings).setOnClickListener(v -> { dialog.dismiss(); showSettings(); });
-    root.findViewById(R.id.m_help).setOnClickListener(v -> { dialog.dismiss(); showHelp(); });
+      // Safe click setter: ignores missing views instead of crashing.
+      java.util.function.BiConsumer<Integer, Runnable> onMenuClick = (id, action) -> {
+        View v = root.findViewById(id);
+        if (v != null) v.setOnClickListener(x -> runAfterDismiss.accept(action));
+      };
 
-    dialog.show();
-    // Size the dialog to wrap the menu card
-    if (w != null) {
-      w.setLayout(dp(260), android.view.WindowManager.LayoutParams.WRAP_CONTENT);
+      // Top circular action row
+      onMenuClick.accept(R.id.m_back, () -> { if (session != null) session.goBack(); });
+      onMenuClick.accept(R.id.m_forward, () -> { if (session != null) session.goForward(); });
+      onMenuClick.accept(R.id.m_bookmark, this::bookmarkCurrent);
+      onMenuClick.accept(R.id.m_download, this::showDownloads);
+      onMenuClick.accept(R.id.m_refresh, () -> { if (session != null) session.reload(); });
+
+      // Menu items
+      onMenuClick.accept(R.id.m_newtab, this::newTab);
+      onMenuClick.accept(R.id.m_incognito, this::newIncognitoTab);
+      onMenuClick.accept(R.id.m_history, () -> showList("History", historyItems));
+      onMenuClick.accept(R.id.m_cleardata, this::confirmClearData);
+      onMenuClick.accept(R.id.m_site, this::showSiteControls);
+      onMenuClick.accept(R.id.m_downloads, this::showDownloads);
+      onMenuClick.accept(R.id.m_bookmarks, this::showBookmarks);
+      onMenuClick.accept(R.id.m_recent, this::showRecentTabs);
+      onMenuClick.accept(R.id.m_share, this::sharePage);
+      onMenuClick.accept(R.id.m_find, this::showFindInPage);
+      onMenuClick.accept(R.id.m_translate, this::translatePage);
+      android.widget.CheckBox desktopCheck = root.findViewById(R.id.m_desktop_check);
+      if (desktopCheck != null) desktopCheck.setChecked(prefs.getBoolean("desktop_site", false));
+      onMenuClick.accept(R.id.m_desktop, () -> {
+        boolean on = !prefs.getBoolean("desktop_site", false);
+        prefs.edit().putBoolean("desktop_site", on).apply();
+        applyDesktopSite(on);
+      });
+      onMenuClick.accept(R.id.m_extensions, this::showExtensions);
+      onMenuClick.accept(R.id.m_vpn, this::showVpn);
+      onMenuClick.accept(R.id.m_settings, this::showSettings);
+      onMenuClick.accept(R.id.m_help, this::showHelp);
+
+      // Show anchored to the top-right, below the toolbar.
+      popup.showAsDropDown(anchor, -dp(260) + anchor.getWidth(), dp(8));
+    } catch (Exception e) {
+      Toast.makeText(this, "Menu failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
     }
   }
 
