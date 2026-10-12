@@ -61,6 +61,7 @@ public final class MainActivity extends AppCompatActivity {
   private boolean vpnReceiverRegistered;
   SharedPreferences prefs;
   final SettingsScreens settingsScreens = new SettingsScreens(this);
+  final AiChatPanel aiChatPanel = new AiChatPanel(this);
   private boolean isDesktop;
 
   // Desktop right-panel widgets (null on phones).
@@ -108,9 +109,9 @@ public final class MainActivity extends AppCompatActivity {
   final ArrayList<String> historyItems = new ArrayList<>();
   final ArrayList<String> bookmarks = new ArrayList<>();
   final ArrayList<BrowserTab> tabs = new ArrayList<>();
-  private BrowserTab activeTab;
+  BrowserTab activeTab;
 
-  private static final class BrowserTab {
+  static final class BrowserTab {
     final GeckoSession session;
     String url = "";
     LinearLayout chip;
@@ -2285,6 +2286,7 @@ public final class MainActivity extends AppCompatActivity {
         applyDesktopSite(on);
       });
       onMenuClick.accept(R.id.m_extensions, this::showExtensions);
+      onMenuClick.accept(R.id.m_ai, () -> aiChatPanel.show());
       onMenuClick.accept(R.id.m_vpn, this::showVpn);
       onMenuClick.accept(R.id.m_settings, this::showSettings);
       onMenuClick.accept(R.id.m_help, this::showHelp);
