@@ -2570,7 +2570,7 @@ public final class MainActivity extends AppCompatActivity {
     if (settingsDialog == null) {
       View root = getLayoutInflater().inflate(R.layout.panel_settings, null);
       settingsDialog = makeSheet(root);
-      settingsScreens.initSettingsPanel(root);
+      settingsScreens.initSettingsPanel((LinearLayout) root);
     } else {
       refreshSettingsPanel();
     }
