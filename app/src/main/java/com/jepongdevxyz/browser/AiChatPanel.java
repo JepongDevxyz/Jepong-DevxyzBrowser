@@ -45,7 +45,7 @@ public final class AiChatPanel {
     header.setOrientation(LinearLayout.HORIZONTAL);
     header.setGravity(Gravity.CENTER_VERTICAL);
     TextView title = new TextView(a);
-    title.setText("\u2728 Devxyz AI");
+    title.setText("\u2728 JepongDevxyz AI");
     title.setTextSize(18);
     title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
     title.setTextColor(a.getColor(R.color.text));
@@ -98,7 +98,7 @@ public final class AiChatPanel {
     inputRow.setOrientation(LinearLayout.HORIZONTAL);
     inputRow.setGravity(Gravity.CENTER_VERTICAL);
     input = new EditText(a);
-    input.setHint("Ask Devxyz AI…");
+    input.setHint("Ask JepongDevxyz AI…");
     input.setTextSize(15);
     input.setTextColor(a.getColor(R.color.text));
     input.setHintTextColor(a.getColor(R.color.muted));
@@ -232,7 +232,7 @@ public final class AiChatPanel {
       // Replace last user message with the full prompt (page text included)
       toSend.set(toSend.size() - 1, new GeminiAi.Message(true, overridePrompt));
     }
-    String system = "You are Devxyz AI, a helpful assistant built into DevxyzBrowser. "
+    String system = "You are JepongDevxyz AI, a helpful assistant built into DevxyzBrowser. "
         + "Answer concisely and in the user's language (Tagalog or English).";
     GeminiAi.chat(a.prefs, toSend, system, new GeminiAi.ChatCallback() {
       @Override public void onReply(String text) {
