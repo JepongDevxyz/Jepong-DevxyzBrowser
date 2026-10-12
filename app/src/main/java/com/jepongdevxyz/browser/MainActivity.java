@@ -41,17 +41,6 @@ import androidx.appcompat.widget.PopupMenu;
 
 public final class MainActivity extends AppCompatActivity {
   private static GeckoRuntime runtime;
-  private static GeckoRuntime privateRuntime;
-
-  /** Private-browsing runtime for Incognito tabs (separate profile, no history). */
-  private GeckoRuntime privateRuntime() {
-    if (privateRuntime == null) {
-      GeckoRuntimeSettings.Builder rsb = new GeckoRuntimeSettings.Builder();
-      rsb.usePrivateMode(true);
-      privateRuntime = GeckoRuntime.create(this, rsb.build());
-    }
-    return privateRuntime;
-  }
   private GeckoSession session;
   private EditText address, heroSearch;
   private ProgressBar progress;
@@ -795,7 +784,7 @@ public final class MainActivity extends AppCompatActivity {
   private void newTab() {
     try {
       GeckoSession newSession = new GeckoSession();
-      newSession.open(activeTab != null && activeTab.incognito ? privateRuntime() : runtime);
+      newSession.open(runtime);
       if (prefs.getBoolean("desktop_site", false)) {
         try {
           newSession.getSettings().setUserAgentOverride(
@@ -803,7 +792,6 @@ public final class MainActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
       }
       BrowserTab tab = new BrowserTab(newSession);
-      tab.incognito = activeTab != null && activeTab.incognito;
       tabs.add(tab);
       attachSession(tab);
       addTabChip(tab);
@@ -820,8 +808,12 @@ public final class MainActivity extends AppCompatActivity {
 
   private void newIncognitoTab() {
     try {
-      GeckoSession newSession = new GeckoSession();
-      newSession.open(privateRuntime());
+      // Private mode is per-session in GeckoView (no separate runtime needed).
+      GeckoSessionSettings settings = new GeckoSessionSettings.Builder()
+          .usePrivateMode(true)
+          .build();
+      GeckoSession newSession = new GeckoSession(settings);
+      newSession.open(runtime);
       BrowserTab tab = new BrowserTab(newSession);
       tab.incognito = true;
       tabs.add(tab);
