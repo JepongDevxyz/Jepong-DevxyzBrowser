@@ -723,7 +723,80 @@ public final class SettingsScreens {
     root.findViewById(R.id.set_downloads_row).setOnClickListener(v -> showDownloadSettings());
     root.findViewById(R.id.set_default_browser_row).setOnClickListener(v -> openDefaultBrowserSettings());
     root.findViewById(R.id.set_appearance_row).setOnClickListener(v -> showAppearanceSettings());
+    // AI Assistant row (added programmatically since panel_settings.xml is fixed)
+    LinearLayout aiRow = appearanceRow("AI Assistant",
+        com.jepongdevxyz.browser.util.GeminiAi.getKeys(a.prefs).isEmpty() ? "Not set up" : "Gemini ready");
+    aiRow.setOnClickListener(v -> showAiSettings());
+    // Insert before the last child (version footer if any)
+    root.addView(aiRow, Math.max(0, root.getChildCount() - 1));
     a.refreshSettingsPanel();
+  }
+
+
+  public void showAiSettings() {
+    LinearLayout root = new LinearLayout(a);
+    root.setOrientation(LinearLayout.VERTICAL);
+    int pad = a.dp(20);
+    root.setPadding(pad, pad, pad, a.dp(8));
+    ScrollView scroll = new ScrollView(a);
+    scroll.addView(root);
+
+    TextView title = new TextView(a);
+    title.setText("AI Assistant");
+    title.setTextSize(20);
+    title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+    title.setTextColor(a.getColor(R.color.text));
+    title.setPadding(0, 0, 0, a.dp(8));
+    root.addView(title);
+
+    TextView desc = new TextView(a);
+    desc.setText("Powered by Google Gemini. Add API keys below (one per line) — keys rotate automatically on quota limits. Get a free key at aistudio.google.com.");
+    desc.setTextSize(13);
+    desc.setTextColor(a.getColor(R.color.muted));
+    desc.setPadding(0, 0, 0, a.dp(12));
+    root.addView(desc);
+
+    TextView keyLabel = new TextView(a);
+    keyLabel.setText("Gemini API keys");
+    keyLabel.setTextSize(14);
+    keyLabel.setTextColor(a.getColor(R.color.text));
+    keyLabel.setPadding(0, 0, 0, a.dp(4));
+    root.addView(keyLabel);
+
+    android.widget.EditText keyInput = new android.widget.EditText(a);
+    keyInput.setHint("Paste API key(s), one per line");
+    keyInput.setTextSize(14);
+    keyInput.setTextColor(a.getColor(R.color.text));
+    keyInput.setHintTextColor(a.getColor(R.color.muted));
+    keyInput.setMinLines(3);
+    keyInput.setText(a.prefs.getString("gemini_api_keys", ""));
+    root.addView(keyInput);
+
+    LinearLayout btnRow = new LinearLayout(a);
+    btnRow.setOrientation(LinearLayout.HORIZONTAL);
+    btnRow.setPadding(0, a.dp(12), 0, 0);
+    android.widget.Button testBtn = new android.widget.Button(a);
+    testBtn.setText("Test");
+    testBtn.setOnClickListener(v -> {
+      String key = keyInput.getText().toString().trim().split("\\n")[0].trim();
+      if (key.isEmpty()) { Ui.toast(a, "Enter a key first"); return; }
+      Ui.toast(a, "Testing key…");
+      com.jepongdevxyz.browser.util.GeminiAi.testKey(key, new com.jepongdevxyz.browser.util.GeminiAi.ChatCallback() {
+        @Override public void onReply(String t) { Ui.toast(a, "Key works!"); }
+        @Override public void onError(String m) { Ui.toastLong(a, "Key failed: " + m); }
+      });
+    });
+    btnRow.addView(testBtn);
+    android.widget.Button saveBtn = new android.widget.Button(a);
+    saveBtn.setText("Save");
+    saveBtn.setOnClickListener(v -> {
+      com.jepongdevxyz.browser.util.GeminiAi.saveKeys(a.prefs, keyInput.getText().toString());
+      Ui.toast(a, "API keys saved");
+    });
+    btnRow.addView(saveBtn);
+    root.addView(btnRow);
+
+    Ui.dialog(a).setView(scroll).setPositiveButton("Done", null).show();
   }
 
 }
