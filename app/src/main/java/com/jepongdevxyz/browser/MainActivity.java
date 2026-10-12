@@ -41,6 +41,17 @@ import androidx.appcompat.widget.PopupMenu;
 
 public final class MainActivity extends AppCompatActivity {
   private static GeckoRuntime runtime;
+  private static GeckoRuntime privateRuntime;
+
+  /** Private-browsing runtime for Incognito tabs (separate profile, no history). */
+  private GeckoRuntime privateRuntime() {
+    if (privateRuntime == null) {
+      GeckoRuntimeSettings.Builder rsb = new GeckoRuntimeSettings.Builder();
+      rsb.usePrivateMode(true);
+      privateRuntime = GeckoRuntime.create(this, rsb.build());
+    }
+    return privateRuntime;
+  }
   private GeckoSession session;
   private EditText address, heroSearch;
   private ProgressBar progress;
@@ -89,6 +100,7 @@ public final class MainActivity extends AppCompatActivity {
     String url = "";
     LinearLayout chip;
     TextView label;
+    boolean incognito = false;
     BrowserTab(GeckoSession session) { this.session = session; }
   }
 
@@ -781,18 +793,45 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void newTab() {
-    GeckoSession newSession = new GeckoSession();
-    newSession.open(runtime);
-    BrowserTab tab = new BrowserTab(newSession);
-    tabs.add(tab);
-    attachSession(tab);
-    addTabChip(tab);
-    selectTab(tab);
+    try {
+      GeckoSession newSession = new GeckoSession();
+      newSession.open(activeTab != null && activeTab.incognito ? privateRuntime() : runtime);
+      if (prefs.getBoolean("desktop_site", false)) {
+        try {
+          newSession.getSettings().setUserAgentOverride(
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36");
+        } catch (Exception ignored) {}
+      }
+      BrowserTab tab = new BrowserTab(newSession);
+      tab.incognito = activeTab != null && activeTab.incognito;
+      tabs.add(tab);
+      attachSession(tab);
+      addTabChip(tab);
+      selectTab(tab);
+    } catch (Exception e) {
+      Toast.makeText(this, "Could not open new tab: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
   }
 
   private void newTab(String url) {
     newTab();
     load(url);
+  }
+
+  private void newIncognitoTab() {
+    try {
+      GeckoSession newSession = new GeckoSession();
+      newSession.open(privateRuntime());
+      BrowserTab tab = new BrowserTab(newSession);
+      tab.incognito = true;
+      tabs.add(tab);
+      attachSession(tab);
+      addTabChip(tab);
+      selectTab(tab);
+      Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show();
+    } catch (Exception e) {
+      Toast.makeText(this, "Could not open incognito tab: " + e.getMessage(), Toast.LENGTH_LONG).show();
+    }
   }
 
   private void attachSession(BrowserTab tab) {
@@ -803,7 +842,8 @@ public final class MainActivity extends AppCompatActivity {
           address.setText(url); progress.setVisibility(View.VISIBLE); progress.setProgress(5);
         }
         updateTabLabel(tab);
-        if (prefs.getBoolean("remember_history", true) && !historyItems.contains(url)) historyItems.add(0, url);
+        // Incognito tabs never touch history.
+        if (!tab.incognito && prefs.getBoolean("remember_history", true) && !historyItems.contains(url)) historyItems.add(0, url);
       }
       @Override public void onPageStop(GeckoSession s, boolean ok) {
         if (tab == activeTab) {
@@ -841,6 +881,9 @@ public final class MainActivity extends AppCompatActivity {
     geckoView.setSession(session);
     startPage.setVisibility(tab.url.isEmpty() ? View.VISIBLE : View.GONE);
     address.setText(tab.url.isEmpty() ? "" : tab.url);
+    // Incognito indicator: show 🕶 in the tab count badge when in a private tab.
+    TextView tc = findViewById(R.id.tabCount);
+    if (tc != null) tc.setText(tab.incognito ? "🕶" : String.valueOf(tabs.size()));
     progress.setVisibility(View.GONE);
     for (BrowserTab item : tabs) updateTabLabel(item);
   }
@@ -925,9 +968,14 @@ public final class MainActivity extends AppCompatActivity {
   private void closeTab(BrowserTab tab) {
     int index = tabs.indexOf(tab);
     if (index < 0) return;
+    // Remember for "Recent tabs" (skip incognito and blank tabs).
+    if (!tab.incognito && tab.url != null && !tab.url.isEmpty() && !tab.url.startsWith("about:")) {
+      recentlyClosed.add(0, tab.url);
+      while (recentlyClosed.size() > 25) recentlyClosed.remove(recentlyClosed.size() - 1);
+    }
     tabs.remove(index);
     if (tab.chip != null && tabStrip != null) tabStrip.removeView(tab.chip);
-    tab.session.close();
+    try { tab.session.close(); } catch (Exception ignored) {}
     if (tabs.isEmpty()) newTab();
     else if (activeTab == tab) selectTab(tabs.get(Math.max(0, index - 1)));
     updateTabCount();
@@ -973,6 +1021,7 @@ public final class MainActivity extends AppCompatActivity {
       TextView label = new TextView(this);
       String title = tab.url.isEmpty() ? "New Tab" : Uri.parse(tab.url).getHost();
       if (title == null || title.isEmpty()) title = "Page";
+      if (tab.incognito) title = "🕶 " + title;
       label.setText(title);
       label.setTextSize(14);
       label.setTextColor(getColor(R.color.text));
@@ -1019,15 +1068,29 @@ public final class MainActivity extends AppCompatActivity {
 
     // Menu items
     root.findViewById(R.id.m_newtab).setOnClickListener(v -> { dialog.dismiss(); newTab(); });
+    root.findViewById(R.id.m_incognito).setOnClickListener(v -> { dialog.dismiss(); newIncognitoTab(); });
     root.findViewById(R.id.m_history).setOnClickListener(v -> { dialog.dismiss(); showList("History", historyItems); });
     root.findViewById(R.id.m_cleardata).setOnClickListener(v -> { dialog.dismiss(); confirmClearData(); });
+    root.findViewById(R.id.m_site).setOnClickListener(v -> { dialog.dismiss(); showSiteControls(); });
     root.findViewById(R.id.m_downloads).setOnClickListener(v -> { dialog.dismiss(); showDownloads(); });
     root.findViewById(R.id.m_bookmarks).setOnClickListener(v -> { dialog.dismiss(); showBookmarks(); });
+    root.findViewById(R.id.m_recent).setOnClickListener(v -> { dialog.dismiss(); showRecentTabs(); });
+    root.findViewById(R.id.m_share).setOnClickListener(v -> { dialog.dismiss(); sharePage(); });
+    root.findViewById(R.id.m_find).setOnClickListener(v -> { dialog.dismiss(); showFindInPage(); });
+    root.findViewById(R.id.m_translate).setOnClickListener(v -> { dialog.dismiss(); translatePage(); });
+    android.widget.CheckBox desktopCheck = root.findViewById(R.id.m_desktop_check);
+    desktopCheck.setChecked(prefs.getBoolean("desktop_site", false));
+    root.findViewById(R.id.m_desktop).setOnClickListener(v -> {
+      boolean on = !prefs.getBoolean("desktop_site", false);
+      prefs.edit().putBoolean("desktop_site", on).apply();
+      desktopCheck.setChecked(on);
+      applyDesktopSite(on);
+      dialog.dismiss();
+    });
     root.findViewById(R.id.m_extensions).setOnClickListener(v -> { dialog.dismiss(); showExtensions(); });
     root.findViewById(R.id.m_vpn).setOnClickListener(v -> { dialog.dismiss(); showVpn(); });
     root.findViewById(R.id.m_settings).setOnClickListener(v -> { dialog.dismiss(); showSettings(); });
-    root.findViewById(R.id.m_about).setOnClickListener(v -> { dialog.dismiss(); showInfo("DevxyzBrowser",
-        "DevxyzBrowser • GeckoView 156\nFast. Private. Flexible.\nFirefox-compatible settings, built-in VPN and extensions."); });
+    root.findViewById(R.id.m_help).setOnClickListener(v -> { dialog.dismiss(); showHelp(); });
 
     dialog.show();
     // Size the dialog to wrap the menu card
@@ -1056,6 +1119,114 @@ public final class MainActivity extends AppCompatActivity {
           Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show();
         })
         .setNegativeButton("Cancel", null).show();
+  }
+
+  // ---- Recently closed tabs ----
+  private final ArrayList<String> recentlyClosed = new ArrayList<>();
+
+  private void showRecentTabs() {
+    if (recentlyClosed.isEmpty()) {
+      showInfo("Recent tabs", "No recently closed tabs.");
+      return;
+    }
+    showList("Recent tabs", recentlyClosed);
+  }
+
+  // ---- Share ----
+  private void sharePage() {
+    String url = activeTab != null ? activeTab.url : "";
+    if (url == null || url.isEmpty() || !url.startsWith("http")) {
+      Toast.makeText(this, "Open a page first to share it", Toast.LENGTH_SHORT).show();
+      return;
+    }
+    android.content.Intent share = new android.content.Intent(android.content.Intent.ACTION_SEND);
+    share.setType("text/plain");
+    share.putExtra(android.content.Intent.EXTRA_TEXT, url);
+    startActivity(android.content.Intent.createChooser(share, "Share via"));
+  }
+
+  // ---- Find in page ----
+  private void showFindInPage() {
+    if (activeTab == null || activeTab.url.isEmpty()) {
+      Toast.makeText(this, "Open a page first", Toast.LENGTH_SHORT).show();
+      return;
+    }
+    AlertDialog.Builder b = new AlertDialog.Builder(this);
+    b.setTitle("Find in page");
+    final android.widget.EditText input = new android.widget.EditText(this);
+    input.setHint("Search text");
+    input.setSingleLine(true);
+    int pad = dp(16);
+    input.setPadding(pad, pad, pad, pad);
+    b.setView(input);
+    b.setPositiveButton("Find", (d, which) -> {
+      String q = input.getText().toString();
+      if (!q.isEmpty()) {
+        try {
+          session.getFinder().find(q, 0).then(
+            result -> { return null; },
+            e -> { Toast.makeText(this, "Find failed", Toast.LENGTH_SHORT).show(); return null; });
+        } catch (Exception e) {
+          Toast.makeText(this, "Find not available", Toast.LENGTH_SHORT).show();
+        }
+      }
+    });
+    b.setNegativeButton("Cancel", null);
+    b.show();
+  }
+
+  // ---- Translate ----
+  private void translatePage() {
+    String url = activeTab != null ? activeTab.url : "";
+    if (url == null || url.isEmpty() || !url.startsWith("http")) {
+      Toast.makeText(this, "Open a page first to translate it", Toast.LENGTH_SHORT).show();
+      return;
+    }
+    try {
+      String t = "https://translate.google.com/translate?sl=auto&tl=tl&u=" +
+          java.net.URLEncoder.encode(url, "UTF-8");
+      newTab(t);
+    } catch (Exception e) {
+      Toast.makeText(this, "Could not open Translate", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  // ---- Desktop site ----
+  private void applyDesktopSite(boolean on) {
+    try {
+      String ua = on
+        ? "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+        : null;
+      // Apply to current session via settings; GeckoView picks it up on reload.
+      if (session != null) {
+        session.getSettings().setUserAgentOverride(ua);
+        session.reload();
+      }
+      Toast.makeText(this, on ? "Desktop site ON" : "Desktop site OFF", Toast.LENGTH_SHORT).show();
+    } catch (Exception e) {
+      Toast.makeText(this, "Desktop site not available", Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  // ---- Site controls ----
+  private void showSiteControls() {
+    String url = activeTab != null ? activeTab.url : "";
+    if (url == null || url.isEmpty()) url = "(new tab)";
+    boolean secure = url.startsWith("https://");
+    String host;
+    try { host = Uri.parse(url).getHost(); } catch (Exception e) { host = null; }
+    if (host == null) host = url;
+    showInfo("Site controls",
+        "Site: " + host + "\nConnection: " + (secure ? "Secure (HTTPS)" : "Not secure") +
+        "\n\nTip: use Settings → Privacy for tracking protection.");
+  }
+
+  // ---- Help & feedback ----
+  private void showHelp() {
+    showInfo("Help & feedback",
+        "DevxyzBrowser • GeckoView 156\nFast. Private. Flexible.\n\n" +
+        "Tips:\n• Tap ⋮ for all browser actions\n• Tap the tab count to switch tabs\n• Long-press the address bar to paste\n\n" +
+        "Made by JepongDevxyz.");
   }
 
   // ---- Download manager ----
@@ -1403,9 +1574,10 @@ public final class MainActivity extends AppCompatActivity {
   @Override protected void onPause() {
     super.onPause();
     // Firefox-style: remember open tabs so they can be restored on startup.
+    // Incognito tabs are never saved.
     StringBuilder sb = new StringBuilder();
     for (BrowserTab tab : tabs) {
-      if (tab.url != null && !tab.url.isEmpty() && !tab.url.startsWith("about:")) {
+      if (!tab.incognito && tab.url != null && !tab.url.isEmpty() && !tab.url.startsWith("about:")) {
         if (sb.length() > 0) sb.append('\n');
         sb.append(tab.url);
       }
