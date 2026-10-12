@@ -28,6 +28,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.jepongdevxyz.browser.util.ImgUtil;
+import com.jepongdevxyz.browser.util.TvUtil;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 import com.jepongdevxyz.browser.vpn.VpnGateApi;
@@ -158,6 +159,12 @@ public final class MainActivity extends AppCompatActivity {
 
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
+    // TV detected -> hand off to the D-pad friendly TV home.
+    if (TvUtil.isTv(this)) {
+      startActivity(new Intent(this, TvMainActivity.class));
+      finish();
+      return;
+    }
     prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
     setContentView(R.layout.activity_main);
     isDesktop = findViewById(R.id.sidebar) != null;
