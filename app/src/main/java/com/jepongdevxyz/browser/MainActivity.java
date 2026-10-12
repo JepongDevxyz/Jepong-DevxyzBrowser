@@ -61,7 +61,18 @@ public final class MainActivity extends AppCompatActivity {
   private TextView vpnStateText, vpnHostText, vpnSubText, vpnSecureTitle, vpnIpText;
   private SwitchMaterial swAuto, swKill, swTrack;
   private EditText extSearch;
-  private LinearLayout extInstalledList, extRecommendedList;
+  private LinearLayout extInstalledList, extRecommendedList, extSearchResults;
+  private final java.util.List<AmoExt> amoResults = new java.util.ArrayList<>();
+  private String amoQuery = "";
+  private final android.os.Handler amoHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+  private Runnable amoPending;
+
+  /** One extension from the addons.mozilla.org public search API. */
+  private static final class AmoExt {
+    String name = "", slug = "", author = "", version = "", iconUrl = "", fileUrl = "", summary = "";
+    long users;
+    double rating;
+  }
   private LinearLayout tileRow;
 
   private boolean ipLookedUp;
@@ -516,12 +527,19 @@ public final class MainActivity extends AppCompatActivity {
     extSearch = root.findViewById(R.id.ext_search);
     extInstalledList = root.findViewById(R.id.ext_installed_list);
     extRecommendedList = root.findViewById(R.id.ext_recommended_list);
+    extSearchResults = root.findViewById(R.id.ext_search_results);
     extSearch.addTextChangedListener(new TextWatcher() {
       @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
       @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
       @Override public void afterTextChanged(Editable s) {
         extFilter = s.toString();
         renderExtensionLists();
+        // Debounced search across ALL of addons.mozilla.org, like Firefox.
+        if (amoPending != null) amoHandler.removeCallbacks(amoPending);
+        final String q = s.toString().trim();
+        amoPending = () -> searchAmo(q);
+        amoHandler.postDelayed(amoPending, 600);
+
       }
     });
     extSearch.setOnTouchListener((v, event) -> {
@@ -605,6 +623,182 @@ public final class MainActivity extends AppCompatActivity {
     h.setTypeface(h.getTypeface(), android.graphics.Typeface.BOLD);
     h.setPadding(0, dp(12), 0, dp(4));
     return h;
+  }
+
+  /** Searches ALL extensions on addons.mozilla.org via the public API, like Firefox. */
+  private void searchAmo(String q) {
+    amoQuery = q;
+    amoResults.clear();
+    if (extSearchResults == null) return;
+    if (q.length() < 2) {
+      runOnUiThread(this::renderAmoResults);
+      return;
+    }
+    runOnUiThread(() -> {
+      extSearchResults.removeAllViews();
+      extSearchResults.addView(extSectionHeader("Searching addons.mozilla.org…"));
+    });
+    new Thread(() -> {
+      try {
+        String url = "https://addons.mozilla.org/api/v5/addons/search/?q="
+            + java.net.URLEncoder.encode(q, "UTF-8")
+            + "&app=firefox&type=extension&page_size=20&sort=relevance";
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(10000);
+        c.setReadTimeout(10000);
+        c.setRequestProperty("User-Agent", "DevxyzBrowser");
+        c.setRequestProperty("Accept", "application/json");
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream()))) {
+          String line;
+          while ((line = br.readLine()) != null) sb.append(line);
+        } finally {
+          c.disconnect();
+        }
+        java.util.List<AmoExt> out = new java.util.ArrayList<>();
+        org.json.JSONObject root = new org.json.JSONObject(sb.toString());
+        org.json.JSONArray arr = root.optJSONArray("results");
+        if (arr != null) {
+          for (int i = 0; i < arr.length(); i++) {
+            org.json.JSONObject o = arr.optJSONObject(i);
+            if (o == null) continue;
+            AmoExt a = new AmoExt();
+            a.slug = o.optString("slug", "");
+            a.name = localized(o.optJSONObject("name"), a.slug);
+            a.summary = localized(o.optJSONObject("summary"), "");
+            org.json.JSONArray authors = o.optJSONArray("authors");
+            if (authors != null && authors.length() > 0) {
+              a.author = authors.optJSONObject(0).optString("name", "");
+            }
+            a.iconUrl = o.optString("icon_url", "");
+            a.users = o.optLong("average_daily_users", 0);
+            org.json.JSONObject ratings = o.optJSONObject("ratings");
+            if (ratings != null) a.rating = ratings.optDouble("average", 0);
+            org.json.JSONObject cv = o.optJSONObject("current_version");
+            if (cv != null) {
+              a.version = cv.optString("version", "");
+              org.json.JSONObject file = cv.optJSONObject("file");
+              if (file != null) a.fileUrl = file.optString("url", "");
+            }
+            if (!a.fileUrl.isEmpty()) out.add(a);
+          }
+        }
+        final java.util.List<AmoExt> done = out;
+        runOnUiThread(() -> {
+          // Ignore stale responses if the user typed something else meanwhile.
+          if (!amoQuery.equals(q)) return;
+          amoResults.clear();
+          amoResults.addAll(done);
+          renderAmoResults();
+        });
+      } catch (Exception e) {
+        runOnUiThread(() -> {
+          if (!amoQuery.equals(q) || extSearchResults == null) return;
+          extSearchResults.removeAllViews();
+          extSearchResults.addView(extSectionHeader("Search failed — check your connection"));
+        });
+      }
+    }).start();
+  }
+
+  private static String localized(org.json.JSONObject o, String fallback) {
+    if (o == null) return fallback;
+    String v = o.optString("en-US", null);
+    if (v != null && !v.isEmpty()) return v;
+    java.util.Iterator<String> keys = o.keys();
+    if (keys.hasNext()) {
+      String k = keys.next();
+      v = o.optString(k, null);
+      if (v != null && !v.isEmpty()) return v;
+    }
+    return fallback;
+  }
+
+  private void renderAmoResults() {
+    if (extSearchResults == null) return;
+    extSearchResults.removeAllViews();
+    if (amoQuery.length() < 2 || amoResults.isEmpty()) return;
+    extSearchResults.addView(extSectionHeader("All extensions (" + amoResults.size() + ")"));
+    for (AmoExt a : amoResults) {
+      extSearchResults.addView(amoExtRow(a));
+    }
+  }
+
+  private View amoExtRow(AmoExt a) {
+    LinearLayout row = new LinearLayout(this);
+    row.setOrientation(LinearLayout.HORIZONTAL);
+    row.setGravity(Gravity.CENTER_VERTICAL);
+    row.setPadding(0, dp(10), 0, dp(10));
+    ImageView icon = new ImageView(this);
+    icon.setImageResource(R.drawable.ic_extension_puzzle);
+    row.addView(icon, new LinearLayout.LayoutParams(dp(40), dp(40)));
+    if (!a.iconUrl.isEmpty()) ImgUtil.loadUrl(icon, a.iconUrl);
+    LinearLayout texts = new LinearLayout(this);
+    texts.setOrientation(LinearLayout.VERTICAL);
+    LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+    tp.setMargins(dp(12), 0, dp(8), 0);
+    TextView nameView = new TextView(this);
+    nameView.setText(a.name);
+    nameView.setTextSize(14);
+    nameView.setTextColor(getColor(R.color.text));
+    nameView.setTypeface(nameView.getTypeface(), android.graphics.Typeface.BOLD);
+    TextView descView = new TextView(this);
+    StringBuilder sub = new StringBuilder();
+    if (!a.author.isEmpty()) sub.append(a.author);
+    if (!a.version.isEmpty()) { if (sub.length() > 0) sub.append(" • "); sub.append("v").append(a.version); }
+    if (a.rating > 0) { if (sub.length() > 0) sub.append(" • "); sub.append("★ ").append(String.format(Locale.ROOT, "%.1f", a.rating)); }
+    descView.setText(sub.toString());
+    descView.setTextSize(12);
+    descView.setTextColor(getColor(R.color.muted));
+    texts.addView(nameView);
+    texts.addView(descView);
+    row.addView(texts, tp);
+    // Install button (or state if already installed).
+    boolean installed = false;
+    for (WebExtension ext : installedExts) {
+      if (a.slug.equalsIgnoreCase(ext.id) || extName(ext).equalsIgnoreCase(a.name)) { installed = true; break; }
+    }
+    if (installed) {
+      TextView st = new TextView(this);
+      st.setText("Installed");
+      st.setTextSize(12);
+      st.setTextColor(getColor(R.color.green));
+      row.addView(st);
+    } else {
+      com.google.android.material.button.MaterialButton btn = new com.google.android.material.button.MaterialButton(this);
+      btn.setText("Get");
+      btn.setTextSize(12);
+      btn.setCornerRadius(dp(16));
+      btn.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.orange)));
+      btn.setTextColor(getColor(R.color.text));
+      btn.setPadding(dp(8), 0, dp(8), 0);
+      btn.setMinWidth(0);
+      btn.setMinimumWidth(0);
+      btn.setOnClickListener(v -> installAmo(a, btn));
+      row.addView(btn, new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, dp(36)));
+    }
+    return row;
+  }
+
+  private void installAmo(AmoExt a, View btn) {
+    btn.setEnabled(false);
+    Ui.toast(this, "Installing " + a.name + "…");
+    try {
+      runtime.getWebExtensionController().install(a.fileUrl).accept(
+        ext -> runOnUiThread(() -> {
+          Ui.toastLong(this, "Installed: " + extName(ext));
+          refreshExtensionLists();
+          renderAmoResults();
+        }),
+        err -> runOnUiThread(() -> {
+          btn.setEnabled(true);
+          Ui.toastLong(this, "Install failed: " + (err == null ? "unknown error" : err.getMessage()));
+        }));
+    } catch (Exception e) {
+      btn.setEnabled(true);
+      Ui.toastLong(this, "Install failed: " + e.getMessage());
+    }
   }
 
   private LinearLayout extRowBase(int iconRes, String name, String desc) {
