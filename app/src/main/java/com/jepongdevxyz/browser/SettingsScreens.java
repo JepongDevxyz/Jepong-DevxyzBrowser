@@ -750,11 +750,24 @@ public final class SettingsScreens {
     root.addView(title);
 
     TextView desc = new TextView(a);
-    desc.setText("Powered by Google Gemini. Add API keys below (one per line) — keys rotate automatically on quota limits. Get a free key at aistudio.google.com.");
+    desc.setText("Powered by Google Gemini. 16 keys built-in and rotate automatically on quota limits. You can add more below (one per line).");
     desc.setTextSize(13);
     desc.setTextColor(a.getColor(R.color.muted));
     desc.setPadding(0, 0, 0, a.dp(12));
     root.addView(desc);
+
+    TextView modelLabel = new TextView(a);
+    modelLabel.setText("Model");
+    modelLabel.setTextSize(14);
+    modelLabel.setTextColor(a.getColor(R.color.text));
+    modelLabel.setPadding(0, 0, 0, a.dp(4));
+    root.addView(modelLabel);
+    String[] models = com.jepongdevxyz.browser.util.GeminiAi.MODELS;
+    String curModel = a.prefs.getString("gemini_model", models[0]);
+    LinearLayout modelRow = appearanceRow("Model", curModel);
+    modelRow.setOnClickListener(v -> a.pickOption("Model", models, curModel,
+        val -> { a.prefs.edit().putString("gemini_model", val).apply(); showAiSettings(); }));
+    root.addView(modelRow);
 
     TextView keyLabel = new TextView(a);
     keyLabel.setText("Gemini API keys");
