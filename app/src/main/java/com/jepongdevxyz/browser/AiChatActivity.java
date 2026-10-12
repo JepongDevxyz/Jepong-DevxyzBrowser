@@ -562,51 +562,97 @@ public class AiChatActivity extends Activity {
     return row;
   }
 
-  // ============ Attach popup ============
+  // ============ Attach popup (custom with icons, like Brave Leo) ============
   private void showAttachMenu() {
-    android.widget.PopupMenu popup = new android.widget.PopupMenu(this, input);
-    popup.getMenu().add("Attach file...");
-    popup.getMenu().add("Take a picture...");
-    popup.getMenu().add("Open tabs...");
-    popup.getMenu().add("Bookmarks...");
-    popup.getMenu().add("History...");
-    popup.setOnMenuItemClickListener(item -> {
-      String t = item.getTitle().toString();
-      if (t.startsWith("Attach")) {
-        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-        i.setType("*/*");
-        startActivity(Intent.createChooser(i, "Attach file"));
-      } else if (t.startsWith("Take")) {
-        try { startActivity(new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)); }
-        catch (Exception e) { Ui.toast(this, "No camera app"); }
-      } else {
-        Ui.toast(this, t + " — coming soon");
-      }
-      return true;
-    });
-    popup.show();
+    LinearLayout root = new LinearLayout(this);
+    root.setOrientation(LinearLayout.VERTICAL);
+    root.setBackgroundResource(R.drawable.leo_popup_bg);
+    root.setPadding(dp(8), dp(8), dp(8), dp(8));
+    String[] items = {"Attach file...", "Take a picture...", "Open tabs...", "Bookmarks...", "History..."};
+    int[] icons = {R.drawable.ic_a_file, R.drawable.ic_a_camera, R.drawable.ic_a_tab,
+        R.drawable.ic_a_bookmark, R.drawable.ic_a_history};
+    android.app.Dialog dialog = new android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar);
+    for (int i = 0; i < items.length; i++) {
+      LinearLayout row = new LinearLayout(this);
+      row.setOrientation(LinearLayout.HORIZONTAL);
+      row.setGravity(Gravity.CENTER_VERTICAL);
+      row.setPadding(dp(12), dp(12), dp(12), dp(12));
+      ImageButton ic = new ImageButton(this);
+      ic.setImageResource(icons[i]);
+      ic.setBackground(null);
+      ic.setPadding(0, 0, dp(12), 0);
+      row.addView(ic);
+      TextView tv = new TextView(this);
+      tv.setText(items[i]);
+      tv.setTextSize(15);
+      tv.setTextColor(0xFFFFFFFF);
+      row.addView(tv);
+      final String item = items[i];
+      final android.app.Dialog d = dialog;
+      row.setOnClickListener(v -> {
+        d.dismiss();
+        if (item.startsWith("Attach")) {
+          Intent in = new Intent(Intent.ACTION_GET_CONTENT);
+          in.setType("*/*");
+          startActivity(Intent.createChooser(in, "Attach file"));
+        } else if (item.startsWith("Take")) {
+          try { startActivity(new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)); }
+          catch (Exception e) { Ui.toast(this, "No camera app"); }
+        } else {
+          Ui.toast(this, item + " — coming soon");
+        }
+      });
+      root.addView(row);
+    }
+    dialog.setContentView(root);
+    android.view.Window w = dialog.getWindow();
+    if (w != null) {
+      w.setGravity(Gravity.BOTTOM | Gravity.START);
+      android.view.WindowManager.LayoutParams lp = w.getAttributes();
+      lp.y = dp(120); lp.x = dp(16);
+      w.setAttributes(lp);
+    }
+    dialog.show();
   }
 
-  // ============ Chat ⋮ menu ============
+  // ============ Chat ⋮ menu (custom popup with icons, like Brave Leo) ============
   private void showChatMenu() {
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
+    root.setBackgroundResource(R.drawable.leo_popup_bg);
     root.setPadding(dp(8), dp(8), dp(8), dp(8));
     String[] items = {"Copy entire conversation", "Rename conversation", "Delete conversation",
-        "Manage shared conversations", "Advanced Settings"};
-    for (String item : items) {
-      TextView row = drawerItem("  " + item);
+        "Manage shared conversations", "Go Premium", "Advanced Settings"};
+    int[] icons = {R.drawable.ic_m_copy, R.drawable.ic_m_rename, R.drawable.ic_m_delete,
+        R.drawable.ic_m_share, R.drawable.ic_m_premium, R.drawable.ic_m_settings};
+    android.app.Dialog dialog = new android.app.Dialog(this, android.R.style.Theme_Translucent_NoTitleBar);
+    for (int i = 0; i < items.length; i++) {
+      LinearLayout row = new LinearLayout(this);
+      row.setOrientation(LinearLayout.HORIZONTAL);
+      row.setGravity(Gravity.CENTER_VERTICAL);
+      row.setPadding(dp(12), dp(12), dp(12), dp(12));
+      ImageButton ic = new ImageButton(this);
+      ic.setImageResource(icons[i]);
+      ic.setBackground(null);
+      ic.setPadding(0, 0, dp(12), 0);
+      row.addView(ic);
+      TextView tv = new TextView(this);
+      tv.setText(items[i]);
+      tv.setTextSize(15);
+      tv.setTextColor(0xFFFFFFFF);
+      row.addView(tv);
+      final String item = items[i];
+      final android.app.Dialog d = dialog;
+      row.setOnClickListener(v -> { d.dismiss(); handleChatMenu(item); });
       root.addView(row);
     }
-    BottomSheetDialog dialog = new BottomSheetDialog(this);
     dialog.setContentView(root);
-    // Store for dismissal
-    for (int i = 0; i < root.getChildCount(); i++) {
-      View child = root.getChildAt(i);
-      child.setTag(dialog);
-      final BottomSheetDialog d = dialog;
-      final String item = items[i];
-      child.setOnClickListener(v -> { d.dismiss(); handleChatMenu(item); });
+    android.view.Window w = dialog.getWindow();
+    if (w != null) {
+      w.setGravity(Gravity.TOP | Gravity.END);
+      android.view.WindowManager.LayoutParams lp = w.getAttributes();
+      lp.y = dp(60); lp.x = dp(8);
+      w.setAttributes(lp);
     }
     dialog.show();
   }
@@ -746,6 +792,17 @@ public class AiChatActivity extends Activity {
         LinearLayout.LayoutParams.WRAP_CONTENT, 1));
     android.widget.Switch sw = new android.widget.Switch(this);
     sw.setChecked(prefs.getBoolean(key, def));
+    // Peach/orange tint like Brave Leo
+    if (android.os.Build.VERSION.SDK_INT >= 21) {
+      android.content.res.ColorStateList thumbTint = new android.content.res.ColorStateList(
+        new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+        new int[]{0xFFE8A87C, 0xFF8A87A0});
+      sw.setThumbTintList(thumbTint);
+      android.content.res.ColorStateList trackTint = new android.content.res.ColorStateList(
+        new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+        new int[]{0xFFD4814A, 0xFF3A3A4A});
+      sw.setTrackTintList(trackTint);
+    }
     sw.setOnCheckedChangeListener((b, on) -> prefs.edit().putBoolean(key, on).apply());
     card.addView(sw);
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
