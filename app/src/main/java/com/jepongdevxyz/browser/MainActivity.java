@@ -12,6 +12,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.Gravity;
+import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.view.inputmethod.EditorInfo;
 import android.widget.*;
@@ -2126,7 +2127,7 @@ public final class MainActivity extends AppCompatActivity {
       row.setGravity(Gravity.CENTER_VERTICAL);
       row.setPadding(dp(12), dp(10), dp(12), dp(10));
       GradientDrawable bg = new GradientDrawable();
-      bg.setColor(getColor(tab == activeTab ? R.color.panel2 : 0x00000000));
+      bg.setColor(tab == activeTab ? getColor(R.color.panel2) : Color.TRANSPARENT);
       bg.setCornerRadius(dp(12));
       if (tab == activeTab) bg.setStroke(dp(1), getColor(R.color.purple));
       row.setBackground(bg);
