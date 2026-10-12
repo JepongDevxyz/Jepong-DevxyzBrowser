@@ -127,15 +127,29 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private static final RecExt[] RECOMMENDED = {
-    new RecExt("uBlock Origin", "Block ads and trackers", "ublock-origin", R.drawable.ic_ext_ublock),
-    new RecExt("Dark Reader", "Dark mode for all websites", "darkreader", R.drawable.ic_ext_darkreader),
+    // Matches Firefox for Android's own add-ons manager (see reference video).
+    new RecExt("uBlock Origin", "Finally, an efficient wide-spectrum content blocker. Easy on CPU and memory.", "ublock-origin", R.drawable.ic_ext_ublock),
+    new RecExt("AdGuard AdBlocker", "Unmatched adblock extension against advertising and pop-ups. Blocks ads on Facebook, YouTube and all other websites.", "adguard-adblocker", R.drawable.ic_extension_puzzle),
+    new RecExt("Ghostery", "Fast, private, and ad-free browsing you can trust!", "ghostery", R.drawable.ic_extension_puzzle),
+    new RecExt("Privacy Badger", "Automatically learns to block hidden trackers. Made by leading digital rights nonprofit EFF to stop companies from spying on you.", "privacybadger17", R.drawable.ic_extension_puzzle),
+    new RecExt("Dark Reader", "Dark mode for every website. Take care of your eyes, use dark theme for night and daily browsing.", "darkreader", R.drawable.ic_ext_darkreader),
+    new RecExt("FoxyProxy Standard", "FoxyProxy is an open-source, advanced proxy management tool that completely replaces Firefox's limited proxying capabilities.", "foxyproxy-standard", R.drawable.ic_extension_puzzle),
+    new RecExt("Search by Image", "A powerful reverse image search tool, with support for various search engines, such as Google, Bing, Yandex, Baidu and TinEye.", "search_by_image", R.drawable.ic_extension_puzzle),
+    new RecExt("NoScript Security Suite", "The best security you can get in a web browser! Allow potentially malicious web content to run only from sites you trust.", "noscript", R.drawable.ic_extension_puzzle),
+    new RecExt("Read Aloud", "Read out loud the current web-page article with one click. Supports 40+ languages.", "read-aloud", R.drawable.ic_extension_puzzle),
+    new RecExt("ClearURLs", "Automatically removes tracking parameters from URLs.", "clearurls", R.drawable.ic_extension_puzzle),
+    new RecExt("Decentraleyes", "Protects you against tracking through 'free', centralized, content delivery. Prevents requests from reaching networks like Google Hosted Libraries.", "decentraleyes", R.drawable.ic_extension_puzzle),
+    new RecExt("Firefox Relay", "Firefox Relay lets you generate email aliases that forward to your real inbox. Hide your real email address from hackers and unwanted mail.", "private-relay", R.drawable.ic_extension_puzzle),
+    new RecExt("YouTube High Definition", "Automatically plays all YouTube videos in HD, changes video player size, offers auto-stop, mute, and much more.", "youtube-high-definition", R.drawable.ic_extension_puzzle),
+    new RecExt("Tomato Clock", "A simple browser extension for managing your productivity.", "tomato-clock", R.drawable.ic_extension_puzzle),
+    new RecExt("Web Archives", "View archived and cached versions of web pages on various search engines, such as the Wayback Machine and Archive.is.", "view-page-archive", R.drawable.ic_extension_puzzle),
+    new RecExt("Video Background Play Fix", "Fix for sites that don't work with Firefox for Android video background play. Blocks the Page Visibility API and the Fullscreen API.", "video-background-play-fix", R.drawable.ic_extension_puzzle),
+    new RecExt("Google Search Fixer", "Override the user-agent string presented to Google Search pages to receive the search experience shown to Chrome.", "google-youtube-search-fixer", R.drawable.ic_extension_puzzle),
     new RecExt("SponsorBlock", "Skip sponsored content", "sponsorblock", R.drawable.ic_ext_sponsorblock),
     new RecExt("Tampermonkey", "Run userscripts on any site", "tampermonkey", R.drawable.ic_extension_puzzle),
-    new RecExt("Privacy Badger", "Block invisible trackers automatically", "privacybadger17", R.drawable.ic_extension_puzzle),
-    new RecExt("NoScript", "Block scripts unless you allow them", "noscript", R.drawable.ic_extension_puzzle),
     new RecExt("Bitwarden", "Free password manager", "bitwarden-password-manager", R.drawable.ic_extension_puzzle),
     new RecExt("Grammarly", "Write better everywhere", "grammarly", R.drawable.ic_ext_grammarly, true),
-    new RecExt("React Developer Tools", "Debug React apps", "react-devtools", R.drawable.ic_ext_react),
+    new RecExt("React Developer Tools", "Debug React apps", "react-devtools", R.drawable.ic_ext_react, true),
   };
 
   private static final class Tile {
