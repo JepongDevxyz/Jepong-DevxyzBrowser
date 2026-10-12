@@ -74,9 +74,10 @@ public final class ParallelDownloader {
 
         boolean useParallel = total > 1024 * 1024 && "bytes".equalsIgnoreCase(acceptRanges) && safTarget == null;
         AtomicLong done = new AtomicLong(0);
+        final java.io.File parallelOutFile = outFile;
         if (useParallel) {
           // Pre-allocate.
-          try (RandomAccessFile raf = new RandomAccessFile(outFile, "rw")) {
+          try (RandomAccessFile raf = new RandomAccessFile(parallelOutFile, "rw")) {
             raf.setLength(total);
           }
           ExecutorService pool = Executors.newFixedThreadPool(PARTS);
@@ -93,7 +94,7 @@ public final class ParallelDownloader {
                 c.setConnectTimeout(20000);
                 c.setReadTimeout(20000);
                 try (InputStream in = c.getInputStream();
-                     RandomAccessFile raf = new RandomAccessFile(outFile, "rw")) {
+                     RandomAccessFile raf = new RandomAccessFile(parallelOutFile, "rw")) {
                   raf.seek(start);
                   byte[] buf = new byte[32768];
                   int n;
