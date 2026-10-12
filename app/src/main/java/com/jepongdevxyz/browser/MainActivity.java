@@ -603,7 +603,9 @@ public final class MainActivity extends AppCompatActivity {
   private LinearLayout vpnPickerList;
   private TextView vpnPickerStatus;
 
+  private int vpnPickerSession = 0;
   private void showVpnServerPicker() {
+    vpnPickerSession++;
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
     int pad = dp(16);
@@ -662,6 +664,8 @@ public final class MainActivity extends AppCompatActivity {
 
   private void loadVpnServers(boolean forceRefresh) {
     if (vpnPickerList == null) return;
+    final int session = vpnPickerSession;
+    if (!forceRefresh && !vpnServers.isEmpty()) { renderVpnPickerList(); return; }
     vpnPickerStatus.setText(forceRefresh ? "Refreshing server list…" : "Loading servers…");
     vpnPickerList.removeAllViews();
     TextView loading = new TextView(this);
@@ -672,12 +676,8 @@ public final class MainActivity extends AppCompatActivity {
     vpnPickerList.addView(loading);
     VpnGateApi.fetch(this, forceRefresh, new VpnGateApi.Callback() {
       @Override public void onResult(java.util.List<VpnGateApi.VpnServer> servers, boolean fromCache) {
-        if (!vpnServers.isEmpty() && servers.size() == vpnServers.size()) {
-          boolean same = true;
-          for (int i = 0; i < 20 && i < servers.size(); i++)
-            if (!servers.get(i).id().equals(vpnServers.get(i).id())) { same = false; break; }
-          if (same) return;
-        }
+        if (session != vpnPickerSession || vpnPickerList == null) return;
+        if (!fromCache && !vpnServers.isEmpty()) return;
         vpnServers.clear();
         vpnServers.addAll(servers);
         java.util.Set<String> countries = new java.util.TreeSet<>();
