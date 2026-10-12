@@ -24,7 +24,7 @@ import org.json.JSONObject;
  */
 public final class VpnGateApi {
     private static final String TAG = "VpnGateApi";
-    private static final String API_URL = "http://www.vpngate.net/api/iphone/";
+    private static final String API_URL = "https://www.vpngate.net/api/iphone/";
     private static final String CACHE_FILE = "vpngate_cache.json";
     /** Refresh the list at most this often; otherwise reuse the cache. */
     private static final long CACHE_TTL_MS = 6L * 60L * 60L * 1000L;
