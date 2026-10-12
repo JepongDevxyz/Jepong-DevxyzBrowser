@@ -3,8 +3,8 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:orientation="vertical" android:background="@color/bg">
 
-    <!-- Chrome-style top toolbar: omnibox + tab count + menu -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+    <!-- Chrome-style toolbar: omnibox + tab count + menu (can move to bottom) -->
+    <LinearLayout android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="56dp"
         android:orientation="horizontal" android:gravity="center_vertical"
         android:paddingStart="12dp" android:paddingEnd="4dp"
         android:background="@color/panel">
@@ -15,6 +15,10 @@
             android:textColorHint="@color/muted" android:background="@drawable/search_bg"
             android:drawableStart="@drawable/ic_tb_search" android:drawablePadding="10dp"
             android:drawableTint="@color/muted" />
+        <ImageButton android:id="@+id/toolbarShortcut" android:layout_width="42dp" android:layout_height="42dp"
+            android:layout_marginStart="4dp" android:src="@drawable/ic_tb_search" app:tint="@color/text"
+            android:background="@drawable/toolbar_chip_bg" android:visibility="gone"
+            android:contentDescription="Toolbar shortcut" />
         <TextView android:id="@+id/tabCount" android:layout_width="42dp" android:layout_height="42dp"
             android:layout_marginStart="4dp" android:gravity="center"
             android:text="1" android:textSize="13sp" android:textStyle="bold" android:textColor="@color/text"
@@ -97,4 +101,26 @@
     </FrameLayout>
 
     <!-- Phone navigation; tablet/desktop rail becomes visible in layout-sw600dp -->
+
+    <!-- Bottom navigation toolbar (Brave-style Appearance option, hidden by default) -->
+    <LinearLayout android:id="@+id/bottomNavBar" android:layout_width="match_parent" android:layout_height="60dp"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:background="@color/panel" android:visibility="gone"
+        android:paddingStart="16dp" android:paddingEnd="16dp">
+        <ImageButton android:id="@+id/bnHome" android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:src="@drawable/ic_nav_home" app:tint="@color/muted"
+            android:background="@android:color/transparent" android:contentDescription="Home" />
+        <ImageButton android:id="@+id/bnBookmarks" android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:src="@drawable/ic_nav_bookmark" app:tint="@color/muted"
+            android:background="@android:color/transparent" android:contentDescription="Bookmarks" />
+        <ImageButton android:id="@+id/bnSearch" android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:src="@drawable/ic_tb_search" app:tint="@color/muted"
+            android:background="@android:color/transparent" android:contentDescription="Search" />
+        <ImageButton android:id="@+id/bnTabs" android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:src="@drawable/ic_new_tab" app:tint="@color/muted"
+            android:background="@android:color/transparent" android:contentDescription="Tabs" />
+        <ImageButton android:id="@+id/bnMenu" android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:src="@drawable/ic_more_vert" app:tint="@color/muted"
+            android:background="@android:color/transparent" android:contentDescription="Menu" />
+    </LinearLayout>
 </LinearLayout>
