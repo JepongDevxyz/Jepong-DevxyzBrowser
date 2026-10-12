@@ -763,7 +763,7 @@ public final class SettingsScreens {
     modelLabel.setPadding(0, 0, 0, a.dp(4));
     root.addView(modelLabel);
     String[] models = com.jepongdevxyz.browser.util.GeminiAi.MODELS;
-    String curModel = a.prefs.getString("gemini_model", models[0]);
+    String curModel = a.prefs.getString("gemini_model", "Auto");
     LinearLayout modelRow = appearanceRow("Model", curModel);
     modelRow.setOnClickListener(v -> a.pickOption("Model", models, curModel,
         val -> { a.prefs.edit().putString("gemini_model", val).apply(); showAiSettings(); }));
