@@ -10,4 +10,13 @@
     <item name="android:statusBarColor">@color/bg</item>
     <item name="android:navigationBarColor">@color/bg</item>
 </style>
+<style name="Theme.DevxyzBrowser.Dialog" parent="ThemeOverlay.Material3.Dialog.Alert">
+    <item name="colorSurface">@color/panel</item>
+    <item name="colorOnSurface">@color/text</item>
+    <item name="colorOnSurfaceVariant">@color/muted</item>
+    <item name="colorPrimary">@color/orange</item>
+    <item name="android:textColorPrimary">@color/text</item>
+    <item name="android:textColorSecondary">@color/muted</item>
+    <item name="android:windowBackground">@color/panel</item>
+</style>
 </resources>
