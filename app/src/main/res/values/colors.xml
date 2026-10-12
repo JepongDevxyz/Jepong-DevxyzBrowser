@@ -1,6 +1,6 @@
 <resources>
- <color name="bg">#070914</color><color name="panel">#101326</color><color name="panel2">#151831</color>
- <color name="search">#171A32</color><color name="purple">#7C3CFF</color><color name="purple2">#A46BFF</color>
- <color name="blue">#4D7CFE</color><color name="green">#44D7A8</color><color name="text">#F7F5FF</color>
- <color name="muted">#A7A3BC</color><color name="stroke">#292D4C</color><color name="orange">#FF675B</color>
+ <color name="bg">#F5F6FA</color><color name="panel">#FFFFFF</color><color name="panel2">#ECEEF6</color>
+ <color name="search">#E8EAF3</color><color name="purple">#7C3CFF</color><color name="purple2">#6A2FE0</color>
+ <color name="blue">#2F6BFE</color><color name="green">#1F9D6B</color><color name="text">#14152B</color>
+ <color name="muted">#5F5C78</color><color name="stroke">#D5D8E8</color><color name="orange">#E04A3A</color>
 </resources>
