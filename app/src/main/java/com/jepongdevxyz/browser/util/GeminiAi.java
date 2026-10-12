@@ -135,20 +135,8 @@ public final class GeminiAi {
 
   private static String requestWithModel(String apiKey, List<Message> history,
                                          String systemPrompt, String model) throws Exception {
-    String[] tryModels = modelPref.equals("Auto")
-        ? new String[]{"gemini-3.5-flash-lite", "gemini-3.1-flash-lite"}
-        : new String[]{modelPref};
-    Exception lastEx = null;
-    for (String model : tryModels) {
-      try {
-        return requestWithModel(apiKey, history, systemPrompt, model);
-      } catch (QuotaException qe) {
-        throw qe; // quota → rotate keys, don't try other models
-      } catch (Exception e) {
-        lastEx = e; // model failed → try next model
-      }
-    }
-    throw lastEx != null ? lastEx : new Exception("Request failed");
+    URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/"
+        + model + ":generateContent?key=" + apiKey);
     HttpURLConnection c = (HttpURLConnection) url.openConnection();
     c.setRequestMethod("POST");
     c.setRequestProperty("Content-Type", "application/json");
