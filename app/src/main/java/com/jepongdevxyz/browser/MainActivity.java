@@ -778,6 +778,16 @@ public final class MainActivity extends AppCompatActivity {
       row.addView(btn, new LinearLayout.LayoutParams(
         LinearLayout.LayoutParams.WRAP_CONTENT, dp(36)));
     }
+    // Tap the row for full details like the AMO listing page.
+    row.setClickable(true);
+    row.setFocusable(true);
+    row.setOnClickListener(v -> {
+      Ui.toast(this, "Loading details…");
+      fetchAmoDetail(a.slug, d -> {
+        if (d == null) { Ui.toastLong(this, "Could not load details"); return; }
+        showRichAmoDialog(d, findInstalledByName(a.name), a);
+      });
+    });
     return row;
   }
 
@@ -799,6 +809,340 @@ public final class MainActivity extends AppCompatActivity {
       btn.setEnabled(true);
       Ui.toastLong(this, "Install failed: " + e.getMessage());
     }
+  }
+
+  // ---------- Rich AMO details (like the Firefox/AMO listing page) ----------
+
+  private static final class AmoDetail {
+    String name = "", slug = "", summary = "", descriptionHtml = "", version = "",
+           author = "", iconUrl = "", homepage = "", lastUpdated = "", fileUrl = "";
+    double rating; int ratingCount; long users, weeklyDownloads;
+    final java.util.List<String> permissions = new java.util.ArrayList<>();
+  }
+
+  private void fetchAmoDetail(String slug, java.util.function.Consumer<AmoDetail> cb) {
+    new Thread(() -> {
+      AmoDetail d = null;
+      try {
+        String url = "https://addons.mozilla.org/api/v5/addons/addon/"
+            + java.net.URLEncoder.encode(slug, "UTF-8") + "/";
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(10000);
+        c.setReadTimeout(10000);
+        c.setRequestProperty("User-Agent", "DevxyzBrowser");
+        c.setRequestProperty("Accept", "application/json");
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream()))) {
+          String line;
+          while ((line = br.readLine()) != null) sb.append(line);
+        } finally { c.disconnect(); }
+        org.json.JSONObject o = new org.json.JSONObject(sb.toString());
+        d = new AmoDetail();
+        d.slug = o.optString("slug", slug);
+        d.name = localized(o.optJSONObject("name"), slug);
+        d.summary = localized(o.optJSONObject("summary"), "");
+        d.descriptionHtml = localized(o.optJSONObject("description"), "");
+        d.iconUrl = o.optString("icon_url", "");
+        d.lastUpdated = o.optString("last_updated", "");
+        d.users = o.optLong("average_daily_users", 0);
+        d.weeklyDownloads = o.optLong("weekly_downloads", 0);
+        org.json.JSONArray authors = o.optJSONArray("authors");
+        if (authors != null && authors.length() > 0) d.author = authors.optJSONObject(0).optString("name", "");
+        org.json.JSONObject hp = o.optJSONObject("homepage");
+        if (hp != null) d.homepage = localized(hp.optJSONObject("url"), "");
+        org.json.JSONObject ratings = o.optJSONObject("ratings");
+        if (ratings != null) {
+          d.rating = ratings.optDouble("average", 0);
+          d.ratingCount = ratings.optInt("count", 0);
+        }
+        org.json.JSONObject cv = o.optJSONObject("current_version");
+        if (cv != null) {
+          d.version = cv.optString("version", "");
+          org.json.JSONObject file = cv.optJSONObject("file");
+          if (file != null) {
+            d.fileUrl = file.optString("url", "");
+            org.json.JSONArray perms = file.optJSONArray("permissions");
+            if (perms != null) for (int i = 0; i < perms.length(); i++) d.permissions.add(perms.optString(i));
+            org.json.JSONArray hosts = file.optJSONArray("host_permissions");
+            if (hosts != null) for (int i = 0; i < hosts.length(); i++) d.permissions.add(hosts.optString(i));
+          }
+        }
+      } catch (Exception ignored) { }
+      final AmoDetail done = d;
+      runOnUiThread(() -> cb.accept(done));
+    }).start();
+  }
+
+  /** Finds the AMO slug for an installed extension via its GUID. */
+  private void findAmoSlug(WebExtension ext, java.util.function.Consumer<String> cb) {
+    new Thread(() -> {
+      String slug = null;
+      try {
+        String url = "https://addons.mozilla.org/api/v5/addons/search/?guid="
+            + java.net.URLEncoder.encode(ext.id == null ? "" : ext.id, "UTF-8") + "&page_size=1";
+        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+        c.setConnectTimeout(8000);
+        c.setReadTimeout(8000);
+        c.setRequestProperty("User-Agent", "DevxyzBrowser");
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream()))) {
+          String line;
+          while ((line = br.readLine()) != null) sb.append(line);
+        } finally { c.disconnect(); }
+        org.json.JSONArray arr = new org.json.JSONObject(sb.toString()).optJSONArray("results");
+        if (arr != null && arr.length() > 0) slug = arr.optJSONObject(0).optString("slug", null);
+      } catch (Exception ignored) { }
+      final String s = slug;
+      runOnUiThread(() -> cb.accept(s));
+    }).start();
+  }
+
+  private TextView richLabel(String text) {
+    TextView t = new TextView(this);
+    t.setText(text);
+    t.setTextSize(12);
+    t.setTextColor(getColor(R.color.muted));
+    t.setTypeface(t.getTypeface(), android.graphics.Typeface.BOLD);
+    t.setPadding(0, dp(14), 0, dp(4));
+    return t;
+  }
+
+  private TextView richValue(String text) {
+    TextView t = new TextView(this);
+    t.setText(text);
+    t.setTextSize(13);
+    t.setTextColor(getColor(R.color.text));
+    return t;
+  }
+
+  /** Rich details dialog like the AMO listing page in her video. */
+  private void showRichAmoDialog(AmoDetail d, WebExtension installed, AmoExt basic) {
+    String name = !d.name.isEmpty() ? d.name : (basic != null ? basic.name : (installed != null ? extName(installed) : "Extension"));
+    ScrollView sv = new ScrollView(this);
+    LinearLayout body = new LinearLayout(this);
+    body.setOrientation(LinearLayout.VERTICAL);
+    body.setPadding(dp(4), dp(4), dp(4), dp(4));
+    sv.addView(body);
+
+    // Header: icon + name + author
+    LinearLayout head = new LinearLayout(this);
+    head.setOrientation(LinearLayout.HORIZONTAL);
+    head.setGravity(Gravity.CENTER_VERTICAL);
+    ImageView icon = new ImageView(this);
+    icon.setImageResource(R.drawable.ic_extension_puzzle);
+    head.addView(icon, new LinearLayout.LayoutParams(dp(52), dp(52)));
+    String iconUrl = !d.iconUrl.isEmpty() ? d.iconUrl : (basic != null ? basic.iconUrl : "");
+    if (!iconUrl.isEmpty()) ImgUtil.loadUrl(icon, iconUrl);
+    LinearLayout ht = new LinearLayout(this);
+    ht.setOrientation(LinearLayout.VERTICAL);
+    LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+    hp.setMargins(dp(12), 0, 0, 0);
+    TextView nt = new TextView(this);
+    nt.setText(name);
+    nt.setTextSize(17);
+    nt.setTypeface(nt.getTypeface(), android.graphics.Typeface.BOLD);
+    nt.setTextColor(getColor(R.color.text));
+    ht.addView(nt);
+    String author = !d.author.isEmpty() ? d.author : (basic != null ? basic.author : "");
+    if (!author.isEmpty()) {
+      TextView at = new TextView(this);
+      at.setText("by " + author);
+      at.setTextSize(12);
+      at.setTextColor(getColor(R.color.muted));
+      ht.addView(at);
+    }
+    head.addView(ht, hp);
+    body.addView(head);
+
+    // Rating / version / users row
+    StringBuilder stats = new StringBuilder();
+    if (d.rating > 0) stats.append("★ ").append(String.format(Locale.ROOT, "%.1f", d.rating));
+    if (d.ratingCount > 0) stats.append(" (").append(formatCount(d.ratingCount)).append(" reviews)");
+    String ver = !d.version.isEmpty() ? d.version : (basic != null ? basic.version : "");
+    if (!ver.isEmpty()) { if (stats.length() > 0) stats.append("\n"); stats.append("Version ").append(ver); }
+    if (d.users > 0) { if (stats.length() > 0) stats.append("\n"); stats.append(formatCount(d.users)).append(" users"); }
+    if (d.lastUpdated != null && d.lastUpdated.length() >= 10) {
+      if (stats.length() > 0) stats.append("\n");
+      stats.append("Updated ").append(d.lastUpdated.substring(0, 10));
+    }
+    if (stats.length() > 0) {
+      TextView st = richValue(stats.toString());
+      st.setPadding(0, dp(10), 0, 0);
+      body.addView(st);
+    }
+
+    // Description (HTML like the AMO page)
+    if (!d.descriptionHtml.isEmpty()) {
+      body.addView(richLabel("About this extension"));
+      TextView desc = new TextView(this);
+      try {
+        desc.setText(android.text.Html.fromHtml(d.descriptionHtml, android.text.Html.FROM_HTML_MODE_LEGACY));
+      } catch (Exception e) {
+        desc.setText(d.descriptionHtml.replaceAll("<[^>]+>", ""));
+      }
+      desc.setTextSize(13);
+      desc.setTextColor(getColor(R.color.text));
+      body.addView(desc);
+    } else if (installed != null && installed.metaData != null && installed.metaData.description != null) {
+      body.addView(richLabel("About this extension"));
+      body.addView(richValue(installed.metaData.description));
+    }
+
+    // Permissions
+    java.util.List<String> perms = d.permissions.isEmpty() && installed != null && installed.metaData != null
+        && installed.metaData.requiredPermissions != null
+        ? java.util.Arrays.asList(installed.metaData.requiredPermissions)
+        : d.permissions;
+    if (!perms.isEmpty()) {
+      body.addView(richLabel("Permissions"));
+      // Show a readable subset; full list can be long.
+      int show = Math.min(perms.size(), 12);
+      StringBuilder pb = new StringBuilder();
+      for (int i = 0; i < show; i++) pb.append("• ").append(perms.get(i)).append("\n");
+      if (perms.size() > show) pb.append("• …and ").append(perms.size() - show).append(" more");
+      body.addView(richValue(pb.toString().trim()));
+    }
+
+    // Homepage
+    if (!d.homepage.isEmpty()) {
+      body.addView(richLabel("Homepage"));
+      TextView hl = new TextView(this);
+      hl.setText(d.homepage);
+      hl.setTextSize(13);
+      hl.setTextColor(getColor(R.color.blue));
+      hl.setOnClickListener(v -> newTab(d.homepage));
+      body.addView(hl);
+    }
+
+    // Installed-extension controls (Firefox-style)
+    if (installed != null) {
+      WebExtension.MetaData md = installed.metaData;
+      body.addView(richLabel("Settings"));
+      LinearLayout enRow = new LinearLayout(this);
+      enRow.setOrientation(LinearLayout.HORIZONTAL);
+      enRow.setGravity(Gravity.CENTER_VERTICAL);
+      TextView enLabel = new TextView(this);
+      enLabel.setText("Enabled");
+      enLabel.setTextSize(14);
+      enLabel.setTextColor(getColor(R.color.text));
+      enRow.addView(enLabel, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+      SwitchMaterial enSw = new SwitchMaterial(this);
+      enSw.setChecked(md == null || md.enabled);
+      enRow.addView(enSw);
+      body.addView(enRow);
+      LinearLayout pbRow = new LinearLayout(this);
+      pbRow.setOrientation(LinearLayout.HORIZONTAL);
+      pbRow.setGravity(Gravity.CENTER_VERTICAL);
+      TextView pbLabel = new TextView(this);
+      pbLabel.setText("Allow in private browsing");
+      pbLabel.setTextSize(14);
+      pbLabel.setTextColor(getColor(R.color.text));
+      pbRow.addView(pbLabel, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+      SwitchMaterial pbSw = new SwitchMaterial(this);
+      pbSw.setChecked(md != null && md.allowedInPrivateBrowsing);
+      pbRow.addView(pbSw);
+      body.addView(pbRow);
+      enSw.setOnCheckedChangeListener((b, c) -> { setExtEnabled(installed, c); enSw.setEnabled(false); });
+      pbSw.setOnCheckedChangeListener((b, c) -> {
+        try {
+          runtime.getWebExtensionController().setAllowedInPrivateBrowsing(installed, c).accept(
+            done -> runOnUiThread(() -> Ui.toast(this, c ? "Allowed in private browsing" : "Blocked in private browsing")),
+            err -> runOnUiThread(() -> Ui.toastLong(this, "Could not change: " + err.getMessage())));
+        } catch (Exception e) {
+          Ui.toastLong(this, "Could not change: " + e.getMessage());
+        }
+      });
+    }
+
+    AlertDialog.Builder b = Ui.dialog(this).setTitle(name).setView(sv);
+    if (installed != null) {
+      WebExtension.MetaData md = installed.metaData;
+      if (md != null && md.optionsPageUrl != null) {
+        b.setPositiveButton("Extension settings", (dd, w) -> newTab(md.optionsPageUrl));
+      } else {
+        b.setPositiveButton("Close", null);
+      }
+      b.setNeutralButton("Check for updates", (dd, w) -> {
+        Ui.toast(this, "Checking for updates…");
+        try {
+          runtime.getWebExtensionController().update(installed).accept(
+            u -> runOnUiThread(() -> { Ui.toast(this, "Update check finished"); refreshExtensionLists(); }),
+            err -> runOnUiThread(() -> Ui.toastLong(this, "Update failed: " + err.getMessage())));
+        } catch (Exception e) {
+          Ui.toastLong(this, "Update failed: " + e.getMessage());
+        }
+      });
+      b.setNegativeButton("Remove", (dd, w) -> confirmRemoveInstalled(installed, name));
+    } else {
+      String fileUrl = !d.fileUrl.isEmpty() ? d.fileUrl : (basic != null ? basic.fileUrl : "");
+      if (!fileUrl.isEmpty()) {
+        b.setPositiveButton("Add to DevxyzBrowser", (dd, w) -> {
+          Ui.toast(this, "Installing " + name + "…");
+          try {
+            runtime.getWebExtensionController().install(fileUrl).accept(
+              ext -> runOnUiThread(() -> {
+                Ui.toastLong(this, "Installed: " + extName(ext));
+                if (basic != null) {
+                  for (RecExt rec : RECOMMENDED) {
+                    if (rec.slug.equalsIgnoreCase(basic.slug)) recInstalled.add(rec.slug);
+                  }
+                  prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
+                }
+                refreshExtensionLists();
+                renderAmoResults();
+              }),
+              err -> runOnUiThread(() ->
+                Ui.toastLong(this, "Install failed: " + (err == null ? "unknown error" : err.getMessage()))));
+          } catch (Exception e) {
+            Ui.toastLong(this, "Install failed: " + e.getMessage());
+          }
+        });
+        b.setNegativeButton("Close", null);
+      } else {
+        b.setPositiveButton("Close", null);
+      }
+    }
+    b.show();
+  }
+
+  private void confirmRemoveInstalled(WebExtension ext, String name) {
+    Ui.dialog(this).setTitle(name)
+      .setMessage("Remove this extension from DevxyzBrowser?")
+      .setPositiveButton("Remove", (d2, w2) ->
+        runtime.getWebExtensionController().uninstall(ext).accept(
+          done -> {
+            for (RecExt rec : RECOMMENDED) {
+              if (rec.name.equalsIgnoreCase(name)) recInstalled.remove(rec.slug);
+            }
+            prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
+            runOnUiThread(() -> { Ui.toast(this, "Removed: " + name); refreshExtensionLists(); });
+          },
+          err -> runOnUiThread(() ->
+            Ui.toastLong(this, "Could not remove: " + err.getMessage()))))
+      .setNegativeButton("Cancel", null).show();
+  }
+
+  private static String formatCount(long n) {
+    if (n >= 1_000_000) return String.format(Locale.ROOT, "%.1fM", n / 1_000_000.0);
+    if (n >= 1_000) return String.format(Locale.ROOT, "%.1fK", n / 1_000.0);
+    return String.valueOf(n);
+  }
+
+  /** Tap on an installed extension: rich AMO details when available, else local details. */
+  private void showExtDetailsRich(WebExtension ext) {
+    String name = extName(ext);
+    // Show immediate local details, then enrich with AMO data.
+    findAmoSlug(ext, slug -> {
+      if (slug == null) {
+        showExtDetails(ext); // offline or not on AMO: local details dialog
+        return;
+      }
+      Ui.toast(this, "Loading details…");
+      fetchAmoDetail(slug, d -> {
+        if (d == null) { showExtDetails(ext); return; }
+        showRichAmoDialog(d, ext, null);
+      });
+    });
   }
 
   private LinearLayout extRowBase(int iconRes, String name, String desc) {
@@ -841,7 +1185,7 @@ public final class MainActivity extends AppCompatActivity {
     row.setClickable(true);
     row.setFocusable(true);
     // Tapping the row (not the switch) opens Firefox-style extension details.
-    row.setOnClickListener(v -> showExtDetails(ext));
+    row.setOnClickListener(v -> showExtDetailsRich(ext));
     // Keep switch taps from opening details.
     toggle.setOnTouchListener((v, e) -> { v.getParent().requestDisallowInterceptTouchEvent(true); return false; });
     return row;
@@ -1017,7 +1361,29 @@ public final class MainActivity extends AppCompatActivity {
     });
     row.addView(toggle, new LinearLayout.LayoutParams(
       LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+    // Tap the row for rich AMO details (like the Firefox listing page).
+    if (!rec.searchOnly) {
+      row.setClickable(true);
+      row.setFocusable(true);
+      row.setOnClickListener(v -> {
+        Ui.toast(this, "Loading details…");
+        AmoExt basic = new AmoExt();
+        basic.slug = rec.slug;
+        basic.name = rec.name;
+        fetchAmoDetail(rec.slug, d -> {
+          if (d == null) { Ui.toastLong(this, "Could not load details"); return; }
+          showRichAmoDialog(d, findInstalledByName(rec.name), basic);
+        });
+      });
+    }
     return row;
+  }
+
+  private WebExtension findInstalledByName(String name) {
+    for (WebExtension ext : installedExts) {
+      if (extName(ext).equalsIgnoreCase(name)) return ext;
+    }
+    return null;
   }
 
   private View emptyExtRow(String text) {
