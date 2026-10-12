@@ -190,7 +190,50 @@ public final class MainActivity extends AppCompatActivity {
     // Firefox-like extension install/update prompts: tapping "Add to Firefox" on
     // addons.mozilla.org (or any site-triggered install) shows our themed dialog.
     runtime.getWebExtensionController().setPromptDelegate(new WebExtensionController.PromptDelegate() {
-      private GeckoResult<AllowOrDeny> askExt(WebExtension ext, String title, String[] perms, String[] origins) {
+      private String permText(String[] perms, String[] origins) {
+        java.util.List<String> p = new java.util.ArrayList<>();
+        if (perms != null) for (String s : perms) p.add(s);
+        if (origins != null) for (String s : origins) p.add("Access " + s);
+        return p.isEmpty() ? null : "It will need permission to:\n• " + String.join("\n• ", p);
+      }
+      @Override
+      public GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
+          WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
+        GeckoResult<WebExtension.PermissionPromptResponse> result = new GeckoResult<>();
+        runOnUiThread(() -> {
+          try {
+            String name = extName(ext);
+            StringBuilder msg = new StringBuilder();
+            if (ext.metaData != null && ext.metaData.description != null) {
+              msg.append(ext.metaData.description).append("\n\n");
+            }
+            String pt = permText(perms, origins);
+            msg.append(pt != null ? pt : "Add this extension to DevxyzBrowser?");
+            Ui.dialog(MainActivity.this).setTitle("Add " + name + "?")
+              .setMessage(msg.toString())
+              .setPositiveButton("Add", (d, w) -> {
+                result.complete(new WebExtension.PermissionPromptResponse(true, false, true));
+                Ui.toast(MainActivity.this, "Installing " + name + "…");
+                refreshExtensionLists();
+                // The install finishes asynchronously; refresh again to pick it up.
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                    () -> refreshExtensionLists(), 4000);
+              })
+              .setNegativeButton("Cancel", (d, w) ->
+                result.complete(new WebExtension.PermissionPromptResponse(false, false, false)))
+              .setOnCancelListener(d -> {
+                try { result.complete(new WebExtension.PermissionPromptResponse(false, false, false)); }
+                catch (Exception ignored) {}
+              })
+              .show();
+          } catch (Exception e) {
+            try { result.complete(new WebExtension.PermissionPromptResponse(false, false, false)); }
+            catch (Exception ignored) {}
+          }
+        });
+        return result;
+      }
+      private GeckoResult<AllowOrDeny> askAllowDeny(WebExtension ext, String title, String[] perms, String[] origins) {
         GeckoResult<AllowOrDeny> result = new GeckoResult<>();
         runOnUiThread(() -> {
           try {
@@ -199,25 +242,15 @@ public final class MainActivity extends AppCompatActivity {
             if (ext.metaData != null && ext.metaData.description != null) {
               msg.append(ext.metaData.description).append("\n\n");
             }
-            java.util.List<String> p = new java.util.ArrayList<>();
-            if (perms != null) for (String s : perms) p.add(s);
-            if (origins != null) for (String s : origins) p.add("Access " + s);
-            if (!p.isEmpty()) {
-              msg.append("It will need permission to:\n• ").append(String.join("\n• ", p));
-            } else {
-              msg.append("Add this extension to DevxyzBrowser?");
-            }
+            String pt = permText(perms, origins);
+            msg.append(pt != null ? pt : title + " " + name + "?");
             Ui.dialog(MainActivity.this).setTitle(title + " " + name + "?")
               .setMessage(msg.toString())
-              .setPositiveButton("Add", (d, w) -> {
+              .setPositiveButton("Allow", (d, w) -> {
                 result.complete(AllowOrDeny.ALLOW);
-                Ui.toast(MainActivity.this, "Installing " + name + "…");
                 refreshExtensionLists();
-                // The install finishes asynchronously; refresh again to pick it up.
-                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
-                    () -> refreshExtensionLists(), 4000);
               })
-              .setNegativeButton("Cancel", (d, w) -> result.complete(AllowOrDeny.DENY))
+              .setNegativeButton("Deny", (d, w) -> result.complete(AllowOrDeny.DENY))
               .setOnCancelListener(d -> { try { result.complete(AllowOrDeny.DENY); } catch (Exception ignored) {} })
               .show();
           } catch (Exception e) {
@@ -227,16 +260,12 @@ public final class MainActivity extends AppCompatActivity {
         return result;
       }
       @Override
-      public GeckoResult<AllowOrDeny> onInstallPromptRequest(WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
-        return askExt(ext, "Add", perms, origins);
-      }
-      @Override
       public GeckoResult<AllowOrDeny> onUpdatePrompt(WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
-        return askExt(ext, "Update", perms, origins);
+        return askAllowDeny(ext, "Update", perms, origins);
       }
       @Override
       public GeckoResult<AllowOrDeny> onOptionalPrompt(WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
-        return askExt(ext, "Grant permissions to", perms, origins);
+        return askAllowDeny(ext, "Grant permissions to", perms, origins);
       }
     });
     geckoView = findViewById(R.id.gecko);
@@ -627,8 +656,8 @@ public final class MainActivity extends AppCompatActivity {
   private void setExtEnabled(WebExtension ext, boolean enabled) {
     try {
       (enabled
-        ? runtime.getWebExtensionController().enable(ext, WebExtensionController.DisabledFlags.USER)
-        : runtime.getWebExtensionController().disable(ext, WebExtensionController.DisabledFlags.USER)
+        ? runtime.getWebExtensionController().enable(ext, WebExtension.DisabledFlags.USER)
+        : runtime.getWebExtensionController().disable(ext, WebExtension.DisabledFlags.USER)
       ).accept(
         done -> runOnUiThread(() -> {
           Ui.toast(this, extName(ext) + (enabled ? " enabled" : " disabled"));
