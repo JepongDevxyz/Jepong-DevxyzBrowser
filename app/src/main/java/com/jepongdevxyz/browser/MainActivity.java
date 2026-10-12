@@ -3,6 +3,7 @@ package com.jepongdevxyz.browser;
 import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -61,7 +62,6 @@ public final class MainActivity extends AppCompatActivity {
   private boolean vpnReceiverRegistered;
   SharedPreferences prefs;
   final SettingsScreens settingsScreens = new SettingsScreens(this);
-  final AiChatPanel aiChatPanel = new AiChatPanel(this);
   private boolean isDesktop;
 
   // Desktop right-panel widgets (null on phones).
@@ -2286,7 +2286,7 @@ public final class MainActivity extends AppCompatActivity {
         applyDesktopSite(on);
       });
       onMenuClick.accept(R.id.m_extensions, this::showExtensions);
-      onMenuClick.accept(R.id.m_ai, () -> aiChatPanel.show());
+      onMenuClick.accept(R.id.m_ai, () -> startActivity(new Intent(this, AiChatActivity.class)));
       onMenuClick.accept(R.id.m_vpn, this::showVpn);
       onMenuClick.accept(R.id.m_settings, this::showSettings);
       onMenuClick.accept(R.id.m_help, this::showHelp);
