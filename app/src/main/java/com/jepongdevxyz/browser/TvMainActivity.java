@@ -18,7 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import com.jepongdevxyz.browser.util.TvUtil;
-import com.jepongdevxyz.browser.util.Ui;
+import com.jepongdevxyz.browser.Ui;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 import com.jepongdevxyz.browser.vpn.VpnGateApi;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
