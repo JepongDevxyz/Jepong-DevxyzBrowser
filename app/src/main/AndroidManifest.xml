@@ -42,6 +42,8 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|smallestScreenSize|uiMode"
             android:exported="false">
         </activity>
+        <activity android:name=".AiChatActivity" android:exported="false"
+            android:theme="@style/Theme.DevxyzBrowser" />
         <service android:name=".vpn.DevxyzVpnService" android:exported="false"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:foregroundServiceType="specialUse">
