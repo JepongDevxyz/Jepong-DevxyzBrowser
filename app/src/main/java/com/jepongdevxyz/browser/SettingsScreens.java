@@ -698,7 +698,7 @@ public final class SettingsScreens {
   }
 
 
-  public void initSettingsPanel(View root) {
+  public void initSettingsPanel(LinearLayout root) {
     root.findViewById(R.id.settings_close).setOnClickListener(v -> a.settingsDialog.dismiss());
     com.google.android.material.switchmaterial.SwitchMaterial swRestore = root.findViewById(R.id.sw_restore_tabs);
     com.google.android.material.switchmaterial.SwitchMaterial swHist = root.findViewById(R.id.sw_remember_history);
