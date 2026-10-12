@@ -27,11 +27,31 @@ public final class VpnProfileStore {
         try (FileOutputStream out = context.openFileOutput(FILE, Context.MODE_PRIVATE)) {
             out.write(config.getBytes(StandardCharsets.UTF_8));
         }
+        setActiveServerId(context, "");
         return endpoint(config);
     }
 
     public static boolean hasProfile(Context context) {
         return new File(context.getFilesDir(), FILE).isFile();
+    }
+
+    /** Writes a raw OpenVPN config (e.g. decoded from a VPNGate server) as the active profile. */
+    public static void writeActiveProfile(Context context, String config) throws IOException {
+        validate(config);
+        try (FileOutputStream out = context.openFileOutput(FILE, Context.MODE_PRIVATE)) {
+            out.write(config.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    /** Remembers which built-in server (hostname) the active profile came from, or "" for a custom .ovpn. */
+    public static void setActiveServerId(Context context, String id) {
+        context.getSharedPreferences("devxyz_vpn", Context.MODE_PRIVATE)
+            .edit().putString("active_server", id == null ? "" : id).apply();
+    }
+
+    public static String getActiveServerId(Context context) {
+        return context.getSharedPreferences("devxyz_vpn", Context.MODE_PRIVATE)
+            .getString("active_server", "");
     }
 
     public static String read(Context context) throws IOException {
