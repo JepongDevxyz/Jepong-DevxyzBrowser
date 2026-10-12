@@ -238,6 +238,15 @@ public class AiChatActivity extends Activity {
   }
 
   // ============ Messages ============
+  /** Converts markdown links [text](url) to plain clickable URLs. */
+  private android.text.SpannableString linkifyText(String text) {
+    // Replace [text](url) with just url (Linkify will make it clickable)
+    String cleaned = text.replaceAll("\\[([^\\]]+)\\]\\((https?://[^)]+)\\)", "$2");
+    // Remove **bold** markers
+    cleaned = cleaned.replace("**", "");
+    return new android.text.SpannableString(cleaned);
+  }
+
   private void renderMessages() {
     messagesBox.removeAllViews();
     if (history.isEmpty()) {
@@ -261,11 +270,15 @@ public class AiChatActivity extends Activity {
         messagesBox.addView(b);
       } else {
         TextView b = new TextView(this);
-        b.setText(m.text);
+        b.setText(linkifyText(m.text));
         b.setTextSize(15);
         b.setTextColor(0xFFFFFFFF);
         b.setLineSpacing(dp(2), 1);
         b.setPadding(dp(2), dp(8), dp(2), dp(8));
+        // Make URLs clickable
+        b.setAutoLinkMask(android.text.util.Linkify.WEB_URLS);
+        b.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+        b.setLinkTextColor(0xFF7C9CFF);
         messagesBox.addView(b);
       }
     }
