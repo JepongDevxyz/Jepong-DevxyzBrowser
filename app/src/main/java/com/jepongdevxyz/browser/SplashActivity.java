@@ -19,6 +19,9 @@ public final class SplashActivity extends AppCompatActivity {
   private long startedAt;
 
   @Override protected void onCreate(Bundle state) {
+    SharedPreferences earlyPrefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+    com.jepongdevxyz.browser.util.Appearance.applyTheme(earlyPrefs);
+    com.jepongdevxyz.browser.util.Appearance.applyDynamicColors(this, earlyPrefs);
     super.onCreate(state);
     setContentView(R.layout.activity_splash);
     ImgUtil.setB64((ImageView) findViewById(R.id.splash_bg), this, "img/bg_splash.b64");
@@ -47,6 +50,12 @@ public final class SplashActivity extends AppCompatActivity {
     }
     boolean seen = prefs.getBoolean("welcome_seen", false);
     Intent next = new Intent(this, seen ? MainActivity.class : WelcomeActivity.class);
+    // Forward web links (we're a BROWSABLE browser) so they open in MainActivity.
+    Intent src = getIntent();
+    if (src != null && Intent.ACTION_VIEW.equals(src.getAction()) && src.getData() != null) {
+      next.setAction(Intent.ACTION_VIEW);
+      next.setData(src.getData());
+    }
     startActivity(next);
     finish();
   }
