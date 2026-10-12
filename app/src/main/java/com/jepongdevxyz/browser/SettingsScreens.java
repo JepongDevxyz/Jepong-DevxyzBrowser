@@ -165,7 +165,7 @@ public final class SettingsScreens {
     root.addView(downloadToggle("Automatically open when possible",
         "Open downloaded files right away",
         "dl_auto_open", true, null));
-    root.addView(downloadToggle("Show download a.progress notifications",
+    root.addView(downloadToggle("Show download progress notifications",
         "Notify while files are downloading",
         "dl_notifications", true, null));
     root.addView(downloadToggle("Parallel Downloading",
@@ -247,7 +247,7 @@ public final class SettingsScreens {
         android.app.role.RoleManager rm = a.getSystemService(android.app.role.RoleManager.class);
         if (rm != null && rm.isRoleAvailable(android.app.role.RoleManager.ROLE_BROWSER)
             && !rm.isRoleHeld(android.app.role.RoleManager.ROLE_BROWSER)) {
-          startActivityForResult(
+          a.startActivityForResult(
               rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_BROWSER),
               MainActivity.REQ_DEFAULT_BROWSER);
           return;
@@ -330,7 +330,7 @@ public final class SettingsScreens {
 
     // Bottom navigation toolbar.
     root.addView(appearanceToggle("Bottom navigation toolbar",
-        "Show a bottom bar for quick access to home, a.bookmarks, and search",
+        "Show a bottom bar for quick access to home, bookmarks, and search",
         "bottom_nav_bar", false,
         () -> applyAppearance()));
 
@@ -398,8 +398,8 @@ public final class SettingsScreens {
     String[][] items = {
         {"newtab", "New tab"}, {"incognito", "New incognito tab"},
         {"history", "History"}, {"cleardata", "Delete browsing data"},
-        {"site", "Site controls"}, {"a.downloads", "Downloads"},
-        {"a.bookmarks", "Bookmarks"}, {"recent", "Recent a.tabs"},
+        {"site", "Site controls"}, {"downloads", "Downloads"},
+        {"bookmarks", "Bookmarks"}, {"recent", "Recent tabs"},
         {"share", "Share"}, {"find", "Find in page"},
         {"translate", "Translate"}, {"desktop", "Desktop site"},
         {"extensions", "Extensions"}, {"vpn", "VPN"}, {"help", "Help"},
@@ -533,7 +533,7 @@ public final class SettingsScreens {
   public void showKeyboard(View v) {
     try {
       android.view.inputmethod.InputMethodManager imm =
-          (android.view.inputmethod.InputMethodManager) a.getSystemService(INPUT_METHOD_SERVICE);
+          (android.view.inputmethod.InputMethodManager) a.getSystemService(Context.INPUT_METHOD_SERVICE);
       imm.showSoftInput(v, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
     } catch (Exception ignored) { }
   }
@@ -603,17 +603,17 @@ public final class SettingsScreens {
                   a.downloads.add(0, new MainActivity.DownloadItem(filename, url, time, -1));
                   a.saveDownloads();
                   a.refreshDownloadsSheet();
-                  Ui.toast(MainActivity.this, "Downloaded " + filename);
+                  Ui.toast(a, "Downloaded " + filename);
                   if (a.prefs.getBoolean("dl_auto_open", true)) a.openFile(fileUri);
                 });
               }
               @Override public void onError(String message) {
-                a.runOnUiThread(() -> Ui.toastLong(MainActivity.this, "Download failed: " + message));
+                a.runOnUiThread(() -> Ui.toastLong(a, "Download failed: " + message));
               }
             });
         return;
       }
-      android.app.DownloadManager dm = (android.app.DownloadManager) a.getSystemService(DOWNLOAD_SERVICE);
+      android.app.DownloadManager dm = (android.app.DownloadManager) a.getSystemService(Context.DOWNLOAD_SERVICE);
       android.app.DownloadManager.Request req = new android.app.DownloadManager.Request(Uri.parse(url));
       req.setTitle(filename);
       req.setNotificationVisibility(notifications
@@ -638,7 +638,7 @@ public final class SettingsScreens {
     // Voice search for the toolbar shortcut.
     a.voiceSearchLauncher = a.registerForActivityResult(
         new ActivityResultContracts.StartActivityForResult(), result -> {
-      if (result.getResultCode() != RESULT_OK || result.getData() == null) return;
+      if (result.getResultCode() != android.app.Activity.RESULT_OK || result.getData() == null) return;
       java.util.ArrayList<String> matches = result.getData().getStringArrayListExtra(
           android.speech.RecognizerIntent.EXTRA_RESULTS);
       if (matches != null && !matches.isEmpty()) {
@@ -649,7 +649,7 @@ public final class SettingsScreens {
     // "Ask where to save files": user picks the location, we download straight to it.
     a.safDownloadPicker = a.registerForActivityResult(
         new ActivityResultContracts.StartActivityForResult(), result -> {
-      if (result.getResultCode() != RESULT_OK || result.getData() == null) {
+      if (result.getResultCode() != android.app.Activity.RESULT_OK || result.getData() == null) {
         Ui.toast(a, "Download cancelled");
         return;
       }
@@ -669,16 +669,16 @@ public final class SettingsScreens {
                 a.downloads.add(0, new MainActivity.DownloadItem(name, url, time, -1));
                 a.saveDownloads();
                 a.refreshDownloadsSheet();
-                Ui.toast(MainActivity.this, "Downloaded " + name);
+                Ui.toast(a, "Downloaded " + name);
                 if (a.prefs.getBoolean("dl_auto_open", true)) a.openFile(fileUri);
               });
             }
             @Override public void onError(String message) {
-              a.runOnUiThread(() -> Ui.toastLong(MainActivity.this, "Download failed: " + message));
+              a.runOnUiThread(() -> Ui.toastLong(a, "Download failed: " + message));
             }
           });
     });
-    // "Automatically open when possible" for DownloadManager a.downloads.
+    // "Automatically open when possible" for DownloadManager downloads.
     a.downloadCompleteReceiver = new android.content.BroadcastReceiver() {
       @Override public void onReceive(Context context, Intent intent) {
         if (!a.prefs.getBoolean("dl_auto_open", true)) return;
@@ -687,7 +687,7 @@ public final class SettingsScreens {
         for (MainActivity.DownloadItem d : a.downloads) {
           if (d.id == id) {
             android.app.DownloadManager dm =
-                (android.app.DownloadManager) a.getSystemService(DOWNLOAD_SERVICE);
+                (android.app.DownloadManager) a.getSystemService(Context.DOWNLOAD_SERVICE);
             Uri uri = dm.getUriForDownloadedFile(id);
             if (uri != null) a.openFile(uri);
             break;
@@ -719,10 +719,10 @@ public final class SettingsScreens {
         new String[]{"Devxyz Home", "Blank page"},
         a.prefs.getString("homepage", "Devxyz Home"),
         val -> { a.prefs.edit().putString("homepage", val).apply(); a.refreshSettingsPanel(); }));
-    root.findViewById(R.id.set_shields_row).setOnClickListener(v -> a.settingsScreens.showShieldsDialog());
-    root.findViewById(R.id.set_downloads_row).setOnClickListener(v -> a.settingsScreens.showDownloadSettings());
-    root.findViewById(R.id.set_default_browser_row).setOnClickListener(v -> a.settingsScreens.openDefaultBrowserSettings());
-    root.findViewById(R.id.set_appearance_row).setOnClickListener(v -> a.settingsScreens.showAppearanceSettings());
+    root.findViewById(R.id.set_shields_row).setOnClickListener(v -> showShieldsDialog());
+    root.findViewById(R.id.set_downloads_row).setOnClickListener(v -> showDownloadSettings());
+    root.findViewById(R.id.set_default_browser_row).setOnClickListener(v -> openDefaultBrowserSettings());
+    root.findViewById(R.id.set_appearance_row).setOnClickListener(v -> showAppearanceSettings());
     a.refreshSettingsPanel();
   }
 
