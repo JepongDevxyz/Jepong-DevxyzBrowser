@@ -444,7 +444,7 @@ public final class SettingsScreens {
       org.mozilla.geckoview.WebExtension darkReader = null;
       if (list != null) {
         for (org.mozilla.geckoview.WebExtension ext : list) {
-          String id = ext.getId();
+          String id = (ext.metaData != null) ? ext.metaData.id : null;
           if (id != null && id.contains("darkreader")) { darkReader = ext; break; }
         }
       }
@@ -604,7 +604,7 @@ public final class SettingsScreens {
                   a.saveDownloads();
                   a.refreshDownloadsSheet();
                   Ui.toast(a, "Downloaded " + filename);
-                  if (a.prefs.getBoolean("dl_auto_open", true)) a.openFile(fileUri);
+                  if (a.prefs.getBoolean("dl_auto_open", true)) openFile(fileUri);
                 });
               }
               @Override public void onError(String message) {
@@ -670,7 +670,7 @@ public final class SettingsScreens {
                 a.saveDownloads();
                 a.refreshDownloadsSheet();
                 Ui.toast(a, "Downloaded " + name);
-                if (a.prefs.getBoolean("dl_auto_open", true)) a.openFile(fileUri);
+                if (a.prefs.getBoolean("dl_auto_open", true)) openFile(fileUri);
               });
             }
             @Override public void onError(String message) {
@@ -689,7 +689,7 @@ public final class SettingsScreens {
             android.app.DownloadManager dm =
                 (android.app.DownloadManager) a.getSystemService(Context.DOWNLOAD_SERVICE);
             Uri uri = dm.getUriForDownloadedFile(id);
-            if (uri != null) a.openFile(uri);
+            if (uri != null) openFile(uri);
             break;
           }
         }
