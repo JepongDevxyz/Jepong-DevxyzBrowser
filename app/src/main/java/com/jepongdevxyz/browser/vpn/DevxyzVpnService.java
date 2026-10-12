@@ -38,6 +38,21 @@ public final class DevxyzVpnService extends VpnService {
     private volatile boolean destroyed;
 
     public static boolean isConnected() { return connected; }
+    /** Wall-clock time (ms) when the tunnel last reached CONNECTED, 0 when not connected. */
+    private static volatile long connectTimeMs;
+    public static long getConnectTimeMs() { return connected ? connectTimeMs : 0; }
+    private static volatile long rxBaseBytes, txBaseBytes;
+    /** Approximate session traffic via per-UID counters (all tunnel traffic counts toward our UID). */
+    public static long getSessionRxBytes() {
+        if (!connected) return 0;
+        long cur = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
+        return cur < 0 || rxBaseBytes < 0 ? -1 : Math.max(0, cur - rxBaseBytes);
+    }
+    public static long getSessionTxBytes() {
+        if (!connected) return 0;
+        long cur = android.net.TrafficStats.getUidTxBytes(android.os.Process.myUid());
+        return cur < 0 || txBaseBytes < 0 ? -1 : Math.max(0, cur - txBaseBytes);
+    }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent == null ? null : intent.getAction();
@@ -119,6 +134,11 @@ public final class DevxyzVpnService extends VpnService {
 
     private void publish(String state, String detail, boolean error) {
         connected = "CONNECTED".equals(state);
+        if (connected) {
+            connectTimeMs = System.currentTimeMillis();
+            rxBaseBytes = android.net.TrafficStats.getUidRxBytes(android.os.Process.myUid());
+            txBaseBytes = android.net.TrafficStats.getUidTxBytes(android.os.Process.myUid());
+        } else if ("DISCONNECTED".equals(state) || "EXITING".equals(state) || error) connectTimeMs = 0;
         Intent broadcast = new Intent(ACTION_STATE).setPackage(getPackageName())
                 .putExtra("state", state).putExtra("detail", detail).putExtra("error", error);
         sendBroadcast(broadcast);
