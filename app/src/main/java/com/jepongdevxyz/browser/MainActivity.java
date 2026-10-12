@@ -671,6 +671,12 @@ public final class MainActivity extends AppCompatActivity {
     vpnPickerList.addView(loading);
     VpnGateApi.fetch(this, forceRefresh, new VpnGateApi.Callback() {
       @Override public void onResult(java.util.List<VpnGateApi.VpnServer> servers, boolean fromCache) {
+        if (!vpnServers.isEmpty() && servers.size() == vpnServers.size()) {
+          boolean same = true;
+          for (int i = 0; i < 20 && i < servers.size(); i++)
+            if (!servers.get(i).id().equals(vpnServers.get(i).id())) { same = false; break; }
+          if (same) return;
+        }
         vpnServers.clear();
         vpnServers.addAll(servers);
         java.util.Set<String> countries = new java.util.TreeSet<>();
@@ -2012,10 +2018,7 @@ public final class MainActivity extends AppCompatActivity {
         if (!tab.incognito && prefs.getBoolean("remember_history", true) && !historyItems.contains(url)) historyItems.add(0, url);
       }
       @Override public void onProgressChange(GeckoSession s, int p) {
-        if (tab == activeTab && progress.getVisibility() == View.VISIBLE) {
-          int cur = progress.getProgress();
-          if (p > cur) progress.setProgress(Math.min(p, 100));
-        }
+        if (tab == activeTab && p > progress.getProgress()) progress.setProgress(Math.min(p, 100));
       }
       @Override public void onPageStop(GeckoSession s, boolean ok) {
         if (tab == activeTab) {
