@@ -60,7 +60,7 @@ public class AiChatActivity extends Activity {
     topBar.setOrientation(LinearLayout.HORIZONTAL);
     topBar.setGravity(Gravity.CENTER_VERTICAL);
     topBar.setPadding(dp(2), dp(6), dp(2), dp(6));
-    TextView menuBtn = iconBtn("☰");
+    ImageButton menuBtn = iconBtn(R.drawable.ic_ai_menu);
     menuBtn.setOnClickListener(v -> openConversationsDrawer());
     topBar.addView(menuBtn);
     TextView title = new TextView(this);
@@ -71,10 +71,10 @@ public class AiChatActivity extends Activity {
     title.setPadding(dp(6), 0, dp(6), 0);
     topBar.addView(title, new LinearLayout.LayoutParams(0,
         LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-    TextView newBtn = iconBtn("✎");
+    ImageButton newBtn = iconBtn(R.drawable.ic_ai_edit);
     newBtn.setOnClickListener(v -> newConversation());
     topBar.addView(newBtn);
-    TextView moreBtn = iconBtn("⋮");
+    ImageButton moreBtn = iconBtn(R.drawable.ic_ai_more);
     moreBtn.setOnClickListener(v -> showChatMenu());
     topBar.addView(moreBtn);
     main.addView(topBar);
@@ -101,10 +101,11 @@ public class AiChatActivity extends Activity {
       chipRow.setOrientation(LinearLayout.HORIZONTAL);
       chipRow.setGravity(Gravity.CENTER_VERTICAL);
       chipRow.setPadding(0, dp(7), 0, dp(7));
-      TextView ic = new TextView(this);
-      ic.setText("💬");
-      ic.setTextSize(16);
+      ImageButton ic = new ImageButton(this);
+      ic.setImageResource(R.drawable.ic_ai_chat);
+      ic.setBackground(null);
       ic.setPadding(0, 0, dp(10), 0);
+      ic.setColorFilter(0xFF8A87A0);
       chipRow.addView(ic);
       TextView tv = new TextView(this);
       tv.setText(s);
@@ -141,13 +142,13 @@ public class AiChatActivity extends Activity {
     iconRow.setGravity(Gravity.CENTER_VERTICAL);
     iconRow.setPadding(dp(2), dp(2), dp(2), dp(2));
 
-    TextView sparkBtn = iconBtn("✦");
+    ImageButton sparkBtn = iconBtn(R.drawable.ic_ai_sparkle);
     sparkBtn.setOnClickListener(v -> openQuickActionsDrawer());
     iconRow.addView(sparkBtn);
-    TextView micBtn = iconBtn("🎤");
+    ImageButton micBtn = iconBtn(R.drawable.ic_ai_mic);
     micBtn.setOnClickListener(v -> Ui.toast(this, "Voice input coming soon"));
     iconRow.addView(micBtn);
-    TextView attachBtn = iconBtn("📎");
+    ImageButton attachBtn = iconBtn(R.drawable.ic_ai_clip);
     attachBtn.setOnClickListener(v -> showAttachMenu());
     iconRow.addView(attachBtn);
 
@@ -163,13 +164,12 @@ public class AiChatActivity extends Activity {
     modelLabel.setOnClickListener(v -> showModelSheet());
     iconRow.addView(modelLabel);
 
-    TextView sendBtn = new TextView(this);
-    sendBtn.setText("➤");
-    sendBtn.setTextSize(22);
-    sendBtn.setTextColor(0xFFFFFFFF);
-    sendBtn.setBackgroundResource(R.drawable.badge_bg);
-    sendBtn.setGravity(Gravity.CENTER);
-    int sz = dp(38);
+    ImageButton sendBtn = new ImageButton(this);
+    sendBtn.setImageResource(R.drawable.ic_ai_send);
+    sendBtn.setBackgroundResource(R.drawable.send_btn_bg);
+    sendBtn.setPadding(dp(10), dp(10), dp(10), dp(10));
+    sendBtn.setColorFilter(0xFFFFFFFF);
+    int sz = dp(40);
     LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(sz, sz);
     slp.setMargins(dp(4), 0, dp(2), 0);
     sendBtn.setLayoutParams(slp);
@@ -203,14 +203,12 @@ public class AiChatActivity extends Activity {
     setContentView(root);
   }
 
-  private TextView iconBtn(String text) {
-    TextView btn = new TextView(this);
-    btn.setText(text);
-    btn.setTextSize(20);
-    btn.setTextColor(0xFFFFFFFF);
-    btn.setGravity(Gravity.CENTER);
-    btn.setPadding(dp(12), dp(10), dp(12), dp(10));
-    btn.setMinWidth(dp(48));
+  private ImageButton iconBtn(int resId) {
+    ImageButton btn = new ImageButton(this);
+    btn.setImageResource(resId);
+    btn.setBackground(null);
+    btn.setPadding(dp(12), dp(12), dp(12), dp(12));
+    btn.setColorFilter(0xFFFFFFFF);
     return btn;
   }
 
@@ -466,10 +464,10 @@ public class AiChatActivity extends Activity {
     root.setOrientation(LinearLayout.VERTICAL);
     root.setPadding(dp(8), dp(8), dp(8), dp(16));
 
-    root.addView(modelRow("✦", "Automatic", "Current",
+    root.addView(modelRow("sparkle", "Automatic", "Current",
         "Model changes dynamically to use the best one for the task", true));
-    root.addView(modelRow("◉", "gemini-3.5-flash-lite", null, "Fast • Recommended", false));
-    root.addView(modelRow("◉", "gemini-3.1-flash-lite", null, "Fast • Budget", false));
+    root.addView(modelRow("dot", "gemini-3.5-flash-lite", null, "Fast • Recommended", false));
+    root.addView(modelRow("dot", "gemini-3.1-flash-lite", null, "Fast • Budget", false));
 
     TextView all = new TextView(this);
     all.setText("Show all models  >");
@@ -491,10 +489,11 @@ public class AiChatActivity extends Activity {
     row.setOrientation(LinearLayout.HORIZONTAL);
     row.setGravity(Gravity.CENTER_VERTICAL);
     row.setPadding(dp(12), dp(12), dp(12), dp(12));
-    TextView ic = new TextView(this);
-    ic.setText(icon);
-    ic.setTextSize(22);
+    ImageButton ic = new ImageButton(this);
+    ic.setImageResource(icon.equals("sparkle") ? R.drawable.ic_ai_sparkle : R.drawable.ic_ai_chat);
+    ic.setBackground(null);
     ic.setPadding(0, 0, dp(12), 0);
+    ic.setColorFilter(icon.equals("sparkle") ? 0xFFE04A3A : 0xFF8A87A0);
     row.addView(ic);
     LinearLayout texts = new LinearLayout(this);
     texts.setOrientation(LinearLayout.VERTICAL);
@@ -618,11 +617,7 @@ public class AiChatActivity extends Activity {
     header.setOrientation(LinearLayout.HORIZONTAL);
     header.setGravity(Gravity.CENTER_VERTICAL);
     header.setPadding(dp(4), dp(8), dp(4), dp(8));
-    TextView back = new TextView(this);
-    back.setText("←");
-    back.setTextSize(22);
-    back.setTextColor(0xFFFFFFFF);
-    back.setPadding(dp(12), dp(8), dp(12), dp(8));
+    ImageButton back = iconBtn(R.drawable.ic_ai_back);
     header.addView(back);
     TextView title = new TextView(this);
     title.setText("JepongDevxyz AI");
@@ -631,11 +626,7 @@ public class AiChatActivity extends Activity {
     title.setTextColor(0xFFFFFFFF);
     header.addView(title, new LinearLayout.LayoutParams(0,
         LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-    TextView close = new TextView(this);
-    close.setText("✕");
-    close.setTextSize(20);
-    close.setTextColor(0xFFFFFFFF);
-    close.setPadding(dp(12), dp(8), dp(12), dp(8));
+    ImageButton close = iconBtn(R.drawable.ic_ai_close);
     header.addView(close);
     root.addView(header);
     root.addView(divider());
