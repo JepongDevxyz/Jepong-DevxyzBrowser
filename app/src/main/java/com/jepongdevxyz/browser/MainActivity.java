@@ -1520,7 +1520,7 @@ public final class MainActivity extends AppCompatActivity {
     try {
       (enabled
         ? runtime.getWebExtensionController().enable(ext, WebExtensionController.EnableSource.USER)
-        : runtime.getWebExtensionController().disable(ext, WebExtension.DisabledFlags.USER)
+        : runtime.getWebExtensionController().disable(ext, WebExtensionController.EnableSource.USER)
       ).accept(
         done -> runOnUiThread(() -> {
           Ui.toast(this, extName(ext) + (enabled ? " enabled" : " disabled"));
