@@ -29,6 +29,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.jepongdevxyz.browser.util.ImgUtil;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
+import com.jepongdevxyz.browser.vpn.VpnGateApi;
 import android.content.Intent;
 import android.net.VpnService;
 import org.mozilla.geckoview.*;
@@ -58,7 +59,13 @@ public final class MainActivity extends AppCompatActivity {
   private View vpnPanelRoot, extPanelRoot;
   private ImageButton vpnPower;
   private ImageView vpnSecureIcon;
-  private TextView vpnStateText, vpnHostText, vpnSubText, vpnSecureTitle, vpnIpText;
+  private TextView vpnStateText, vpnHostText, vpnSubText, vpnSecureTitle, vpnIpText, vpnStatsText;
+  private final java.util.List<VpnGateApi.VpnServer> vpnServers = new java.util.ArrayList<>();
+  private String vpnServerFilter = "";
+  private final java.util.Set<String> vpnFavorites = new java.util.HashSet<>();
+  private final android.os.Handler vpnStatsHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+  private Runnable vpnStatsTick;
+  private long vpnRxBase, vpnTxBase;
   private SwitchMaterial swAuto, swKill, swTrack;
   private EditText extSearch;
   private LinearLayout extInstalledList, extRecommendedList, extSearchResults;
@@ -434,14 +441,14 @@ public final class MainActivity extends AppCompatActivity {
     vpnSubText = root.findViewById(R.id.vpn_location_sub);
     vpnSecureTitle = root.findViewById(R.id.vpn_secure_title);
     vpnIpText = root.findViewById(R.id.vpn_ip);
+    vpnStatsText = root.findViewById(R.id.vpn_stats);
+    vpnFavorites.addAll(prefs.getStringSet("vpn_favorites", new java.util.HashSet<>()));
     swAuto = root.findViewById(R.id.sw_autoconnect);
     swKill = root.findViewById(R.id.sw_killswitch);
     swTrack = root.findViewById(R.id.sw_blocktrackers);
     vpnPower.setOnClickListener(v -> toggleVpnConnection());
-    View.OnClickListener importProfile = v ->
-      openVpnProfile.launch(new String[]{"application/x-openvpn-profile", "application/octet-stream", "text/plain"});
-    root.findViewById(R.id.vpn_location_row).setOnClickListener(importProfile);
-    root.findViewById(R.id.vpn_gear).setOnClickListener(importProfile);
+    root.findViewById(R.id.vpn_location_row).setOnClickListener(v -> showVpnServerPicker());
+    root.findViewById(R.id.vpn_gear).setOnClickListener(v -> showVpnServerPicker());
     swAuto.setChecked(prefs.getBoolean("auto_connect", false));
     swKill.setChecked(prefs.getBoolean("kill_switch", false));
     swTrack.setChecked(prefs.getInt("etp_level", 1) == 2);
@@ -465,9 +472,16 @@ public final class MainActivity extends AppCompatActivity {
     vpnStateText.setText(connected ? "Connected" : "Disconnected");
     vpnStateText.setTextColor(getColor(connected ? R.color.green : R.color.muted));
     vpnPower.setBackgroundResource(connected ? R.drawable.vpn_power_bg_on : R.drawable.vpn_power_bg);
-    String endpoint = VpnProfileStore.remoteEndpoint(this);
-    vpnHostText.setText(hasProfile ? (endpoint.isEmpty() ? "OpenVPN profile" : endpoint) : "No profile");
-    vpnSubText.setText(hasProfile ? "Tap to replace profile" : "Tap to import .ovpn");
+    String serverId = VpnProfileStore.getActiveServerId(this);
+    if (!serverId.isEmpty()) {
+      VpnGateApi.VpnServer s = findVpnServer(serverId);
+      vpnHostText.setText(s != null ? s.flag() + " " + s.country : serverId);
+      vpnSubText.setText(s != null ? s.hostname + " • Tap to change server" : "Tap to change server");
+    } else {
+      String endpoint = VpnProfileStore.remoteEndpoint(this);
+      vpnHostText.setText(hasProfile ? (endpoint.isEmpty() ? "OpenVPN profile" : endpoint) : "No profile");
+      vpnSubText.setText(hasProfile ? "Tap to change server" : "Tap to choose a server");
+    }
     vpnSecureTitle.setText(connected ? "Your connection is secure" : "You're not protected");
     vpnSecureIcon.setImageTintList(ColorStateList.valueOf(getColor(connected ? R.color.green : R.color.muted)));
     if (connected) {
@@ -476,10 +490,60 @@ public final class MainActivity extends AppCompatActivity {
         vpnIpText.setText("IP: looking up…");
         fetchPublicIp();
       }
+      vpnStatsText.setVisibility(View.VISIBLE);
+      startVpnStatsTicker();
     } else {
       ipLookedUp = false;
       vpnIpText.setText("Connect to secure your connection");
+      vpnStatsText.setVisibility(View.GONE);
+      vpnStatsText.setText("");
+      stopVpnStatsTicker();
     }
+  }
+
+  private VpnGateApi.VpnServer findVpnServer(String id) {
+    for (VpnGateApi.VpnServer s : vpnServers) {
+      if (s.id().equals(id)) return s;
+    }
+    return null;
+  }
+
+  private void startVpnStatsTicker() {
+    stopVpnStatsTicker();
+    vpnStatsTick = new Runnable() {
+      @Override public void run() {
+        if (!DevxyzVpnService.isConnected() || vpnStatsText == null) return;
+        long dur = System.currentTimeMillis() - DevxyzVpnService.getConnectTimeMs();
+        long rx = DevxyzVpnService.getSessionRxBytes();
+        long tx = DevxyzVpnService.getSessionTxBytes();
+        String traffic = (rx < 0 || tx < 0) ? "—"
+          : "↓ " + formatBytes(rx) + "   ↑ " + formatBytes(tx);
+        vpnStatsText.setText("⏱ " + formatDuration(dur) + "   •   " + traffic);
+        vpnStatsHandler.postDelayed(this, 1000);
+      }
+    };
+    vpnStatsHandler.post(vpnStatsTick);
+  }
+
+  private void stopVpnStatsTicker() {
+    if (vpnStatsTick != null) {
+      vpnStatsHandler.removeCallbacks(vpnStatsTick);
+      vpnStatsTick = null;
+    }
+  }
+
+  private static String formatDuration(long ms) {
+    long s = Math.max(0, ms / 1000);
+    long h = s / 3600, m = (s % 3600) / 60, sec = s % 60;
+    if (h > 0) return String.format(java.util.Locale.ROOT, "%d:%02d:%02d", h, m, sec);
+    return String.format(java.util.Locale.ROOT, "%02d:%02d", m, sec);
+  }
+
+  private static String formatBytes(long b) {
+    if (b < 1024) return b + " B";
+    if (b < 1024 * 1024) return String.format(java.util.Locale.ROOT, "%.1f KB", b / 1024.0);
+    if (b < 1024L * 1024L * 1024L) return String.format(java.util.Locale.ROOT, "%.1f MB", b / 1048576.0);
+    return String.format(java.util.Locale.ROOT, "%.2f GB", b / 1073741824.0);
   }
 
   private void toggleVpnConnection() {
@@ -490,12 +554,273 @@ public final class MainActivity extends AppCompatActivity {
     }
     DevxyzVpnService.killSwitch = prefs.getBoolean("kill_switch", false);
     if (!VpnProfileStore.hasProfile(this)) {
-      openVpnProfile.launch(new String[]{"application/x-openvpn-profile", "application/octet-stream", "text/plain"});
+      showVpnServerPicker();
       return;
     }
     Intent permission = VpnService.prepare(this);
     if (permission != null) vpnPermission.launch(permission);
     else requestVpnCredentials();
+  }
+
+  // ---------- Built-in VPN servers (VPNGate public list) ----------
+
+  private AlertDialog vpnPickerDialog;
+  private LinearLayout vpnPickerList;
+  private TextView vpnPickerStatus;
+
+  private void showVpnServerPicker() {
+    LinearLayout root = new LinearLayout(this);
+    root.setOrientation(LinearLayout.VERTICAL);
+    int pad = dp(16);
+    root.setPadding(pad, dp(4), pad, 0);
+
+    // Search + refresh row.
+    LinearLayout topRow = new LinearLayout(this);
+    topRow.setOrientation(LinearLayout.HORIZONTAL);
+    topRow.setGravity(Gravity.CENTER_VERTICAL);
+    EditText search = new EditText(this);
+    search.setHint("Search country or server…");
+    search.setSingleLine(true);
+    search.setTextSize(14);
+    topRow.addView(search, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+    TextView refreshBtn = new TextView(this);
+    refreshBtn.setText("↻");
+    refreshBtn.setTextSize(22);
+    refreshBtn.setPadding(dp(12), dp(8), dp(4), dp(8));
+    refreshBtn.setClickable(true);
+    refreshBtn.setFocusable(true);
+    topRow.addView(refreshBtn);
+    root.addView(topRow);
+
+    vpnPickerStatus = new TextView(this);
+    vpnPickerStatus.setTextSize(12);
+    vpnPickerStatus.setTextColor(getColor(R.color.muted));
+    vpnPickerStatus.setPadding(0, dp(4), 0, dp(4));
+    root.addView(vpnPickerStatus);
+
+    ScrollView sv = new ScrollView(this);
+    vpnPickerList = new LinearLayout(this);
+    vpnPickerList.setOrientation(LinearLayout.VERTICAL);
+    sv.addView(vpnPickerList, new ScrollView.LayoutParams(
+      ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
+    LinearLayout.LayoutParams svp = new LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.MATCH_PARENT, dp(380));
+    root.addView(sv, svp);
+
+    search.addTextChangedListener(new TextWatcher() {
+      @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+      @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+      @Override public void afterTextChanged(Editable s) {
+        vpnServerFilter = s.toString().trim().toLowerCase(java.util.Locale.ROOT);
+        renderVpnPickerList();
+      }
+    });
+    refreshBtn.setOnClickListener(v -> loadVpnServers(true));
+
+    vpnPickerDialog = Ui.dialog(this)
+      .setTitle("Choose VPN server")
+      .setView(root)
+      .setNegativeButton("Close", null)
+      .show();
+    loadVpnServers(false);
+  }
+
+  private void loadVpnServers(boolean forceRefresh) {
+    if (vpnPickerList == null) return;
+    vpnPickerStatus.setText(forceRefresh ? "Refreshing server list…" : "Loading servers…");
+    vpnPickerList.removeAllViews();
+    TextView loading = new TextView(this);
+    loading.setText("Fetching public servers…");
+    loading.setTextColor(getColor(R.color.muted));
+    loading.setPadding(0, dp(16), 0, dp(16));
+    loading.setGravity(Gravity.CENTER);
+    vpnPickerList.addView(loading);
+    VpnGateApi.fetch(this, forceRefresh, new VpnGateApi.Callback() {
+      @Override public void onResult(java.util.List<VpnGateApi.VpnServer> servers, boolean fromCache) {
+        vpnServers.clear();
+        vpnServers.addAll(servers);
+        java.util.Set<String> countries = new java.util.TreeSet<>();
+        for (VpnGateApi.VpnServer s : servers) countries.add(s.country);
+        vpnPickerStatus.setText(servers.size() + " servers • " + countries.size() + " countries"
+          + (fromCache ? " (cached)" : ""));
+        renderVpnPickerList();
+        refreshVpnPanel();
+      }
+      @Override public void onError(String message) {
+        vpnPickerStatus.setText(message);
+        vpnPickerList.removeAllViews();
+      }
+    });
+  }
+
+  private void renderVpnPickerList() {
+    if (vpnPickerList == null) return;
+    vpnPickerList.removeAllViews();
+    String activeId = VpnProfileStore.getActiveServerId(this);
+    boolean hasCustom = VpnProfileStore.hasProfile(this) && activeId.isEmpty();
+
+    // "My .ovpn profile" row.
+    LinearLayout customRow = new LinearLayout(this);
+    customRow.setOrientation(LinearLayout.HORIZONTAL);
+    customRow.setGravity(Gravity.CENTER_VERTICAL);
+    customRow.setPadding(0, dp(10), 0, dp(10));
+    TextView customIcon = new TextView(this);
+    customIcon.setText("\uD83D\uDCC4");
+    customIcon.setTextSize(24);
+    customRow.addView(customIcon);
+    LinearLayout customTexts = new LinearLayout(this);
+    customTexts.setOrientation(LinearLayout.VERTICAL);
+    LinearLayout.LayoutParams ctp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+    ctp.setMargins(dp(12), 0, dp(8), 0);
+    TextView customName = new TextView(this);
+    customName.setText("My .ovpn profile");
+    customName.setTextSize(14);
+    customName.setTypeface(customName.getTypeface(), android.graphics.Typeface.BOLD);
+    customName.setTextColor(getColor(R.color.text));
+    TextView customSub = new TextView(this);
+    customSub.setText(hasCustom ? VpnProfileStore.remoteEndpoint(this) + " • Tap to use" : "Tap Import to add your own");
+    customSub.setTextSize(12);
+    customSub.setTextColor(getColor(R.color.muted));
+    customTexts.addView(customName);
+    customTexts.addView(customSub);
+    customRow.addView(customTexts, ctp);
+    TextView importBtn = new TextView(this);
+    importBtn.setText(hasCustom ? "Replace" : "Import");
+    importBtn.setTextSize(13);
+    importBtn.setTextColor(getColor(R.color.orange));
+    importBtn.setPadding(dp(12), dp(8), dp(12), dp(8));
+    importBtn.setClickable(true);
+    importBtn.setFocusable(true);
+    importBtn.setOnClickListener(v ->
+      openVpnProfile.launch(new String[]{"application/x-openvpn-profile", "application/octet-stream", "text/plain"}));
+    customRow.addView(importBtn);
+    if (hasCustom) {
+      customRow.setClickable(true);
+      customRow.setFocusable(true);
+      customRow.setOnClickListener(v -> {
+        if (vpnPickerDialog != null) vpnPickerDialog.dismiss();
+        Ui.toast(this, "Using your .ovpn profile");
+        toggleVpnConnection();
+      });
+    }
+    vpnPickerList.addView(customRow);
+
+    // Server rows: favorites first, then by ping.
+    java.util.List<VpnGateApi.VpnServer> favs = new java.util.ArrayList<>();
+    java.util.List<VpnGateApi.VpnServer> rest = new java.util.ArrayList<>();
+    for (VpnGateApi.VpnServer s : vpnServers) {
+      if (!matchesVpnFilter(s)) continue;
+      if (vpnFavorites.contains(s.id())) favs.add(s); else rest.add(s);
+    }
+    if (!favs.isEmpty()) {
+      vpnPickerList.addView(vpnPickerSectionHeader("★ Favorites"));
+      for (VpnGateApi.VpnServer s : favs) vpnPickerList.addView(vpnServerRow(s, activeId));
+    }
+    if (!rest.isEmpty()) {
+      vpnPickerList.addView(vpnPickerSectionHeader(
+        vpnServerFilter.isEmpty() ? "All servers (fastest first)" : "Results (" + rest.size() + ")"));
+      for (VpnGateApi.VpnServer s : rest) vpnPickerList.addView(vpnServerRow(s, activeId));
+    }
+    if (favs.isEmpty() && rest.isEmpty() && !vpnServers.isEmpty()) {
+      TextView empty = new TextView(this);
+      empty.setText("No servers match your search.");
+      empty.setTextColor(getColor(R.color.muted));
+      empty.setPadding(0, dp(16), 0, dp(16));
+      empty.setGravity(Gravity.CENTER);
+      vpnPickerList.addView(empty);
+    }
+  }
+
+  private boolean matchesVpnFilter(VpnGateApi.VpnServer s) {
+    if (vpnServerFilter.isEmpty()) return true;
+    String f = vpnServerFilter;
+    return s.country.toLowerCase(java.util.Locale.ROOT).contains(f)
+      || s.hostname.toLowerCase(java.util.Locale.ROOT).contains(f)
+      || s.ip.contains(f)
+      || s.countryCode.toLowerCase(java.util.Locale.ROOT).contains(f);
+  }
+
+  private TextView vpnPickerSectionHeader(String text) {
+    TextView h = new TextView(this);
+    h.setText(text);
+    h.setTextSize(12);
+    h.setTextColor(getColor(R.color.muted));
+    h.setTypeface(h.getTypeface(), android.graphics.Typeface.BOLD);
+    h.setPadding(0, dp(12), 0, dp(4));
+    return h;
+  }
+
+  private View vpnServerRow(VpnGateApi.VpnServer s, String activeId) {
+    LinearLayout row = new LinearLayout(this);
+    row.setOrientation(LinearLayout.HORIZONTAL);
+    row.setGravity(Gravity.CENTER_VERTICAL);
+    row.setPadding(0, dp(10), 0, dp(10));
+    TextView flag = new TextView(this);
+    flag.setText(s.flag());
+    flag.setTextSize(26);
+    row.addView(flag);
+    LinearLayout texts = new LinearLayout(this);
+    texts.setOrientation(LinearLayout.VERTICAL);
+    LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+    tp.setMargins(dp(12), 0, dp(8), 0);
+    TextView nameView = new TextView(this);
+    nameView.setText(s.country + (s.id().equals(activeId) ? "  •  active" : ""));
+    nameView.setTextSize(14);
+    nameView.setTypeface(nameView.getTypeface(), android.graphics.Typeface.BOLD);
+    nameView.setTextColor(getColor(s.id().equals(activeId) ? R.color.green : R.color.text));
+    TextView subView = new TextView(this);
+    subView.setText(s.hostname + " • " + s.pingMs + " ms • " + s.speedLabel()
+      + " • " + s.sessions + " sessions");
+    subView.setTextSize(11);
+    subView.setTextColor(getColor(R.color.muted));
+    texts.addView(nameView);
+    texts.addView(subView);
+    row.addView(texts, tp);
+    TextView star = new TextView(this);
+    boolean fav = vpnFavorites.contains(s.id());
+    star.setText(fav ? "★" : "☆");
+    star.setTextSize(22);
+    star.setTextColor(getColor(fav ? R.color.orange : R.color.muted));
+    star.setPadding(dp(8), dp(8), dp(8), dp(8));
+    star.setClickable(true);
+    star.setFocusable(true);
+    star.setOnClickListener(v -> {
+      if (vpnFavorites.contains(s.id())) vpnFavorites.remove(s.id());
+      else vpnFavorites.add(s.id());
+      prefs.edit().putStringSet("vpn_favorites", new java.util.HashSet<>(vpnFavorites)).apply();
+      renderVpnPickerList();
+    });
+    row.addView(star);
+    row.setClickable(true);
+    row.setFocusable(true);
+    row.setOnClickListener(v -> connectToVpnServer(s));
+    return row;
+  }
+
+  private void connectToVpnServer(VpnGateApi.VpnServer s) {
+    if (DevxyzVpnService.isConnected()) {
+      Ui.toastLong(this, "Disconnect first to switch servers");
+      return;
+    }
+    Ui.toast(this, "Preparing " + s.country + " server…");
+    new Thread(() -> {
+      try {
+        byte[] decoded = android.util.Base64.decode(s.configBase64, android.util.Base64.DEFAULT);
+        String config = new String(decoded, java.nio.charset.StandardCharsets.UTF_8);
+        VpnProfileStore.writeActiveProfile(this, config);
+        VpnProfileStore.setActiveServerId(this, s.id());
+        runOnUiThread(() -> {
+          if (vpnPickerDialog != null) vpnPickerDialog.dismiss();
+          refreshVpnPanel();
+          DevxyzVpnService.killSwitch = prefs.getBoolean("kill_switch", false);
+          Intent permission = VpnService.prepare(this);
+          if (permission != null) vpnPermission.launch(permission);
+          else requestVpnCredentials(); // VPNGate configs need no credentials; connects directly
+        });
+      } catch (Exception e) {
+        runOnUiThread(() -> Ui.toastLong(this, "Could not prepare server: " + e.getMessage()));
+      }
+    }).start();
   }
 
   private void fetchPublicIp() {
