@@ -198,7 +198,7 @@
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
             android:src="@drawable/ic_ai_sparkle" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginStart="18dp" android:text="Devxyz AI"
+            android:layout_marginStart="18dp" android:text="JepongDevxyz AI"
             android:textColor="@color/text" android:textSize="14sp" />
     </LinearLayout>
 
