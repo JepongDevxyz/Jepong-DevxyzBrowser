@@ -19,7 +19,7 @@ import androidx.core.content.ContextCompat;
 import com.jepongdevxyz.browser.util.Appearance;
 import com.jepongdevxyz.browser.util.ParallelDownloader;
 import com.jepongdevxyz.browser.util.Shields;
-import com.jepongdevxyz.browser.util.Ui;
+import com.jepongdevxyz.browser.Ui;
 
 /** Brave-style settings screens (Shields, Downloads, Appearance, Default browser).
  * Extracted from MainActivity to keep the activity pushable; all handlers are real. */
