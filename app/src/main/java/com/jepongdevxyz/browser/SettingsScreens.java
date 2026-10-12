@@ -487,21 +487,21 @@ public final class SettingsScreens {
     boolean bottom = Appearance.addressBarBottom(a.prefs);
     // Move toolbar to top or bottom.
     root.removeView(toolbar);
-    View a.progress = a.findViewById(R.id.pageProgress);
+    View progress = a.findViewById(R.id.pageProgress);
     if (bottom) {
       // Insert toolbar just above the bottom nav bar (last child).
       int idx = root.indexOfChild(a.findViewById(R.id.bottomNavBar));
       if (idx < 0) idx = root.getChildCount();
       root.addView(toolbar, idx);
-      if (a.progress != null) {
-        root.removeView(a.progress);
-        root.addView(a.progress, idx);
+      if (progress != null) {
+        root.removeView(progress);
+        root.addView(progress, idx);
       }
     } else {
       root.addView(toolbar, 0);
-      if (a.progress != null) {
-        root.removeView(a.progress);
-        root.addView(a.progress, 1);
+      if (progress != null) {
+        root.removeView(progress);
+        root.addView(progress, 1);
       }
     }
 
@@ -574,7 +574,7 @@ public final class SettingsScreens {
     }
   }
 
-  public void a.enqueueDownload(String url, String filename) {
+  public void enqueueDownload(String url, String filename) {
     try {
       boolean askWhere = a.prefs.getBoolean("dl_ask_where", false);
       boolean parallel = a.prefs.getBoolean("dl_parallel", true);
