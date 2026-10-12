@@ -51,6 +51,15 @@ public class AiChatActivity extends Activity {
   private void buildUi() {
     FrameLayout root = new FrameLayout(this);
     root.setBackgroundColor(0xFF14141F);
+    // Handle system bars: status bar on top, nav bar on bottom
+    if (android.os.Build.VERSION.SDK_INT >= 20) {
+      root.setOnApplyWindowInsetsListener((v, insets) -> {
+        int top = insets.getSystemWindowInsetTop();
+        int bottom = insets.getSystemWindowInsetBottom();
+        v.setPadding(0, top, 0, bottom);
+        return insets.consumeSystemWindowInsets();
+      });
+    }
 
     LinearLayout main = new LinearLayout(this);
     main.setOrientation(LinearLayout.VERTICAL);
@@ -122,15 +131,6 @@ public class AiChatActivity extends Activity {
     LinearLayout inputWrap = new LinearLayout(this);
     inputWrap.setOrientation(LinearLayout.VERTICAL);
     inputWrap.setPadding(dp(12), dp(4), dp(12), dp(14));
-    // Respect system navigation bar so input is never cut off
-    inputWrap.setFitsSystemWindows(true);
-    if (android.os.Build.VERSION.SDK_INT >= 20) {
-      inputWrap.setOnApplyWindowInsetsListener((v, insets) -> {
-        int bottom = insets.getSystemWindowInsetBottom();
-        v.setPadding(dp(12), dp(4), dp(12), dp(14) + bottom);
-        return insets.consumeSystemWindowInsets();
-      });
-    }
     LinearLayout box = new LinearLayout(this);
     box.setOrientation(LinearLayout.VERTICAL);
     box.setBackgroundResource(R.drawable.leo_input_bg);
