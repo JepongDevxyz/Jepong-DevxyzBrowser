@@ -75,7 +75,7 @@ public final class MainActivity extends AppCompatActivity {
       String state = intent.getStringExtra("state");
       String detail = intent.getStringExtra("detail");
       boolean error = intent.getBooleanExtra("error", false);
-      if (error) Toast.makeText(MainActivity.this, safe(detail), Toast.LENGTH_LONG).show();
+      if (error) Ui.toastLong(MainActivity.this, safe(detail));
       refreshVpnPanel();
     }
   };
@@ -150,16 +150,16 @@ public final class MainActivity extends AppCompatActivity {
       if (result.getResultCode() == RESULT_OK) {
         requestVpnCredentials();
       } else {
-        Toast.makeText(this, "VPN permission is required to connect", Toast.LENGTH_LONG).show();
+        Ui.toastLong(this, "VPN permission is required to connect");
       }
     });
     openVpnProfile = registerForActivityResult(new ActivityResultContracts.OpenDocument(), uri -> {
       if (uri == null) return;
       try {
         VpnProfileStore.importProfile(this, uri);
-        Toast.makeText(this, "OpenVPN profile imported", Toast.LENGTH_LONG).show();
+        Ui.toastLong(this, "OpenVPN profile imported");
       } catch (Exception ex) {
-        Toast.makeText(this, "Profile rejected: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+        Ui.toastLong(this, "Profile rejected: " + ex.getMessage());
       }
       refreshVpnPanel();
     });
@@ -356,8 +356,8 @@ public final class MainActivity extends AppCompatActivity {
     });
     swTrack.setOnCheckedChangeListener((b, c) -> {
       prefs.edit().putInt("etp_level", c ? 2 : 1).apply();
-      Toast.makeText(this, c ? "Tracker blocking turns on after you restart the app"
-        : "Tracker blocking turns off after you restart the app", Toast.LENGTH_LONG).show();
+      Ui.toastLong(this, c ? "Tracker blocking turns on after you restart the app"
+        : "Tracker blocking turns off after you restart the app");
     });
     refreshVpnPanel();
   }
@@ -540,7 +540,7 @@ public final class MainActivity extends AppCompatActivity {
     LinearLayout row = extRowBase(R.drawable.ic_extension_puzzle, name, "Installed");
     row.setClickable(true);
     row.setFocusable(true);
-    row.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle(name)
+    row.setOnClickListener(v -> Ui.dialog(this).setTitle(name)
       .setMessage("Remove this extension from DevxyzBrowser?")
       .setPositiveButton("Remove", (d, w) -> runtime.getWebExtensionController().uninstall(ext).accept(
         done -> {
@@ -549,12 +549,12 @@ public final class MainActivity extends AppCompatActivity {
           }
           prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
           runOnUiThread(() -> {
-            Toast.makeText(this, "Removed: " + name, Toast.LENGTH_SHORT).show();
+            Ui.toast(this, "Removed: " + name);
             refreshExtensionLists();
           });
         },
         err -> runOnUiThread(() ->
-          Toast.makeText(this, "Could not remove: " + err.getMessage(), Toast.LENGTH_LONG).show())))
+          Ui.toastLong(this, "Could not remove: " + err.getMessage()))))
       .setNegativeButton("Cancel", null).show());
     return row;
   }
@@ -567,7 +567,7 @@ public final class MainActivity extends AppCompatActivity {
     if (rec.searchOnly) {
       android.view.View.OnClickListener openSearch = v -> {
         newTab("https://addons.mozilla.org/en-US/firefox/search/?q=" + rec.slug);
-        Toast.makeText(this, "Find " + rec.name + " on addons.mozilla.org", Toast.LENGTH_LONG).show();
+        Ui.toastLong(this, "Find " + rec.name + " on addons.mozilla.org");
       };
       toggle.setOnCheckedChangeListener((button, checked) -> {
         if (checked) {
@@ -601,18 +601,18 @@ public final class MainActivity extends AppCompatActivity {
 
   private void installRecommended(RecExt rec) {
     String url = "https://addons.mozilla.org/firefox/downloads/latest/" + rec.slug + "/latest.xpi";
-    Toast.makeText(this, "Installing " + rec.name + "…", Toast.LENGTH_SHORT).show();
+    Ui.toast(this, "Installing " + rec.name + "…");
     runtime.getWebExtensionController().install(url).accept(
       ext -> {
         recInstalled.add(rec.slug);
         prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
         runOnUiThread(() -> {
-          Toast.makeText(this, "Installed: " + extName(ext), Toast.LENGTH_LONG).show();
+          Ui.toastLong(this, "Installed: " + extName(ext));
           refreshExtensionLists();
         });
       },
       err -> runOnUiThread(() -> {
-        Toast.makeText(this, "Install failed: " + (err == null ? "unknown error" : err.getMessage()), Toast.LENGTH_LONG).show();
+        Ui.toastLong(this, "Install failed: " + (err == null ? "unknown error" : err.getMessage()));
         renderExtensionLists();
       }));
   }
@@ -629,19 +629,19 @@ public final class MainActivity extends AppCompatActivity {
       return;
     }
     final WebExtension found = target;
-    new AlertDialog.Builder(this).setTitle(rec.name)
+    Ui.dialog(this).setTitle(rec.name)
       .setMessage("Remove this extension from DevxyzBrowser?")
       .setPositiveButton("Remove", (d, w) -> runtime.getWebExtensionController().uninstall(found).accept(
         done -> {
           recInstalled.remove(rec.slug);
           prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
           runOnUiThread(() -> {
-            Toast.makeText(this, "Removed: " + rec.name, Toast.LENGTH_SHORT).show();
+            Ui.toast(this, "Removed: " + rec.name);
             refreshExtensionLists();
           });
         },
         err -> runOnUiThread(() ->
-          Toast.makeText(this, "Could not remove: " + err.getMessage(), Toast.LENGTH_LONG).show())))
+          Ui.toastLong(this, "Could not remove: " + err.getMessage()))))
       .setNegativeButton("Cancel", (d, w) -> renderExtensionLists())
       .show();
   }
@@ -705,7 +705,7 @@ public final class MainActivity extends AppCompatActivity {
       tileRow.addView(col, insertAt, tlp);
       icon.setOnClickListener(v -> browse(tile.url));
       col.setOnLongClickListener(v -> {
-        new AlertDialog.Builder(this).setTitle(tile.name)
+        Ui.dialog(this).setTitle(tile.name)
           .setMessage("Remove this shortcut?")
           .setPositiveButton("Remove", (d, w) -> {
             customTiles.remove(tile);
@@ -731,7 +731,7 @@ public final class MainActivity extends AppCompatActivity {
     site.setHint("https://example.com");
     fields.addView(name);
     fields.addView(site);
-    new AlertDialog.Builder(this).setTitle("Add site").setView(fields)
+    Ui.dialog(this).setTitle("Add site").setView(fields)
       .setPositiveButton("Add", (d, w) -> {
         String url = site.getText().toString().trim();
         if (url.isEmpty()) return;
@@ -761,7 +761,7 @@ public final class MainActivity extends AppCompatActivity {
       + "\nHistory entries: " + historyItems.size()
       + "\nCustom sites: " + customTiles.size()
       + "\nVPN: " + vpn;
-    new AlertDialog.Builder(this).setTitle("Local profile")
+    Ui.dialog(this).setTitle("Local profile")
       .setMessage(message).setPositiveButton("OK", null).show();
   }
 
@@ -797,7 +797,7 @@ public final class MainActivity extends AppCompatActivity {
       addTabChip(tab);
       selectTab(tab);
     } catch (Exception e) {
-      Toast.makeText(this, "Could not open new tab: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      Ui.toastLong(this, "Could not open new tab: " + e.getMessage());
     }
   }
 
@@ -820,9 +820,9 @@ public final class MainActivity extends AppCompatActivity {
       attachSession(tab);
       addTabChip(tab);
       selectTab(tab);
-      Toast.makeText(this, "Incognito tab opened", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Incognito tab opened");
     } catch (Exception e) {
-      Toast.makeText(this, "Could not open incognito tab: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      Ui.toastLong(this, "Could not open incognito tab: " + e.getMessage());
     }
   }
 
@@ -1052,7 +1052,7 @@ public final class MainActivity extends AppCompatActivity {
         try { popup.dismiss(); } catch (Exception ignored) {}
         handler.post(() -> {
           try { action.run(); } catch (Exception e) {
-            Toast.makeText(this, "Action failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Ui.toast(this, "Action failed: " + e.getMessage());
           }
         });
       };
@@ -1097,7 +1097,7 @@ public final class MainActivity extends AppCompatActivity {
       // Show anchored to the top-right, below the toolbar.
       popup.showAsDropDown(anchor, -dp(260) + anchor.getWidth(), dp(8));
     } catch (Exception e) {
-      Toast.makeText(this, "Menu failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Menu failed: " + e.getMessage());
     }
   }
 
@@ -1105,20 +1105,20 @@ public final class MainActivity extends AppCompatActivity {
     String current = address.getText().toString().trim();
     if (current.startsWith("http") && !bookmarks.contains(current)) {
       bookmarks.add(0, current);
-      Toast.makeText(this, "Bookmarked", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Bookmarked");
     } else if (current.startsWith("http")) {
-      Toast.makeText(this, "Already bookmarked", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Already bookmarked");
     } else {
-      Toast.makeText(this, "Open a page first to bookmark it", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Open a page first to bookmark it");
     }
   }
 
   private void confirmClearData() {
-    new AlertDialog.Builder(this).setTitle("Delete browsing data")
+    Ui.dialog(this).setTitle("Delete browsing data")
         .setMessage("Clear browsing history?")
         .setPositiveButton("Delete", (d, which) -> {
           historyItems.clear();
-          Toast.makeText(this, "Browsing data deleted", Toast.LENGTH_SHORT).show();
+          Ui.toast(this, "Browsing data deleted");
         })
         .setNegativeButton("Cancel", null).show();
   }
@@ -1138,7 +1138,7 @@ public final class MainActivity extends AppCompatActivity {
   private void sharePage() {
     String url = activeTab != null ? activeTab.url : "";
     if (url == null || url.isEmpty() || !url.startsWith("http")) {
-      Toast.makeText(this, "Open a page first to share it", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Open a page first to share it");
       return;
     }
     android.content.Intent share = new android.content.Intent(android.content.Intent.ACTION_SEND);
@@ -1150,10 +1150,10 @@ public final class MainActivity extends AppCompatActivity {
   // ---- Find in page ----
   private void showFindInPage() {
     if (activeTab == null || activeTab.url.isEmpty()) {
-      Toast.makeText(this, "Open a page first", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Open a page first");
       return;
     }
-    AlertDialog.Builder b = new AlertDialog.Builder(this);
+    AlertDialog.Builder b = Ui.dialog(this);
     b.setTitle("Find in page");
     final android.widget.EditText input = new android.widget.EditText(this);
     input.setHint("Search text");
@@ -1167,9 +1167,9 @@ public final class MainActivity extends AppCompatActivity {
         try {
           session.getFinder().find(q, 0).then(
             result -> { return null; },
-            e -> { Toast.makeText(this, "Find failed", Toast.LENGTH_SHORT).show(); return null; });
+            e -> { Ui.toast(this, "Find failed"); return null; });
         } catch (Exception e) {
-          Toast.makeText(this, "Find not available", Toast.LENGTH_SHORT).show();
+          Ui.toast(this, "Find not available");
         }
       }
     });
@@ -1181,7 +1181,7 @@ public final class MainActivity extends AppCompatActivity {
   private void translatePage() {
     String url = activeTab != null ? activeTab.url : "";
     if (url == null || url.isEmpty() || !url.startsWith("http")) {
-      Toast.makeText(this, "Open a page first to translate it", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Open a page first to translate it");
       return;
     }
     try {
@@ -1189,7 +1189,7 @@ public final class MainActivity extends AppCompatActivity {
           java.net.URLEncoder.encode(url, "UTF-8");
       newTab(t);
     } catch (Exception e) {
-      Toast.makeText(this, "Could not open Translate", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Could not open Translate");
     }
   }
 
@@ -1204,9 +1204,9 @@ public final class MainActivity extends AppCompatActivity {
         session.getSettings().setUserAgentOverride(ua);
         session.reload();
       }
-      Toast.makeText(this, on ? "Desktop site ON" : "Desktop site OFF", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, on ? "Desktop site ON" : "Desktop site OFF");
     } catch (Exception e) {
-      Toast.makeText(this, "Desktop site not available", Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Desktop site not available");
     }
   }
 
@@ -1277,7 +1277,7 @@ public final class MainActivity extends AppCompatActivity {
         }
         enqueueDownload(url, filename);
       } catch (Exception e) {
-        Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        Ui.toastLong(this, "Download failed: " + e.getMessage());
       }
     });
   }
@@ -1307,10 +1307,10 @@ public final class MainActivity extends AppCompatActivity {
           .format(new java.util.Date());
       downloads.add(0, new DownloadItem(filename, url, time, id));
       saveDownloads();
-      Toast.makeText(this, "Downloading " + filename, Toast.LENGTH_SHORT).show();
+      Ui.toast(this, "Downloading " + filename);
       refreshDownloadsSheet();
     } catch (Exception e) {
-      Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      Ui.toastLong(this, "Download failed: " + e.getMessage());
     }
   }
 
@@ -1426,7 +1426,7 @@ public final class MainActivity extends AppCompatActivity {
         int level = val.equals("Strict") ? 2 : val.equals("Off") ? 0 : 1;
         prefs.edit().putInt("etp_level", level).apply();
         refreshSettingsPanel();
-        Toast.makeText(this, "Applies after you restart the app", Toast.LENGTH_SHORT).show();
+        Ui.toast(this, "Applies after you restart the app");
       });
     });
     refreshSettingsPanel();
@@ -1448,7 +1448,7 @@ public final class MainActivity extends AppCompatActivity {
   private void pickOption(String title, String[] options, String current, java.util.function.Consumer<String> onPick) {
     int checked = 0;
     for (int i = 0; i < options.length; i++) if (options[i].equals(current)) checked = i;
-    new AlertDialog.Builder(this).setTitle(title)
+    Ui.dialog(this).setTitle(title)
         .setSingleChoiceItems(options, checked, (d, which) -> {
           onPick.accept(options[which]);
           d.dismiss();
@@ -1480,7 +1480,7 @@ public final class MainActivity extends AppCompatActivity {
 
   private void showBookmarks() {
     String current = address.getText().toString().trim();
-    AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("Bookmarks");
+    AlertDialog.Builder b = Ui.dialog(this).setTitle("Bookmarks");
     if (bookmarks.isEmpty()) b.setMessage("No saved pages yet.");
     else b.setItems(bookmarks.toArray(new String[0]), (d, which) -> browse(bookmarks.get(which)));
     if (current.startsWith("http")) b.setPositiveButton("Save current", (d, w) -> { if (!bookmarks.contains(current)) bookmarks.add(0, current); });
@@ -1489,7 +1489,7 @@ public final class MainActivity extends AppCompatActivity {
 
   private void showList(String title, ArrayList<String> items) {
     if (items.isEmpty()) { showInfo(title, "Nothing here yet."); return; }
-    new AlertDialog.Builder(this).setTitle(title).setItems(items.toArray(new String[0]), (d, w) -> browse(items.get(w))).setNegativeButton("Close", null).show();
+    Ui.dialog(this).setTitle(title).setItems(items.toArray(new String[0]), (d, w) -> browse(items.get(w))).setNegativeButton("Close", null).show();
   }
 
   private void showExtensions() {
@@ -1524,7 +1524,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void showInfo(String title, String message) {
-    new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("OK", null).show();
+    Ui.dialog(this).setTitle(title).setMessage(message).setPositiveButton("OK", null).show();
   }
 
   private void requestVpnCredentials() {
@@ -1534,7 +1534,7 @@ public final class MainActivity extends AppCompatActivity {
         return;
       }
     } catch (Exception e) {
-      Toast.makeText(this, "Could not read VPN profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      Ui.toastLong(this, "Could not read VPN profile: " + e.getMessage());
       return;
     }
     LinearLayout fields = new LinearLayout(this);
@@ -1550,7 +1550,7 @@ public final class MainActivity extends AppCompatActivity {
     keyPassword.setSingleLine(true); keyPassword.setHint("Private key password (if required)");
     keyPassword.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
     fields.addView(username); fields.addView(password); fields.addView(keyPassword);
-    new AlertDialog.Builder(this).setTitle("VPN credentials")
+    Ui.dialog(this).setTitle("VPN credentials")
       .setMessage("These credentials are used for this connection and are not saved by the app.")
       .setView(fields)
       .setPositiveButton("Connect", (dialog, which) -> startOpenVpn(
@@ -1566,7 +1566,7 @@ public final class MainActivity extends AppCompatActivity {
     try {
       ContextCompat.startForegroundService(this, connect);
     } catch (Exception e) {
-      Toast.makeText(this, "Could not start VPN: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      Ui.toastLong(this, "Could not start VPN: " + e.getMessage());
     }
     refreshVpnPanel();
   }
