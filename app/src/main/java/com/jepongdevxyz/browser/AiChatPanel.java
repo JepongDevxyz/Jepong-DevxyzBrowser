@@ -274,11 +274,31 @@ public final class AiChatPanel {
   }
 
   private void getPageText(java.util.function.Consumer<String> cb) {
-    MainActivity.BrowserTab t = a.activeTab;
-    if (t == null || t.session == null) { cb.accept(""); return; }
-    t.session.evaluateJS("document.body?document.body.innerText.slice(0,20000):''",
-        r -> a.runOnUiThread(() -> cb.accept(r != null ? r.toString() : "")),
-        e -> a.runOnUiThread(() -> cb.accept("")));
+    String url = a.activeTab != null ? a.activeTab.url : "";
+    if (url.isEmpty() || url.startsWith("about:")) { cb.accept(""); return; }
+    new Thread(() -> {
+      String text = "";
+      try {
+        java.net.HttpURLConnection c = (java.net.HttpURLConnection)
+            new java.net.URL(url).openConnection();
+        c.setConnectTimeout(10000);
+        c.setReadTimeout(15000);
+        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) DevxyzBrowser");
+        java.io.BufferedReader br = new java.io.BufferedReader(
+            new java.io.InputStreamReader(c.getInputStream(), "UTF-8"));
+        StringBuilder html = new StringBuilder();
+        String line;
+        while ((line = br.readLine()) != null && html.length() < 100000) html.append(line).append(' ');
+        br.close();
+        // Strip tags and scripts/styles
+        text = html.toString().replaceAll("(?s)<script.*?</script>", " ")
+            .replaceAll("(?s)<style.*?</style>", " ")
+            .replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
+        if (text.length() > 20000) text = text.substring(0, 20000);
+      } catch (Exception ignored) { }
+      String t = text;
+      a.runOnUiThread(() -> cb.accept(t));
+    }).start();
   }
 
 }
