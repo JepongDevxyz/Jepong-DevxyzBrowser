@@ -932,15 +932,24 @@ public final class MainActivity extends AppCompatActivity {
     menu.show();
   }
 
+  private final android.os.Handler extRefreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+  private Runnable extRefreshPending = null;
+
   void refreshExtensionLists() {
     if (extInstalledList == null) return;
-    runtime.getWebExtensionController().list().accept(
-      list -> {
-        installedExts.clear();
-        if (list != null) installedExts.addAll(list);
-        runOnUiThread(this::renderExtensionLists);
-      },
-      err -> runOnUiThread(this::renderExtensionLists));
+    if (extRefreshPending != null) extRefreshHandler.removeCallbacks(extRefreshPending);
+    extRefreshPending = () -> {
+      extRefreshPending = null;
+      if (extInstalledList == null) return;
+      runtime.getWebExtensionController().list().accept(
+        list -> {
+          installedExts.clear();
+          if (list != null) installedExts.addAll(list);
+          runOnUiThread(this::renderExtensionLists);
+        },
+        err -> runOnUiThread(this::renderExtensionLists));
+    };
+    extRefreshHandler.postDelayed(extRefreshPending, 120);
   }
 
   private String extName(WebExtension ext) {
@@ -1981,7 +1990,6 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
-
   void applyShieldsToSessions() {
     boolean block = Shields.blockScripts(prefs);
     for (BrowserTab t : tabs) {
@@ -2002,6 +2010,12 @@ public final class MainActivity extends AppCompatActivity {
         updateTabLabel(tab);
         // Incognito tabs never touch history.
         if (!tab.incognito && prefs.getBoolean("remember_history", true) && !historyItems.contains(url)) historyItems.add(0, url);
+      }
+      @Override public void onProgressChange(GeckoSession s, int p) {
+        if (tab == activeTab && progress.getVisibility() == View.VISIBLE) {
+          int cur = progress.getProgress();
+          if (p > cur) progress.setProgress(Math.min(p, 100));
+        }
       }
       @Override public void onPageStop(GeckoSession s, boolean ok) {
         if (tab == activeTab) {
@@ -2472,7 +2486,6 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
-
   /** Opens a downloaded file with the best matching app. */
 
   void showDownloads() {
@@ -2559,12 +2572,7 @@ public final class MainActivity extends AppCompatActivity {
     settingsDialog.show();
   }
 
-
-
-
   /** "Customize menu": toggle each ⋮ menu item on/off. */
-
-
 
   void refreshSettingsPanel() {
     if (settingsDialog == null) return;
