@@ -444,8 +444,8 @@ public final class SettingsScreens {
       org.mozilla.geckoview.WebExtension darkReader = null;
       if (list != null) {
         for (org.mozilla.geckoview.WebExtension ext : list) {
-          String id = (ext.metaData != null) ? ext.metaData.id : null;
-          if (id != null && id.contains("darkreader")) { darkReader = ext; break; }
+          String nm = (ext.metaData != null && ext.metaData.name != null) ? ext.metaData.name : "";
+          if (nm.toLowerCase(java.util.Locale.US).contains("dark reader")) { darkReader = ext; break; }
         }
       }
       if (darkReader == null) {
