@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import androidx.appcompat.app.AppCompatActivity;
 import com.jepongdevxyz.browser.util.ImgUtil;
+import com.jepongdevxyz.browser.util.TvUtil;
 
 /** Branded launch screen: fox logo, tagline and loading bar over the Earth backdrop. */
 public final class SplashActivity extends AppCompatActivity {
@@ -38,6 +39,12 @@ public final class SplashActivity extends AppCompatActivity {
 
   private void goNext() {
     SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+    // TV detected -> D-pad friendly TV home; phone -> normal flow.
+    if (TvUtil.isTv(this)) {
+      startActivity(new Intent(this, TvMainActivity.class));
+      finish();
+      return;
+    }
     boolean seen = prefs.getBoolean("welcome_seen", false);
     Intent next = new Intent(this, seen ? MainActivity.class : WelcomeActivity.class);
     startActivity(next);
