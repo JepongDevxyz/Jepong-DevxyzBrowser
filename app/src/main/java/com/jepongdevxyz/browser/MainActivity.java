@@ -1519,7 +1519,7 @@ public final class MainActivity extends AppCompatActivity {
   private void setExtEnabled(WebExtension ext, boolean enabled) {
     try {
       (enabled
-        ? runtime.getWebExtensionController().enable(ext, WebExtension.DisabledFlags.USER)
+        ? runtime.getWebExtensionController().enable(ext, WebExtensionController.EnableSource.USER)
         : runtime.getWebExtensionController().disable(ext, WebExtension.DisabledFlags.USER)
       ).accept(
         done -> runOnUiThread(() -> {
