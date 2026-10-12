@@ -28,6 +28,8 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.jepongdevxyz.browser.util.ImgUtil;
+import com.jepongdevxyz.browser.util.Shields;
+import com.jepongdevxyz.browser.util.Appearance;
 import com.jepongdevxyz.browser.util.TvUtil;
 import com.jepongdevxyz.browser.vpn.VpnProfileStore;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
@@ -43,18 +45,22 @@ import java.util.*;
 import androidx.appcompat.widget.PopupMenu;
 
 public final class MainActivity extends AppCompatActivity {
-  private static GeckoRuntime runtime;
+  static GeckoRuntime runtime;
   private GeckoSession session;
-  private EditText address, heroSearch;
-  private ProgressBar progress;
+  EditText address, heroSearch;
+  ProgressBar progress;
   private View startPage;
   private View menuButton;
   private LinearLayout tabStrip;
   private org.mozilla.geckoview.GeckoView geckoView;
   private ActivityResultLauncher<String[]> openVpnProfile;
   private ActivityResultLauncher<Intent> vpnPermission;
+  ActivityResultLauncher<Intent> safDownloadPicker;
+  ActivityResultLauncher<Intent> voiceSearchLauncher;
+  android.content.BroadcastReceiver downloadCompleteReceiver;
   private boolean vpnReceiverRegistered;
-  private SharedPreferences prefs;
+  SharedPreferences prefs;
+  final SettingsScreens settingsScreens = new SettingsScreens(this);
   private boolean isDesktop;
 
   // Desktop right-panel widgets (null on phones).
@@ -99,9 +105,9 @@ public final class MainActivity extends AppCompatActivity {
       refreshVpnPanel();
     }
   };
-  private final ArrayList<String> historyItems = new ArrayList<>();
-  private final ArrayList<String> bookmarks = new ArrayList<>();
-  private final ArrayList<BrowserTab> tabs = new ArrayList<>();
+  final ArrayList<String> historyItems = new ArrayList<>();
+  final ArrayList<String> bookmarks = new ArrayList<>();
+  final ArrayList<BrowserTab> tabs = new ArrayList<>();
   private BrowserTab activeTab;
 
   private static final class BrowserTab {
@@ -113,7 +119,7 @@ public final class MainActivity extends AppCompatActivity {
     BrowserTab(GeckoSession session) { this.session = session; }
   }
 
-  private static final class RecExt {
+  static final class RecExt {
     final String name, desc, slug;
     final int icon;
     final boolean searchOnly;
@@ -126,7 +132,7 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
-  private static final RecExt[] RECOMMENDED = {
+  static final RecExt[] RECOMMENDED = {
     // Matches Firefox for Android's own add-ons manager (see reference video).
     new RecExt("uBlock Origin", "Finally, an efficient wide-spectrum content blocker. Easy on CPU and memory.", "ublock-origin", R.drawable.ic_ext_ublock),
     new RecExt("AdGuard AdBlocker", "Unmatched adblock extension against advertising and pop-ups. Blocks ads on Facebook, YouTube and all other websites.", "adguard-adblocker", R.drawable.ic_extension_puzzle),
@@ -162,16 +168,20 @@ public final class MainActivity extends AppCompatActivity {
     R.id.home, R.id.bookmarks, R.id.history, R.id.downloads, R.id.extensions, R.id.vpn, R.id.settings
   };
 
-  private void onClick(int id, View.OnClickListener l) {
+  void onClick(int id, View.OnClickListener l) {
     View v = findViewById(id);
     if (v != null) v.setOnClickListener(l);
   }
 
-  private int dp(int value) {
+  int dp(int value) {
     return (int) (value * getResources().getDisplayMetrics().density);
   }
 
   @Override public void onCreate(Bundle state) {
+    // Appearance: theme + dynamic colors must apply before super.onCreate.
+    SharedPreferences earlyPrefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+    Appearance.applyTheme(earlyPrefs);
+    Appearance.applyDynamicColors(this, earlyPrefs);
     super.onCreate(state);
     // TV detected -> hand off to the D-pad friendly TV home.
     if (TvUtil.isTv(this)) {
@@ -207,24 +217,13 @@ public final class MainActivity extends AppCompatActivity {
       }
       refreshVpnPanel();
     });
+    settingsScreens.initDownloadLaunchers();
     if (runtime == null) {
       GeckoRuntimeSettings.Builder rsb = new GeckoRuntimeSettings.Builder();
-      // Firefox-style Enhanced Tracking Protection: 0=Off, 1=Standard (default), 2=Strict.
-      // Migrates the legacy block_trackers boolean (true -> Strict).
-      int etp = prefs.getInt("etp_level", -1);
-      if (etp < 0) {
-        etp = prefs.getBoolean("block_trackers", false) ? 2 : 1;
-        prefs.edit().putInt("etp_level", etp).apply();
-      }
-      if (etp == 1) {
-        rsb.contentBlocking(new ContentBlocking.Settings.Builder()
-            .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.DEFAULT)
-            .build());
-      } else if (etp == 2) {
-        rsb.contentBlocking(new ContentBlocking.Settings.Builder()
-            .enhancedTrackingProtectionLevel(ContentBlocking.EtpLevel.STRICT)
-            .build());
-      }
+      // Brave-style Shields: real GeckoView content blocking from prefs.
+      // Trackers/ads mode, fingerprinting and cookie blocking apply on restart;
+      // script blocking is applied live per session (see applyBlockScripts).
+      rsb.contentBlocking(Shields.build(prefs));
       runtime = GeckoRuntime.create(this, rsb.build());
     }
     // Firefox-like extension install/update prompts: tapping "Add to Firefox" on
@@ -341,10 +340,22 @@ public final class MainActivity extends AppCompatActivity {
     IntentFilter vpnFilter = new IntentFilter(DevxyzVpnService.ACTION_STATE);
     ContextCompat.registerReceiver(this, vpnStateReceiver, vpnFilter, ContextCompat.RECEIVER_NOT_EXPORTED);
     vpnReceiverRegistered = true;
+    ContextCompat.registerReceiver(this, downloadCompleteReceiver,
+        new IntentFilter(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+        ContextCompat.RECEIVER_NOT_EXPORTED);
+
+    // Open web links when we're launched as the default browser.
+    Intent launchIntent = getIntent();
+    if (launchIntent != null && Intent.ACTION_VIEW.equals(launchIntent.getAction())
+        && launchIntent.getData() != null) {
+      final String linkUrl = launchIntent.getData().toString();
+      newTab(linkUrl);
+    }
 
     // Chrome-style: omnibox + tab count + menu. All actions live in the menu.
     onClick(R.id.menu, v -> showChromeMenu(v));
     onClick(R.id.tabCount, v -> showTabs());
+    settingsScreens.applyAppearance();
     ImgUtil.setB64((ImageView) findViewById(R.id.ntpLogo), this, "img/fox.b64");
     onClick(R.id.addSite, v -> showAddSite());
 
@@ -473,14 +484,15 @@ public final class MainActivity extends AppCompatActivity {
     root.findViewById(R.id.vpn_gear).setOnClickListener(v -> showVpnServerPicker());
     swAuto.setChecked(prefs.getBoolean("auto_connect", false));
     swKill.setChecked(prefs.getBoolean("kill_switch", false));
-    swTrack.setChecked(prefs.getInt("etp_level", 1) == 2);
+    swTrack.setChecked(Shields.mode(prefs) == 2);
     swAuto.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("auto_connect", c).apply());
     swKill.setOnCheckedChangeListener((b, c) -> {
       prefs.edit().putBoolean("kill_switch", c).apply();
       DevxyzVpnService.killSwitch = c;
     });
     swTrack.setOnCheckedChangeListener((b, c) -> {
-      prefs.edit().putInt("etp_level", c ? 2 : 1).apply();
+      prefs.edit().putInt("shields_mode", c ? 2 : 1).apply();
+      refreshSettingsPanel();
       Ui.toastLong(this, c ? "Tracker blocking turns on after you restart the app"
         : "Tracker blocking turns off after you restart the app");
     });
@@ -920,7 +932,7 @@ public final class MainActivity extends AppCompatActivity {
     menu.show();
   }
 
-  private void refreshExtensionLists() {
+  void refreshExtensionLists() {
     if (extInstalledList == null) return;
     runtime.getWebExtensionController().list().accept(
       list -> {
@@ -936,7 +948,7 @@ public final class MainActivity extends AppCompatActivity {
     return "Extension";
   }
 
-  private void renderExtensionLists() {
+  void renderExtensionLists() {
     if (extInstalledList == null) return;
     extInstalledList.removeAllViews();
     extRecommendedList.removeAllViews();
@@ -1742,7 +1754,7 @@ public final class MainActivity extends AppCompatActivity {
     return view;
   }
 
-  private void installRecommended(RecExt rec) {
+  void installRecommended(RecExt rec) {
     String url = "https://addons.mozilla.org/firefox/downloads/latest/" + rec.slug + "/latest.xpi";
     Ui.toast(this, "Installing " + rec.name + "…");
     runtime.getWebExtensionController().install(url).accept(
@@ -1908,7 +1920,7 @@ public final class MainActivity extends AppCompatActivity {
       .setMessage(message).setPositiveButton("OK", null).show();
   }
 
-  private void showHome() {
+  void showHome() {
     if (activeTab != null) {
       activeTab.url = "";
       updateTabLabel(activeTab);
@@ -1924,7 +1936,7 @@ public final class MainActivity extends AppCompatActivity {
     progress.setProgress(0);
   }
 
-  private void newTab() {
+  void newTab() {
     try {
       GeckoSession newSession = new GeckoSession();
       newSession.open(runtime);
@@ -1969,7 +1981,18 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
+
+  void applyShieldsToSessions() {
+    boolean block = Shields.blockScripts(prefs);
+    for (BrowserTab t : tabs) {
+      try { t.session.getSettings().setAllowJavascript(!block); } catch (Exception ignored) { }
+    }
+  }
+
   private void attachSession(BrowserTab tab) {
+    // Block scripts applies immediately, per session.
+    try { tab.session.getSettings().setAllowJavascript(!Shields.blockScripts(prefs)); }
+    catch (Exception ignored) { }
     tab.session.setProgressDelegate(new GeckoSession.ProgressDelegate() {
       @Override public void onPageStart(GeckoSession s, String url) {
         tab.url = url;
@@ -2125,7 +2148,7 @@ public final class MainActivity extends AppCompatActivity {
 
   private BottomSheetDialog tabsDialog;
 
-  private void showTabs() {
+  void showTabs() {
     if (isDesktop) return;
     if (tabsDialog == null) {
       View root = getLayoutInflater().inflate(R.layout.panel_tabs, null);
@@ -2179,7 +2202,7 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void showChromeMenu(View anchor) {
+  void showChromeMenu(View anchor) {
     // Chrome-style popup menu with icons, anchored top-right like Chrome.
     // Uses PopupWindow (like real Chrome) instead of Dialog for stability.
     try {
@@ -2205,6 +2228,18 @@ public final class MainActivity extends AppCompatActivity {
         View v = root.findViewById(id);
         if (v != null) v.setOnClickListener(x -> runAfterDismiss.accept(action));
       };
+
+      // "Customize menu" (Appearance): hide items the user turned off.
+      String[] menuKeys = {"newtab", "incognito", "history", "cleardata", "site",
+          "downloads", "bookmarks", "recent", "share", "find", "translate",
+          "desktop", "extensions", "vpn", "help"};
+      int[] menuIds = {R.id.m_newtab, R.id.m_incognito, R.id.m_history, R.id.m_cleardata,
+          R.id.m_site, R.id.m_downloads, R.id.m_bookmarks, R.id.m_recent, R.id.m_share,
+          R.id.m_find, R.id.m_translate, R.id.m_desktop, R.id.m_extensions, R.id.m_vpn, R.id.m_help};
+      for (int i = 0; i < menuIds.length; i++) {
+        View mv = root.findViewById(menuIds[i]);
+        if (mv != null && !Appearance.menuVisible(prefs, menuKeys[i])) mv.setVisibility(View.GONE);
+      }
 
       // Top circular action row
       onMenuClick.accept(R.id.m_back, () -> { if (session != null) session.goBack(); });
@@ -2278,7 +2313,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   // ---- Share ----
-  private void sharePage() {
+  void sharePage() {
     String url = activeTab != null ? activeTab.url : "";
     if (url == null || url.isEmpty() || !url.startsWith("http")) {
       Ui.toast(this, "Open a page first to share it");
@@ -2375,13 +2410,13 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   // ---- Download manager ----
-  private static final class DownloadItem {
+  static final class DownloadItem {
     String name, url, time; long id;
     DownloadItem(String name, String url, String time, long id) {
       this.name = name; this.url = url; this.time = time; this.id = id;
     }
   }
-  private final ArrayList<DownloadItem> downloads = new ArrayList<>();
+  final ArrayList<DownloadItem> downloads = new ArrayList<>();
   private BottomSheetDialog downloadsDialog;
 
   private void loadDownloads() {
@@ -2398,7 +2433,7 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
-  private void saveDownloads() {
+  void saveDownloads() {
     StringBuilder sb = new StringBuilder();
     for (DownloadItem d : downloads) {
       if (sb.length() > 0) sb.append('\n');
@@ -2418,46 +2453,29 @@ public final class MainActivity extends AppCompatActivity {
           requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 9001);
           return;
         }
-        enqueueDownload(url, filename);
+        settingsScreens.enqueueDownload(url, filename);
       } catch (Exception e) {
         Ui.toastLong(this, "Download failed: " + e.getMessage());
       }
     });
   }
 
-  private String pendingDownloadUrl, pendingDownloadName;
+  String pendingDownloadUrl, pendingDownloadName;
 
   @Override public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
     super.onRequestPermissionsResult(code, perms, results);
     if (code == 9001 && results.length > 0 &&
         results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED &&
         pendingDownloadUrl != null) {
-      enqueueDownload(pendingDownloadUrl, pendingDownloadName);
+      settingsScreens.enqueueDownload(pendingDownloadUrl, pendingDownloadName);
       pendingDownloadUrl = null;
     }
   }
 
-  private void enqueueDownload(String url, String filename) {
-    try {
-      android.app.DownloadManager dm = (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-      android.app.DownloadManager.Request req = new android.app.DownloadManager.Request(Uri.parse(url));
-      req.setTitle(filename);
-      req.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-      req.setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, filename);
-      req.allowScanningByMediaScanner();
-      long id = dm.enqueue(req);
-      String time = new java.text.SimpleDateFormat("MMM d, yyyy h:mm a", java.util.Locale.getDefault())
-          .format(new java.util.Date());
-      downloads.add(0, new DownloadItem(filename, url, time, id));
-      saveDownloads();
-      Ui.toast(this, "Downloading " + filename);
-      refreshDownloadsSheet();
-    } catch (Exception e) {
-      Ui.toastLong(this, "Download failed: " + e.getMessage());
-    }
-  }
 
-  private void showDownloads() {
+  /** Opens a downloaded file with the best matching app. */
+
+  void showDownloads() {
     if (isDesktop) { showInfo("Downloads", downloads.isEmpty() ? "No downloads yet." : downloads.size() + " file(s) downloaded."); return; }
     loadDownloads();
     if (downloadsDialog == null) {
@@ -2469,7 +2487,7 @@ public final class MainActivity extends AppCompatActivity {
     downloadsDialog.show();
   }
 
-  private void refreshDownloadsSheet() {
+  void refreshDownloadsSheet() {
     if (downloadsDialog == null) return;
     LinearLayout list = downloadsDialog.findViewById(R.id.dl_list);
     TextView empty = downloadsDialog.findViewById(R.id.dl_empty);
@@ -2524,7 +2542,7 @@ public final class MainActivity extends AppCompatActivity {
     return "Unknown";
   }
 
-  private BottomSheetDialog settingsDialog;
+  BottomSheetDialog settingsDialog;
 
   private void showSettings() {
     if (isDesktop) {
@@ -2534,61 +2552,55 @@ public final class MainActivity extends AppCompatActivity {
     if (settingsDialog == null) {
       View root = getLayoutInflater().inflate(R.layout.panel_settings, null);
       settingsDialog = makeSheet(root);
-      initSettingsPanel(root);
+      settingsScreens.initSettingsPanel(root);
     } else {
       refreshSettingsPanel();
     }
     settingsDialog.show();
   }
 
-  private void initSettingsPanel(View root) {
-    root.findViewById(R.id.settings_close).setOnClickListener(v -> settingsDialog.dismiss());
-    com.google.android.material.switchmaterial.SwitchMaterial swRestore = root.findViewById(R.id.sw_restore_tabs);
-    com.google.android.material.switchmaterial.SwitchMaterial swHist = root.findViewById(R.id.sw_remember_history);
-    com.google.android.material.switchmaterial.SwitchMaterial swClear = root.findViewById(R.id.sw_clear_on_quit);
-    swRestore.setChecked(prefs.getBoolean("restore_tabs", true));
-    swHist.setChecked(prefs.getBoolean("remember_history", true));
-    swClear.setChecked(prefs.getBoolean("clear_on_quit", false));
-    swRestore.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("restore_tabs", c).apply());
-    swHist.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("remember_history", c).apply());
-    swClear.setOnCheckedChangeListener((b, c) -> prefs.edit().putBoolean("clear_on_quit", c).apply());
-    root.findViewById(R.id.set_search_engine_row).setOnClickListener(v -> pickOption(
-        "Default search engine",
-        new String[]{"Google", "Bing", "DuckDuckGo"},
-        prefs.getString("search_engine", "Google"),
-        val -> { prefs.edit().putString("search_engine", val).apply(); refreshSettingsPanel(); }));
-    root.findViewById(R.id.set_homepage_row).setOnClickListener(v -> pickOption(
-        "Homepage",
-        new String[]{"Devxyz Home", "Blank page"},
-        prefs.getString("homepage", "Devxyz Home"),
-        val -> { prefs.edit().putString("homepage", val).apply(); refreshSettingsPanel(); }));
-    root.findViewById(R.id.set_etp_row).setOnClickListener(v -> {
-      String[] labels = {"Off", "Standard", "Strict"};
-      int cur = prefs.getInt("etp_level", 1);
-      pickOption("Enhanced Tracking Protection", labels, labels[cur], val -> {
-        int level = val.equals("Strict") ? 2 : val.equals("Off") ? 0 : 1;
-        prefs.edit().putInt("etp_level", level).apply();
-        refreshSettingsPanel();
-        Ui.toast(this, "Applies after you restart the app");
-      });
-    });
-    refreshSettingsPanel();
-  }
 
-  private void refreshSettingsPanel() {
+
+
+  /** "Customize menu": toggle each ⋮ menu item on/off. */
+
+
+
+  void refreshSettingsPanel() {
     if (settingsDialog == null) return;
     TextView se = settingsDialog.findViewById(R.id.set_search_engine_val);
     TextView hp = settingsDialog.findViewById(R.id.set_homepage_val);
-    TextView etp = settingsDialog.findViewById(R.id.set_etp_val);
+    TextView shields = settingsDialog.findViewById(R.id.set_shields_val);
+    TextView db = settingsDialog.findViewById(R.id.set_default_browser_val);
+    TextView appearance = settingsDialog.findViewById(R.id.set_appearance_val);
     if (se != null) se.setText(prefs.getString("search_engine", "Google"));
     if (hp != null) hp.setText(prefs.getString("homepage", "Devxyz Home"));
-    if (etp != null) {
-      String[] labels = {"Off", "Standard", "Strict"};
-      etp.setText(labels[prefs.getInt("etp_level", 1)]);
+    if (appearance != null) appearance.setText("Theme: " + Appearance.themeLabel(prefs));
+    if (shields != null) {
+      String[] labels = {"Allow all", "Standard", "Aggressive"};
+      int m = Shields.mode(prefs);
+      String extra = "";
+      if (Shields.blockScripts(prefs)) extra += " • No scripts";
+      shields.setText(labels[m] + extra);
+    }
+    if (db != null) db.setText(settingsScreens.isDefaultBrowser() ? "DevxyzBrowser is default" : "Not set");
+  }
+
+  /** True when DevxyzBrowser is the system's default browser (RoleManager, API 29+). */
+
+  static final int REQ_DEFAULT_BROWSER = 1401;
+
+  @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == REQ_DEFAULT_BROWSER) {
+      refreshSettingsPanel();
+      Ui.toastLong(this, settingsScreens.isDefaultBrowser()
+          ? "DevxyzBrowser is now your default browser"
+          : "DevxyzBrowser is not the default browser");
     }
   }
 
-  private void pickOption(String title, String[] options, String current, java.util.function.Consumer<String> onPick) {
+  void pickOption(String title, String[] options, String current, java.util.function.Consumer<String> onPick) {
     int checked = 0;
     for (int i = 0; i < options.length; i++) if (options[i].equals(current)) checked = i;
     Ui.dialog(this).setTitle(title)
@@ -2599,7 +2611,7 @@ public final class MainActivity extends AppCompatActivity {
         .setNegativeButton("Cancel", null).show();
   }
 
-  private void browse(String raw) {
+  void browse(String raw) {
     String q = raw.trim();
     if (q.isEmpty()) return;
     startPage.setVisibility(View.GONE);
@@ -2621,7 +2633,7 @@ public final class MainActivity extends AppCompatActivity {
     return "https://www.google.com/search?q=";
   }
 
-  private void showBookmarks() {
+  void showBookmarks() {
     String current = address.getText().toString().trim();
     AlertDialog.Builder b = Ui.dialog(this).setTitle("Bookmarks");
     if (bookmarks.isEmpty()) b.setMessage("No saved pages yet.");
@@ -2630,7 +2642,7 @@ public final class MainActivity extends AppCompatActivity {
     b.setNegativeButton("Close", null).show();
   }
 
-  private void showList(String title, ArrayList<String> items) {
+  void showList(String title, ArrayList<String> items) {
     if (items.isEmpty()) { showInfo(title, "Nothing here yet."); return; }
     Ui.dialog(this).setTitle(title).setItems(items.toArray(new String[0]), (d, w) -> browse(items.get(w))).setNegativeButton("Close", null).show();
   }
@@ -2732,6 +2744,7 @@ public final class MainActivity extends AppCompatActivity {
 
   @Override protected void onDestroy() {
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
+    try { unregisterReceiver(downloadCompleteReceiver); } catch (Exception ignored) { }
     if (prefs.getBoolean("clear_on_quit", false)) {
       historyItems.clear();
       prefs.edit().remove("saved_tabs").apply();
