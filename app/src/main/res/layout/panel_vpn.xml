@@ -99,6 +99,9 @@
             <TextView android:id="@+id/vpn_ip" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="2dp" android:text="Connect to secure your connection"
                 android:textColor="@color/muted" android:textSize="11sp" />
+            <TextView android:id="@+id/vpn_stats" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" android:text="" android:visibility="gone"
+                android:textColor="@color/muted" android:textSize="11sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
