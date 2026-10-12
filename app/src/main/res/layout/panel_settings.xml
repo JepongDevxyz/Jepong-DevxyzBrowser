@@ -72,7 +72,25 @@
             android:layout_marginTop="10dp" android:text="PRIVACY &amp; SECURITY"
             android:textColor="@color/purple2" android:textSize="12sp" android:textStyle="bold" />
 
-        <LinearLayout android:id="@+id/set_etp_row" android:layout_width="match_parent"
+        <LinearLayout android:id="@+id/set_appearance_row" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_appearance" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Appearance" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_appearance_val" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Theme, toolbar, menu" android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/set_shields_row" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="horizontal"
             android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
             android:clickable="true" android:focusable="true">
@@ -81,10 +99,45 @@
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                 android:orientation="vertical" android:layout_marginStart="10dp">
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Enhanced Tracking Protection" android:textColor="@color/text" android:textSize="14sp" />
-                <TextView android:id="@+id/set_etp_val" android:layout_width="match_parent"
+                    android:text="Shields &amp; privacy" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_shields_val" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:layout_marginTop="2dp"
                     android:text="Standard" android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/set_downloads_row" android:layout_width="match_parent"            android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_download" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Downloads" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_downloads_val" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Download location, notifications" android:textColor="@color/muted" android:textSize="12sp" />
+            </LinearLayout>
+            <ImageView android:layout_width="20dp" android:layout_height="20dp"
+                android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/set_default_browser_row" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="horizontal"
+            android:gravity="center_vertical" android:paddingTop="12dp" android:paddingBottom="12dp"
+            android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                android:src="@drawable/ic_nav_home" app:tint="@color/muted" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:orientation="vertical" android:layout_marginStart="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Default browser" android:textColor="@color/text" android:textSize="14sp" />
+                <TextView android:id="@+id/set_default_browser_val" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                    android:text="Not set" android:textColor="@color/muted" android:textSize="12sp" />
             </LinearLayout>
             <ImageView android:layout_width="20dp" android:layout_height="20dp"
                 android:src="@drawable/ic_chevron_down" app:tint="@color/muted" />
