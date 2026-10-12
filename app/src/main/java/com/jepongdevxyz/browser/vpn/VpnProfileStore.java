@@ -23,6 +23,7 @@ public final class VpnProfileStore {
             }
             config = out.toString(StandardCharsets.UTF_8.name());
         }
+        config = sanitize(config);
         validate(config);
         try (FileOutputStream out = context.openFileOutput(FILE, Context.MODE_PRIVATE)) {
             out.write(config.getBytes(StandardCharsets.UTF_8));
@@ -37,6 +38,7 @@ public final class VpnProfileStore {
 
     /** Writes a raw OpenVPN config (e.g. decoded from a VPNGate server) as the active profile. */
     public static void writeActiveProfile(Context context, String config) throws IOException {
+        config = sanitize(config);
         validate(config);
         try (FileOutputStream out = context.openFileOutput(FILE, Context.MODE_PRIVATE)) {
             out.write(config.getBytes(StandardCharsets.UTF_8));
@@ -76,12 +78,50 @@ public final class VpnProfileStore {
         return false;
     }
 
+    /**
+     * Strips directives the OpenVPN 3 client does not accept (script hooks and
+     * other local-execution options) instead of rejecting the whole profile.
+     * VPNGate configs commonly ship with these; the tunnel works fine without them.
+     */
+    private static String sanitize(String c) {
+        StringBuilder sb = new StringBuilder();
+        boolean inInline = false;
+        for (String line : c.split("\\r?\\n")) {
+            String s = line.trim();
+            String sl = s.toLowerCase(java.util.Locale.ROOT);
+            // Track inline blocks (<ca>...</ca> etc.) — never strip inside them
+            if (sl.startsWith("<") && sl.endsWith(">") && !sl.startsWith("</")) {
+                inInline = true;
+                sb.append(line).append('\n');
+                continue;
+            }
+            if (sl.startsWith("</")) {
+                inInline = false;
+                sb.append(line).append('\n');
+                continue;
+            }
+            if (inInline) { sb.append(line).append('\n'); continue; }
+            String opt = sl.split("\\s+", 2)[0];
+            // Script hooks and local-execution directives rejected by OpenVPN 3 client
+            if (opt.equals("script-security") || opt.equals("up") || opt.equals("down")
+                    || opt.equals("route-up") || opt.equals("route-pre-down")
+                    || opt.equals("route-delay") || opt.equals("tls-remote")
+                    || opt.equals("ip-win32") || opt.equals("register-dns")
+                    || opt.equals("block-outside-dns") || opt.equals("dhcp-release")
+                    || opt.equals("dhcp-renew") || opt.equals("management")
+                    || opt.equals("management-hold") || opt.equals("management-query-passwords")
+                    || opt.equals("auth-retry") && sl.contains("interact")) {
+                continue; // strip this line
+            }
+            sb.append(line).append('\n');
+        }
+        return sb.toString();
+    }
+
     private static void validate(String c) throws IOException {
         String lower=c.toLowerCase(java.util.Locale.ROOT);
         if (!lower.contains("client") || !lower.contains("remote "))
             throw new IOException("Not a valid OpenVPN client profile");
-        if (lower.contains("script-security") || lower.contains("up ") || lower.contains("down "))
-            throw new IOException("Profiles containing local script hooks are not accepted");
         boolean inline = false;
         for (String line : c.split("\\r?\\n")) {
             String s = line.trim();
