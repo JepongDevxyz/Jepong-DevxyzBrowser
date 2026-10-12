@@ -80,13 +80,19 @@ public final class VpnGateApi {
                     postResult(cb, cached, true, null);
                     return;
                 }
+                // Speed: show stale cache instantly, refresh in background (stale-while-revalidate).
+                boolean postedStale = false;
+                if (cached != null && !cached.isEmpty()) {
+                    postResult(cb, cached, true, null);
+                    postedStale = true;
+                }
                 List<VpnServer> fresh = download();
                 if (fresh != null && !fresh.isEmpty()) {
                     writeCache(context, fresh);
                     postResult(cb, fresh, false, null);
-                } else if (cached != null && !cached.isEmpty()) {
+                } else if (!postedStale && cached != null && !cached.isEmpty()) {
                     postResult(cb, cached, true, null);
-                } else {
+                } else if (!postedStale) {
                     postError(cb, "Could not reach the server list. Check your connection and try again.");
                 }
             } catch (Exception e) {
