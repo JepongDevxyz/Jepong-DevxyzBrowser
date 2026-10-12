@@ -109,8 +109,12 @@ public final class MainActivity extends AppCompatActivity {
   private static final RecExt[] RECOMMENDED = {
     new RecExt("uBlock Origin", "Block ads and trackers", "ublock-origin", R.drawable.ic_ext_ublock),
     new RecExt("Dark Reader", "Dark mode for all websites", "darkreader", R.drawable.ic_ext_darkreader),
-    new RecExt("Grammarly", "Write better everywhere", "grammarly", R.drawable.ic_ext_grammarly, true),
     new RecExt("SponsorBlock", "Skip sponsored content", "sponsorblock", R.drawable.ic_ext_sponsorblock),
+    new RecExt("Tampermonkey", "Run userscripts on any site", "tampermonkey", R.drawable.ic_extension_puzzle),
+    new RecExt("Privacy Badger", "Block invisible trackers automatically", "privacybadger17", R.drawable.ic_extension_puzzle),
+    new RecExt("NoScript", "Block scripts unless you allow them", "noscript", R.drawable.ic_extension_puzzle),
+    new RecExt("Bitwarden", "Free password manager", "bitwarden-password-manager", R.drawable.ic_extension_puzzle),
+    new RecExt("Grammarly", "Write better everywhere", "grammarly", R.drawable.ic_ext_grammarly, true),
     new RecExt("React Developer Tools", "Debug React apps", "react-devtools", R.drawable.ic_ext_react),
   };
 
@@ -183,6 +187,58 @@ public final class MainActivity extends AppCompatActivity {
       }
       runtime = GeckoRuntime.create(this, rsb.build());
     }
+    // Firefox-like extension install/update prompts: tapping "Add to Firefox" on
+    // addons.mozilla.org (or any site-triggered install) shows our themed dialog.
+    runtime.getWebExtensionController().setPromptDelegate(new WebExtensionController.PromptDelegate() {
+      private GeckoResult<AllowOrDeny> askExt(WebExtension ext, String title, String[] perms, String[] origins) {
+        GeckoResult<AllowOrDeny> result = new GeckoResult<>();
+        runOnUiThread(() -> {
+          try {
+            String name = extName(ext);
+            StringBuilder msg = new StringBuilder();
+            if (ext.metaData != null && ext.metaData.description != null) {
+              msg.append(ext.metaData.description).append("\n\n");
+            }
+            java.util.List<String> p = new java.util.ArrayList<>();
+            if (perms != null) for (String s : perms) p.add(s);
+            if (origins != null) for (String s : origins) p.add("Access " + s);
+            if (!p.isEmpty()) {
+              msg.append("It will need permission to:\n• ").append(String.join("\n• ", p));
+            } else {
+              msg.append("Add this extension to DevxyzBrowser?");
+            }
+            Ui.dialog(MainActivity.this).setTitle(title + " " + name + "?")
+              .setMessage(msg.toString())
+              .setPositiveButton("Add", (d, w) -> {
+                result.complete(AllowOrDeny.ALLOW);
+                Ui.toast(MainActivity.this, "Installing " + name + "…");
+                refreshExtensionLists();
+                // The install finishes asynchronously; refresh again to pick it up.
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                    () -> refreshExtensionLists(), 4000);
+              })
+              .setNegativeButton("Cancel", (d, w) -> result.complete(AllowOrDeny.DENY))
+              .setOnCancelListener(d -> { try { result.complete(AllowOrDeny.DENY); } catch (Exception ignored) {} })
+              .show();
+          } catch (Exception e) {
+            try { result.complete(AllowOrDeny.DENY); } catch (Exception ignored) {}
+          }
+        });
+        return result;
+      }
+      @Override
+      public GeckoResult<AllowOrDeny> onInstallPromptRequest(WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
+        return askExt(ext, "Add", perms, origins);
+      }
+      @Override
+      public GeckoResult<AllowOrDeny> onUpdatePrompt(WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
+        return askExt(ext, "Update", perms, origins);
+      }
+      @Override
+      public GeckoResult<AllowOrDeny> onOptionalPrompt(WebExtension ext, String[] perms, String[] origins, String[] dataCollection) {
+        return askExt(ext, "Grant permissions to", perms, origins);
+      }
+    });
     geckoView = findViewById(R.id.gecko);
     session = new GeckoSession();
     session.open(runtime);
@@ -495,6 +551,7 @@ public final class MainActivity extends AppCompatActivity {
     for (WebExtension ext : installedExts) {
       String name = extName(ext);
       if (!f.isEmpty() && !name.toLowerCase(Locale.ROOT).contains(f)) continue;
+      if (!anyInstalled) extInstalledList.addView(extSectionHeader("Installed (" + installedExts.size() + ")"));
       anyInstalled = true;
       extInstalledList.addView(installedExtRow(ext, name));
     }
@@ -503,10 +560,22 @@ public final class MainActivity extends AppCompatActivity {
     if (prefs.getBoolean("ext_sort_az", false)) {
       java.util.Collections.sort(recs, (a, b) -> a.name.compareToIgnoreCase(b.name));
     }
+    boolean headerAdded = false;
     for (RecExt rec : recs) {
       if (!f.isEmpty() && !rec.name.toLowerCase(Locale.ROOT).contains(f)) continue;
+      if (!headerAdded) { extRecommendedList.addView(extSectionHeader("Recommended")); headerAdded = true; }
       extRecommendedList.addView(recommendedExtRow(rec, recInstalled.contains(rec.slug)));
     }
+  }
+
+  private View extSectionHeader(String text) {
+    TextView h = new TextView(this);
+    h.setText(text);
+    h.setTextSize(12);
+    h.setTextColor(getColor(R.color.muted));
+    h.setTypeface(h.getTypeface(), android.graphics.Typeface.BOLD);
+    h.setPadding(0, dp(12), 0, dp(4));
+    return h;
   }
 
   private LinearLayout extRowBase(int iconRes, String name, String desc) {
@@ -537,26 +606,164 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private View installedExtRow(WebExtension ext, String name) {
-    LinearLayout row = extRowBase(R.drawable.ic_extension_puzzle, name, "Installed");
+    boolean enabled = ext.metaData != null && ext.metaData.enabled;
+    LinearLayout row = extRowBase(R.drawable.ic_extension_puzzle, name,
+        (enabled ? "Enabled" : "Disabled") + (ext.metaData != null && ext.metaData.version != null ? " • v" + ext.metaData.version : ""));
+    SwitchMaterial toggle = new SwitchMaterial(this);
+    toggle.setChecked(enabled);
+    toggle.setContentDescription(name + " enabled");
+    toggle.setOnCheckedChangeListener((button, checked) -> setExtEnabled(ext, checked));
+    row.addView(toggle, new LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
     row.setClickable(true);
     row.setFocusable(true);
-    row.setOnClickListener(v -> Ui.dialog(this).setTitle(name)
-      .setMessage("Remove this extension from DevxyzBrowser?")
-      .setPositiveButton("Remove", (d, w) -> runtime.getWebExtensionController().uninstall(ext).accept(
-        done -> {
-          for (RecExt rec : RECOMMENDED) {
-            if (rec.name.equalsIgnoreCase(name)) recInstalled.remove(rec.slug);
-          }
-          prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
-          runOnUiThread(() -> {
-            Ui.toast(this, "Removed: " + name);
-            refreshExtensionLists();
-          });
-        },
-        err -> runOnUiThread(() ->
-          Ui.toastLong(this, "Could not remove: " + err.getMessage()))))
-      .setNegativeButton("Cancel", null).show());
+    // Tapping the row (not the switch) opens Firefox-style extension details.
+    row.setOnClickListener(v -> showExtDetails(ext));
+    // Keep switch taps from opening details.
+    toggle.setOnTouchListener((v, e) -> { v.getParent().requestDisallowInterceptTouchEvent(true); return false; });
     return row;
+  }
+
+  private void setExtEnabled(WebExtension ext, boolean enabled) {
+    try {
+      (enabled
+        ? runtime.getWebExtensionController().enable(ext, WebExtensionController.DisabledFlags.USER)
+        : runtime.getWebExtensionController().disable(ext, WebExtensionController.DisabledFlags.USER)
+      ).accept(
+        done -> runOnUiThread(() -> {
+          Ui.toast(this, extName(ext) + (enabled ? " enabled" : " disabled"));
+          refreshExtensionLists();
+        }),
+        err -> runOnUiThread(() -> {
+          Ui.toastLong(this, "Could not " + (enabled ? "enable" : "disable") + ": " + err.getMessage());
+          refreshExtensionLists();
+        }));
+    } catch (Exception e) {
+      Ui.toastLong(this, "Could not " + (enabled ? "enable" : "disable") + ": " + e.getMessage());
+      refreshExtensionLists();
+    }
+  }
+
+  /** Firefox-style extension details: description, author, version, options, permissions, remove. */
+  private void showExtDetails(WebExtension ext) {
+    String name = extName(ext);
+    WebExtension.MetaData md = ext.metaData;
+    LinearLayout body = new LinearLayout(this);
+    body.setOrientation(LinearLayout.VERTICAL);
+    int pad = dp(4);
+    body.setPadding(pad, pad, pad, pad);
+
+    if (md != null) {
+      if (md.description != null && !md.description.isEmpty()) {
+        TextView desc = new TextView(this);
+        desc.setText(md.description);
+        desc.setTextSize(13);
+        desc.setTextColor(getColor(R.color.text));
+        body.addView(desc);
+      }
+      StringBuilder meta = new StringBuilder();
+      if (md.version != null) meta.append("Version ").append(md.version).append("\n");
+      if (md.creatorName != null && !md.creatorName.isEmpty()) meta.append("By ").append(md.creatorName).append("\n");
+      if (meta.length() > 0) {
+        TextView mv = new TextView(this);
+        mv.setText(meta.toString().trim());
+        mv.setTextSize(12);
+        mv.setTextColor(getColor(R.color.muted));
+        mv.setPadding(0, dp(8), 0, 0);
+        body.addView(mv);
+      }
+    }
+
+    // Enable / disable row
+    LinearLayout enRow = new LinearLayout(this);
+    enRow.setOrientation(LinearLayout.HORIZONTAL);
+    enRow.setGravity(Gravity.CENTER_VERTICAL);
+    enRow.setPadding(0, dp(12), 0, dp(4));
+    TextView enLabel = new TextView(this);
+    enLabel.setText("Enabled");
+    enLabel.setTextSize(14);
+    enLabel.setTextColor(getColor(R.color.text));
+    enRow.addView(enLabel, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+    SwitchMaterial enSw = new SwitchMaterial(this);
+    enSw.setChecked(md == null || md.enabled);
+    enRow.addView(enSw);
+    body.addView(enRow);
+
+    // Allow in private browsing row
+    LinearLayout pbRow = new LinearLayout(this);
+    pbRow.setOrientation(LinearLayout.HORIZONTAL);
+    pbRow.setGravity(Gravity.CENTER_VERTICAL);
+    pbRow.setPadding(0, dp(4), 0, dp(4));
+    TextView pbLabel = new TextView(this);
+    pbLabel.setText("Allow in private browsing");
+    pbLabel.setTextSize(14);
+    pbLabel.setTextColor(getColor(R.color.text));
+    pbRow.addView(pbLabel, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+    SwitchMaterial pbSw = new SwitchMaterial(this);
+    pbSw.setChecked(md != null && md.allowedInPrivateBrowsing);
+    pbRow.addView(pbSw);
+    body.addView(pbRow);
+
+    final boolean[] dirty = {false};
+    enSw.setOnCheckedChangeListener((b, c) -> { setExtEnabled(ext, c); dirty[0] = true; enSw.setEnabled(false); });
+    pbSw.setOnCheckedChangeListener((b, c) -> {
+      try {
+        runtime.getWebExtensionController().setAllowedInPrivateBrowsing(ext, c).accept(
+          done -> runOnUiThread(() -> Ui.toast(this, c ? "Allowed in private browsing" : "Blocked in private browsing")),
+          err -> runOnUiThread(() -> Ui.toastLong(this, "Could not change: " + err.getMessage())));
+      } catch (Exception e) {
+        Ui.toastLong(this, "Could not change: " + e.getMessage());
+      }
+    });
+
+    // Permissions
+    if (md != null && md.requiredPermissions != null && md.requiredPermissions.length > 0) {
+      TextView ph = new TextView(this);
+      ph.setText("Permissions");
+      ph.setTextSize(12);
+      ph.setTextColor(getColor(R.color.muted));
+      ph.setPadding(0, dp(12), 0, dp(4));
+      body.addView(ph);
+      TextView pl = new TextView(this);
+      pl.setText("• " + String.join("\n• ", md.requiredPermissions));
+      pl.setTextSize(12);
+      pl.setTextColor(getColor(R.color.text));
+      body.addView(pl);
+    }
+
+    Ui.dialog(this).setTitle(name)
+      .setView(body)
+      .setPositiveButton(md != null && md.optionsPageUrl != null ? "Extension settings" : "Close",
+        (d, w) -> {
+          if (md != null && md.optionsPageUrl != null) newTab(md.optionsPageUrl);
+          if (dirty[0]) refreshExtensionLists();
+        })
+      .setNeutralButton("Check for updates", (d, w) -> {
+        try {
+          Ui.toast(this, "Checking for updates…");
+          runtime.getWebExtensionController().update(ext).accept(
+            u -> runOnUiThread(() -> { Ui.toast(this, "Update check finished"); refreshExtensionLists(); }),
+            err -> runOnUiThread(() -> Ui.toastLong(this, "Update failed: " + err.getMessage())));
+        } catch (Exception e) {
+          Ui.toastLong(this, "Update failed: " + e.getMessage());
+        }
+      })
+      .setNegativeButton("Remove", (d, w) ->
+        Ui.dialog(this).setTitle(name)
+          .setMessage("Remove this extension from DevxyzBrowser?")
+          .setPositiveButton("Remove", (d2, w2) ->
+            runtime.getWebExtensionController().uninstall(ext).accept(
+              done -> {
+                for (RecExt rec : RECOMMENDED) {
+                  if (rec.name.equalsIgnoreCase(name)) recInstalled.remove(rec.slug);
+                }
+                prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
+                runOnUiThread(() -> { Ui.toast(this, "Removed: " + name); refreshExtensionLists(); });
+              },
+              err -> runOnUiThread(() ->
+                Ui.toastLong(this, "Could not remove: " + err.getMessage()))))
+          .setNegativeButton("Cancel", null).show())
+      .show();
   }
 
   private View recommendedExtRow(RecExt rec, boolean installed) {
