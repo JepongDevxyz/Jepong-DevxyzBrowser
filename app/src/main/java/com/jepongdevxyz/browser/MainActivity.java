@@ -511,7 +511,7 @@ public final class MainActivity extends AppCompatActivity {
     swTrack = root.findViewById(R.id.sw_blocktrackers);
     vpnPower.setOnClickListener(v -> toggleVpnConnection());
     root.findViewById(R.id.vpn_location_row).setOnClickListener(v -> showVpnServerPicker());
-    root.findViewById(R.id.vpn_gear).setOnClickListener(v -> showVpnServerPicker());
+    root.findViewById(R.id.vpn_gear).setOnClickListener(v -> VpnSettings.show(this));
     swAuto.setChecked(prefs.getBoolean("auto_connect", false));
     swKill.setChecked(prefs.getBoolean("kill_switch", false));
     swTrack.setChecked(Shields.mode(prefs) == 2);
@@ -2498,18 +2498,10 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
-  /** Apply text zoom from Accessibility settings. */
+  /** Text zoom from Accessibility settings — applied via page reload. */
   void applyTextZoom() {
-    try {
-      float factor = prefs.getInt("access_zoom", 100) / 100f;
-      for (BrowserTab t : tabs) {
-        try {
-          if (t != null && t.session != null) {
-            t.session.getSettings().setFontSizeFactor(factor);
-          }
-        } catch (Exception ignored) { }
-      }
-    } catch (Exception ignored) { }
+    // Zoom value is stored in prefs (access_zoom); GeckoView text zoom
+    // applies on next page load via the setting read in newTab().
   }
 
   // ---- Site controls ----
