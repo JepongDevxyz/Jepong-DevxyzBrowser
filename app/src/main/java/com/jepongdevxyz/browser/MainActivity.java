@@ -2501,11 +2501,11 @@ public final class MainActivity extends AppCompatActivity {
   /** Apply text zoom from Accessibility settings. */
   void applyTextZoom() {
     try {
-      int zoom = prefs.getInt("access_zoom", 100);
+      float factor = prefs.getInt("access_zoom", 100) / 100f;
       for (BrowserTab t : tabs) {
         try {
           if (t != null && t.session != null) {
-            t.session.getSettings().setDisplayDpiOverride(zoom);
+            t.session.getSettings().setFontSizeFactor(factor);
           }
         } catch (Exception ignored) { }
       }
