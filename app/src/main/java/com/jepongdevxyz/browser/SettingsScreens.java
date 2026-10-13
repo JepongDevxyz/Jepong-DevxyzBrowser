@@ -729,6 +729,8 @@ public final class SettingsScreens {
     aiRow.setOnClickListener(v -> showAiSettings());
     // Insert before the last child (version footer if any)
     root.addView(aiRow, Math.max(0, root.getChildCount() - 1));
+    // Chrome-style pages: Accessibility + Site settings
+    ChromeSettings.addRows(a, root);
     a.refreshSettingsPanel();
   }
 
