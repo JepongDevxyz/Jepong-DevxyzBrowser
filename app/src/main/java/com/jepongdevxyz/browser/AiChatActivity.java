@@ -332,14 +332,12 @@ public class AiChatActivity extends Activity {
     GeminiAi.chat(prefs, toSend, system, new GeminiAi.ChatCallback() {
       @Override public void onReply(String text) {
         waiting = false;
-        messagesBox.removeView(typing);
         history.add(new GeminiAi.Message(false, text));
         saveConversation();
         renderMessages();
       }
       @Override public void onError(String message) {
         waiting = false;
-        messagesBox.removeView(typing);
         history.add(new GeminiAi.Message(false, "⚠ " + message));
         renderMessages();
       }
