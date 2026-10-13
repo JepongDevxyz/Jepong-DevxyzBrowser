@@ -80,6 +80,7 @@ public final class DevxyzVpnService extends VpnService {
         startTunnelForeground();
         try {
             String profile = VpnProfileStore.read(this);
+            profile = applyProtocolSetting(profile);
             publish("CONNECTING", "Starting OpenVPN 3", false);
             nativeStarted = true;
             boolean started = NativeOpenVpn.start(this, profile,
@@ -189,6 +190,24 @@ public final class DevxyzVpnService extends VpnService {
         } catch (Exception e) { return 30; }
     }
 
+    /** Inject proto udp/tcp into ovpn profile based on VPN settings. */
+    private String applyProtocolSetting(String profile) {
+        try {
+            String proto = vpnProtocol();
+            if ("adaptive".equals(proto) || profile == null) return profile;
+            // Remove existing proto lines, add the selected one
+            String[] lines = profile.split("\n");
+            StringBuilder sb = new StringBuilder();
+            for (String line : lines) {
+                String t = line.trim();
+                if (!t.startsWith("proto ")) sb.append(line).append("\n");
+            }
+            sb.append("proto ").append(proto).append("\n");
+            Log.i("DevxyzVpn", "Protocol set to: " + proto);
+            return sb.toString();
+        } catch (Exception e) { return profile; }
+    }
+
     /** VPN protocol from settings: adaptive/tcp/udp. */
     private String vpnProtocol() {
         try {
@@ -222,8 +241,27 @@ public final class DevxyzVpnService extends VpnService {
     }
     public synchronized boolean nativeTunAddRoute(String address, int prefix) {
         if (tunBuilder == null) return false;
+        // Allow LAN: skip routing local subnets through VPN
+        if (allowLanAccess() && isLocalSubnet(address)) {
+            Log.i("DevxyzVpn", "LAN access: skipping route " + address + "/" + prefix);
+            return true;
+        }
         tunBuilder.addRoute(address, prefix);
         return true;
+    }
+
+    private boolean allowLanAccess() {
+        try {
+            return getSharedPreferences("devxyz", MODE_PRIVATE).getBoolean("vpn_allow_lan", true);
+        } catch (Exception e) { return true; }
+    }
+
+    private boolean isLocalSubnet(String addr) {
+        return addr.startsWith("192.168.") || addr.startsWith("10.") ||
+               addr.startsWith("172.16.") || addr.startsWith("172.17.") ||
+               addr.startsWith("172.18.") || addr.startsWith("172.19.") ||
+               addr.startsWith("172.2") || addr.startsWith("172.30.") ||
+               addr.startsWith("172.31.");
     }
     public synchronized boolean nativeTunExcludeRoute(String address, int prefix) {
         if (tunBuilder == null) return false;
