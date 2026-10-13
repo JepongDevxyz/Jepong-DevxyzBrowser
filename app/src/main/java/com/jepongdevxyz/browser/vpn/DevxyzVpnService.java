@@ -30,6 +30,7 @@ public final class DevxyzVpnService extends VpnService {
     private static volatile boolean connected;
     /** When true, apps cannot bypass the tunnel and unexpected drops auto-reconnect. */
     public static volatile boolean killSwitch;
+    private int reconnectTries = 0;
 
     private Builder tunBuilder;
     private volatile boolean foreground;
