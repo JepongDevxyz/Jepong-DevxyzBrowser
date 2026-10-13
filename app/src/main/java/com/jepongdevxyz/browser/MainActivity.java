@@ -2030,7 +2030,7 @@ public final class MainActivity extends AppCompatActivity {
     });
     tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
       @Override public void onFullScreen(GeckoSession s, boolean fullScreen) {
-        runOnUiThread(() -> VideoFullscreen.set(this, fullScreen));
+        runOnUiThread(() -> VideoFullscreen.set(MainActivity.this, fullScreen));
       }
       @Override public void onExternalResponse(GeckoSession s, WebResponse response) {
         String url = response.uri;
