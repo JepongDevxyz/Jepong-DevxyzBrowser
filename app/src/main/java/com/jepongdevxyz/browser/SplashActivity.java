@@ -42,9 +42,9 @@ public final class SplashActivity extends AppCompatActivity {
 
   private void goNext() {
     SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
-    // TV detected -> D-pad friendly TV home; phone -> normal flow.
+    // TV detected -> full browser (MainActivity is TV-aware); phone -> normal flow.
     if (TvUtil.isTv(this)) {
-      startActivity(new Intent(this, TvMainActivity.class));
+      startActivity(new Intent(this, MainActivity.class));
       finish();
       return;
     }
