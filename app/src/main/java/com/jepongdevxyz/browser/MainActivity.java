@@ -2025,6 +2025,9 @@ public final class MainActivity extends AppCompatActivity {
       }
     });
     tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
+      @Override public void onFullScreen(GeckoSession s, boolean fullScreen) {
+        runOnUiThread(() -> VideoFullscreen.set(this, fullScreen));
+      }
       @Override public void onExternalResponse(GeckoSession s, WebResponse response) {
         String url = response.uri;
         String name = null;
@@ -2045,6 +2048,11 @@ public final class MainActivity extends AppCompatActivity {
         startDownload(url, name);
       }
     });
+  }
+
+  @Override public void onBackPressed() {
+    if (VideoFullscreen.isFullscreen()) { session.exitFullScreen(); return; }
+    super.onBackPressed();
   }
 
   private void selectTab(BrowserTab tab) {
