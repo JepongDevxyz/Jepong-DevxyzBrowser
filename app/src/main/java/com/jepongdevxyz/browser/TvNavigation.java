@@ -44,7 +44,7 @@ public final class TvNavigation {
   }
 
   /** Window.Callback wrapper that routes D-pad/air-mouse to TvCursor. */
-  private static final class TvWindowCallback extends android.view.WindowCallbackWrapper {
+  private static final class TvWindowCallback extends Window.CallbackWrapper {
     private final MainActivity activity;
     TvWindowCallback(MainActivity a, Window.Callback wrapped) {
       super(wrapped);
