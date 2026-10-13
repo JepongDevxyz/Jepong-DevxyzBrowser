@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -39,6 +40,7 @@ public class AiChatActivity extends Activity {
   private boolean waiting = false;
   private String conversationId;
   private ImageButton sendStopBtn;
+  private String selectedModel = "auto";
 
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -606,9 +608,19 @@ public class AiChatActivity extends Activity {
       TextView badgeTv = new TextView(this);
       badgeTv.setText(badge);
       badgeTv.setTextSize(11);
-      badgeTv.setTextColor(0xFF7C9CFF);
-      badgeTv.setBackgroundResource(R.drawable.badge_bg);
-      badgeTv.setPadding(dp(8), dp(2), dp(8), dp(2));
+      badgeTv.setTypeface(null, android.graphics.Typeface.BOLD);
+      // Leo-style badges: Current=blue filled, Premium=blue outline, Beta=gray outline
+      if (badge.equals("Current")) {
+        badgeTv.setTextColor(0xFFFFFFFF);
+        badgeTv.setBackgroundResource(R.drawable.badge_blue);
+      } else if (badge.equals("Premium")) {
+        badgeTv.setTextColor(0xFF4A7CFF);
+        badgeTv.setBackgroundResource(R.drawable.badge_blue_outline);
+      } else {
+        badgeTv.setTextColor(0xFF9A9AA0);
+        badgeTv.setBackgroundResource(R.drawable.badge_gray_outline);
+      }
+      badgeTv.setPadding(dp(10), dp(3), dp(10), dp(3));
       LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
           LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
       blp.setMargins(dp(8), 0, 0, 0);
@@ -620,6 +632,15 @@ public class AiChatActivity extends Activity {
     descTv.setTextSize(13);
     descTv.setTextColor(0xFF8A87A0);
     txt.addView(descTv);
+    // "Learn more" link like Leo (for models that have it)
+    if (id.equals("gemini-3.1-flash-lite")) {
+      TextView learnTv = new TextView(this);
+      learnTv.setText("Learn more");
+      learnTv.setTextSize(13);
+      learnTv.setTextColor(0xFF8A87A0);
+      learnTv.setPaintFlags(learnTv.getPaintFlags() | android.graphics.Paint.UNDERLINE_TEXT_FLAG);
+      txt.addView(learnTv);
+    }
     row.addView(txt, new LinearLayout.LayoutParams(0,
         LinearLayout.LayoutParams.WRAP_CONTENT, 1));
     row.setOnClickListener(v -> {
@@ -639,16 +660,26 @@ public class AiChatActivity extends Activity {
     root.setPadding(dp(8), dp(8), dp(8), dp(16));
 
     addModelRow(root, "auto", "Automatic", "Model changes dynamically to use the best one for the task", "Current");
-    addModelRow(root, "gemini-3.5-flash-lite", "gemini-3.5-flash-lite", "Fast • Recommended", null);
-    addModelRow(root, "gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "Fast • Budget", null);
+    addModelRow(root, "gemini-3.5-flash-lite", "gemini-3.5-flash-lite", "Fast • Search • Vision", "Premium");
+    addModelRow(root, "gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "Fast • Budget", "Beta");
 
+    LinearLayout allRow = new LinearLayout(this);
+    allRow.setOrientation(LinearLayout.HORIZONTAL);
+    allRow.setGravity(Gravity.CENTER_VERTICAL);
+    allRow.setPadding(dp(16), dp(14), dp(16), dp(6));
     TextView all = new TextView(this);
-    all.setText("Show all models  >");
+    all.setText("Show all models");
     all.setTextSize(15);
     all.setTextColor(0xFFFFFFFF);
-    all.setPadding(dp(16), dp(14), dp(16), dp(6));
-    all.setOnClickListener(v -> Ui.toast(this, "3 models available: Automatic, gemini-3.5-flash-lite, gemini-3.1-flash-lite"));
-    root.addView(all);
+    allRow.addView(all, new LinearLayout.LayoutParams(0,
+        LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+    TextView arrow = new TextView(this);
+    arrow.setText(">");
+    arrow.setTextSize(18);
+    arrow.setTextColor(0xFF8A87A0);
+    allRow.addView(arrow);
+    allRow.setOnClickListener(v -> Ui.toast(this, "3 models available: Automatic, gemini-3.5-flash-lite, gemini-3.1-flash-lite"));
+    root.addView(allRow);
 
     BottomSheetDialog dialog = new BottomSheetDialog(this);
     dialog.setContentView(root);
