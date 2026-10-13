@@ -269,6 +269,7 @@ public final class TvMainActivity extends AppCompatActivity {
         .show();
   }
 
+  @Override
   void applyTvNavMode() {
     try {
       android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
@@ -332,6 +333,14 @@ public final class TvMainActivity extends AppCompatActivity {
     registerReceiver(vpnStateReceiver, new IntentFilter(DevxyzVpnService.ACTION_STATE),
       Context.RECEIVER_NOT_EXPORTED);
     refresh();
+    // Set initial focus for D-pad navigation
+    try {
+      if (powerBtn != null) {
+        powerBtn.post(() -> {
+          try { powerBtn.requestFocus(); } catch (Exception ignored) {}
+        });
+      }
+    } catch (Exception ignored) {}
   }
 
   @Override protected void onPause() {
