@@ -18,7 +18,7 @@ public class VideoFullscreen {
     if (ts != null) ts.setVisibility(v);
     d.setSystemUiVisibility(fs ? 5894 : 0); // immersive + fullscreen + hide nav
     // TV stays landscape; phones toggle
-    if (!isTv(a)) a.setRequestedOrientation(fs ? 6 : 1);
+    if (!isTv(a)) a.setRequestedOrientation(fs ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
   }
 
   /** True on Android TV / Google TV devices. */
