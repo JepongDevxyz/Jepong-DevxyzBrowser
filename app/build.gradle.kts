@@ -17,11 +17,19 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { buildConfig = true }
-    // TV support: include 32-bit ARM for Android TV (e.g. Xiaomi TV A 32).
-    // Phone uses arm64-v8a, TV may need armeabi-v7a.
+    // Split APKs by ABI: phone gets arm64-only (small), TV gets 32-bit (small).
+    // Instead of one fat 178MB APK, CI uploads two lean APKs.
     defaultConfig {
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+    }
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = false
         }
     }
 }
