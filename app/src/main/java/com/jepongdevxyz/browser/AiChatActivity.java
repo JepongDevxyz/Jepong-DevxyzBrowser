@@ -651,7 +651,11 @@ public class AiChatActivity extends Activity {
     if (w != null) {
       w.setGravity(Gravity.TOP | Gravity.END);
       android.view.WindowManager.LayoutParams lp = w.getAttributes();
-      lp.y = dp(60); lp.x = dp(8);
+      // Add status bar height so popup doesn't go under it
+      int statusBar = 0;
+      int resId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+      if (resId > 0) statusBar = getResources().getDimensionPixelSize(resId);
+      lp.y = dp(60) + statusBar; lp.x = dp(8);
       w.setAttributes(lp);
     }
     dialog.show();
