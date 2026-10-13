@@ -2477,17 +2477,39 @@ public final class MainActivity extends AppCompatActivity {
   private void applyDesktopSite(boolean on) {
     try {
       String ua = on
-        ? "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-        : null;
-      // Apply to current session via settings; GeckoView picks it up on reload.
-      if (session != null) {
-        session.getSettings().setUserAgentOverride(ua);
-        session.reload();
+        ? "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        : "";
+      // Apply to ALL tabs so it works everywhere, then reload active tab
+      int count = 0;
+      for (BrowserTab t : tabs) {
+        try {
+          if (t != null && t.session != null) {
+            t.session.getSettings().setUserAgentOverride(ua);
+            count++;
+          }
+        } catch (Exception ignored) { }
       }
-      Ui.toast(this, on ? "Desktop site ON" : "Desktop site OFF");
+      if (activeTab != null && activeTab.session != null) {
+        try { activeTab.session.reload(); } catch (Exception ignored) { }
+      }
+      Ui.toast(this, on ? "Desktop site ON (" + count + " tabs)" : "Desktop site OFF");
     } catch (Exception e) {
       Ui.toast(this, "Desktop site not available");
     }
+  }
+
+  /** Apply text zoom from Accessibility settings. */
+  void applyTextZoom() {
+    try {
+      int zoom = prefs.getInt("access_zoom", 100);
+      for (BrowserTab t : tabs) {
+        try {
+          if (t != null && t.session != null) {
+            t.session.getSettings().setDisplayDpiOverride(zoom);
+          }
+        } catch (Exception ignored) { }
+      }
+    } catch (Exception ignored) { }
   }
 
   // ---- Site controls ----
