@@ -19,11 +19,7 @@ android {
     buildFeatures { buildConfig = true }
     // Split APKs by ABI: phone gets arm64-only (small), TV gets 32-bit (small).
     // Instead of one fat 178MB APK, CI uploads two lean APKs.
-    defaultConfig {
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
-        }
-    }
+    // NOTE: no ndk abiFilters here — splits control the ABIs.
     splits {
         abi {
             isEnable = true
