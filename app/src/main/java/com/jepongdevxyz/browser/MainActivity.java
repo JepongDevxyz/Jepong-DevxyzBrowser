@@ -529,7 +529,8 @@ public final class MainActivity extends AppCompatActivity {
       startVpnStatsTicker();
     } else {
       ipLookedUp = false;
-      vpnIpText.setText("Connect to secure your connection");
+      vpnIpText.setText("IP:...");
+      fetchPublicIp();
       vpnStatsText.setVisibility(View.GONE);
       vpnStatsText.setText("");
       stopVpnStatsTicker();
@@ -864,24 +865,21 @@ public final class MainActivity extends AppCompatActivity {
 
   private void fetchPublicIp() {
     new Thread(() -> {
-      String ip = null;
-      HttpURLConnection conn = null;
+      String r = null;
       try {
-        conn = (HttpURLConnection) new URL("https://api.ipify.org").openConnection();
-        conn.setConnectTimeout(8000);
-        conn.setReadTimeout(8000);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        ip = reader.readLine();
-        reader.close();
+        String j = new java.util.Scanner(new URL("http://ip-api.com/json/?fields=query,city,country").openStream(), "UTF-8").useDelimiter("\\A").next();
+        String ip = jv(j, "query");
+        if (ip != null) r = "IP: " + ip + " (" + jv(j, "city") + ", " + jv(j, "country") + ")";
       } catch (Exception ignored) { }
-      finally { if (conn != null) conn.disconnect(); }
-      final String result = ip;
-      runOnUiThread(() -> {
-        if (vpnIpText != null) {
-          vpnIpText.setText(result == null || result.trim().isEmpty() ? "IP: unavailable" : "IP: " + result.trim());
-        }
-      });
+      final String f = r;
+      runOnUiThread(() -> { if (vpnIpText != null) vpnIpText.setText(f != null ? f : "IP: unavailable"); });
     }).start();
+  }
+
+  private String jv(String j, String k) {
+    int i = j.indexOf(k + "\":\""); if (i < 0) return "?";
+    int s = j.indexOf("\"", i + k.length() + 3) + 1, e = j.indexOf("\"", s);
+    return j.substring(s, e);
   }
 
   // ---------- Extensions panel ----------
