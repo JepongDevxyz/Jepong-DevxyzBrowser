@@ -2584,7 +2584,8 @@ public final class MainActivity extends AppCompatActivity {
     if (settingsDialog == null) {
       View root = getLayoutInflater().inflate(R.layout.panel_settings, null);
       settingsDialog = makeSheet(root);
-      settingsScreens.initSettingsPanel((LinearLayout) root);
+      android.widget.ScrollView sv = (android.widget.ScrollView) root;
+      settingsScreens.initSettingsPanel((LinearLayout) sv.getChildAt(0));
     } else {
       refreshSettingsPanel();
     }
