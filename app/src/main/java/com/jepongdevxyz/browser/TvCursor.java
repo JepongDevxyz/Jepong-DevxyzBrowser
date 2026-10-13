@@ -77,6 +77,38 @@ public final class TvCursor {
     targetView = null;
   }
 
+  /**
+   * Handle motion events from air-mouse / motion remotes.
+   * When the remote sends pointer movement, the cursor follows it.
+   * Returns true if the event was a pointer movement we handled.
+   */
+  public static boolean onMotion(MotionEvent event, Context ctx) {
+    if (!enabled || cursorView == null) return false;
+    int action = event.getAction();
+    // Air-mouse remotes send HOVER_MOVE or mouse SOURCE events
+    if (action == MotionEvent.ACTION_HOVER_MOVE
+        || action == MotionEvent.ACTION_MOVE) {
+      int src = event.getSource();
+      boolean isPointer = (src & android.view.InputDevice.SOURCE_MOUSE) != 0
+          || (src & android.view.InputDevice.SOURCE_TOUCHPAD) != 0
+          || action == MotionEvent.ACTION_HOVER_MOVE;
+      if (isPointer) {
+        android.util.DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
+        x = Math.max(0, Math.min(dm.widthPixels - 72, event.getRawX() - 36));
+        y = Math.max(0, Math.min(dm.heightPixels - 72, event.getRawY() - 36));
+        try {
+          params.x = (int) x;
+          params.y = (int) y;
+          wm.updateViewLayout(cursorView, params);
+        } catch (Exception ignored) { }
+        // Stop D-pad auto-move; motion takes over
+        stopMoving();
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Handle D-pad key events. Returns true if consumed. */
   public static boolean onKey(int keyCode, KeyEvent event, Context ctx) {
     if (!enabled) return false;
