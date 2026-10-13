@@ -18,11 +18,11 @@
             app:tint="@color/text" android:background="@drawable/circle_btn_bg"
             android:padding="11dp" android:contentDescription="Forward" />
         <ImageButton android:id="@+id/m_bookmark" android:layout_width="44dp" android:layout_height="44dp"
-            android:layout_marginHorizontal="2dp" android:src="@drawable/ic_star"
+            android:layout_marginHorizontal="2dp" android:src="@drawable/ic_m_bookmark"
             app:tint="@color/text" android:background="@drawable/circle_btn_bg"
             android:padding="11dp" android:contentDescription="Bookmark this page" />
         <ImageButton android:id="@+id/m_download" android:layout_width="44dp" android:layout_height="44dp"
-            android:layout_marginHorizontal="2dp" android:src="@drawable/ic_nav_download"
+            android:layout_marginHorizontal="2dp" android:src="@drawable/ic_m_download"
             app:tint="@color/text" android:background="@drawable/circle_btn_bg"
             android:padding="11dp" android:contentDescription="Download" />
         <ImageButton android:id="@+id/m_refresh" android:layout_width="44dp" android:layout_height="44dp"
@@ -39,7 +39,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_new_tab" app:tint="@color/text" />
+            android:src="@drawable/ic_m_newtab" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="New tab"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -50,7 +50,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_incognito" app:tint="@color/text" />
+            android:src="@drawable/ic_m_incognito" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="New Incognito tab"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -64,7 +64,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_nav_history" app:tint="@color/text" />
+            android:src="@drawable/ic_m_history" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="History"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -75,7 +75,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_trash" app:tint="@color/text" />
+            android:src="@drawable/ic_m_delete" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Delete browsing data"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -86,7 +86,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_site" app:tint="@color/text" />
+            android:src="@drawable/ic_m_site" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Site controls"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -100,7 +100,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_nav_download" app:tint="@color/text" />
+            android:src="@drawable/ic_m_download" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Downloads"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -111,7 +111,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_star" app:tint="@color/text" />
+            android:src="@drawable/ic_m_bookmark" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Bookmarks"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -122,7 +122,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_recent" app:tint="@color/text" />
+            android:src="@drawable/ic_m_recent" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Recent tabs"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -136,7 +136,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_share" app:tint="@color/text" />
+            android:src="@drawable/ic_m_share" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Share..."
             android:textColor="@color/text" android:textSize="14sp" />
@@ -147,7 +147,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_find" app:tint="@color/text" />
+            android:src="@drawable/ic_m_search" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Find in page"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -158,7 +158,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_translate" app:tint="@color/text" />
+            android:src="@drawable/ic_m_translate" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Translate..."
             android:textColor="@color/text" android:textSize="14sp" />
@@ -169,7 +169,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_desktop" app:tint="@color/text" />
+            android:src="@drawable/ic_m_desktop" app:tint="@color/text" />
         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
             android:layout_marginStart="18dp" android:text="Desktop site"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -221,7 +221,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_nav_gear" app:tint="@color/text" />
+            android:src="@drawable/ic_m_settings" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Settings"
             android:textColor="@color/text" android:textSize="14sp" />
@@ -232,7 +232,7 @@
         android:paddingHorizontal="18dp" android:paddingVertical="10dp"
         android:clickable="true" android:focusable="true">
         <ImageView android:layout_width="24dp" android:layout_height="24dp"
-            android:src="@drawable/ic_help" app:tint="@color/text" />
+            android:src="@drawable/ic_m_help" app:tint="@color/text" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginStart="18dp" android:text="Help &amp; feedback"
             android:textColor="@color/text" android:textSize="14sp" />
