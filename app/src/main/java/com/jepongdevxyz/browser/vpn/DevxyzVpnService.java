@@ -153,16 +153,20 @@ public final class DevxyzVpnService extends VpnService {
                 foreground = false;
             }
         }
-        if (killSwitch && !userStopped && !destroyed && (error || "DISCONNECTED".equals(state))) {
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                if (destroyed || userStopped || connected || !killSwitch) return;
-                try {
-                    if (!VpnProfileStore.hasProfile(this) || VpnProfileStore.requiresCredentials(this)) return;
-                    Intent retry = new Intent(this, DevxyzVpnService.class).setAction(ACTION_CONNECT);
-                    startService(retry);
-                } catch (Exception ignored) { }
-            }, 4000);
+        if (!userStopped && !destroyed && (error || "DISCONNECTED".equals(state))) {
+            if (reconnectTries < 3) {
+                reconnectTries++;
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    if (destroyed || userStopped || connected) return;
+                    try {
+                        if (!VpnProfileStore.hasProfile(this) || VpnProfileStore.requiresCredentials(this)) return;
+                        Intent retry = new Intent(this, DevxyzVpnService.class).setAction(ACTION_CONNECT);
+                        startService(retry);
+                    } catch (Exception ignored) { }
+                }, 4000);
+            }
         }
+        if ("CONNECTED".equals(state)) reconnectTries = 0;
     }
 
     /** Called on OpenVPN's worker thread for every client event. */
