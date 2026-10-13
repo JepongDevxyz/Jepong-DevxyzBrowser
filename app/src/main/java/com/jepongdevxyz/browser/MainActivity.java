@@ -461,7 +461,19 @@ public final class MainActivity extends AppCompatActivity {
     BottomSheetDialog dialog = new BottomSheetDialog(this);
     dialog.setContentView(root);
     View sheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
-    if (sheet != null) sheet.setBackgroundResource(R.drawable.bottomsheet_bg);
+    if (sheet != null) {
+      sheet.setBackgroundResource(R.drawable.bottomsheet_bg);
+      // Fix scroll getting stuck: expand fully and let ScrollView own the gestures.
+      // The bottom sheet drag was stealing touch events at the scroll extremes.
+      try {
+        com.google.android.material.bottomsheet.BottomSheetBehavior<?> behavior =
+            com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet);
+        behavior.setState(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
+        behavior.setDraggable(false);
+        behavior.setHideable(false);
+      } catch (Exception ignored) { }
+    }
+    // Close via the panel's own close button / back press, not swipe
     return dialog;
   }
 
@@ -2612,7 +2624,7 @@ public final class MainActivity extends AppCompatActivity {
     if (settingsDialog == null) {
       View root = getLayoutInflater().inflate(R.layout.panel_settings, null);
       settingsDialog = makeSheet(root);
-      android.widget.ScrollView sv = (android.widget.ScrollView) root;
+      androidx.core.widget.NestedScrollView sv = (androidx.core.widget.NestedScrollView) root;
       settingsScreens.initSettingsPanel((LinearLayout) sv.getChildAt(0));
     } else {
       refreshSettingsPanel();
