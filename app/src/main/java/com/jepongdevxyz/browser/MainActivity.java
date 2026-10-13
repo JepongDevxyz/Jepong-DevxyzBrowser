@@ -2022,6 +2022,10 @@ public final class MainActivity extends AppCompatActivity {
           progress.setProgress(100);
           progress.postDelayed(() -> { progress.setProgress(0); progress.setVisibility(View.GONE); }, 350);
         }
+        // TV: auto-fullscreen videos
+        if (VideoFullscreen.isTv(MainActivity.this)) {
+          s.loadUri("javascript:" + VideoFullscreen.autoFullscreenJs());
+        }
       }
     });
     tab.session.setContentDelegate(new GeckoSession.ContentDelegate() {
