@@ -294,15 +294,29 @@ public class AiChatActivity extends Activity {
     askAi(null);
   }
 
+  private LinearLayout thinkingCard;
+  private TextView thinkingSteps;
+  private boolean thinkingExpanded = false;
+  private final java.util.List<String> thinkingLog = new java.util.ArrayList<>();
+
   private void askAi(String overridePrompt) {
     waiting = true;
-    TextView typing = new TextView(this);
-    typing.setText("Thinking…");
-    typing.setTextSize(14);
-    typing.setTextColor(0xFF8A87A0);
-    typing.setPadding(dp(2), dp(8), dp(2), dp(8));
-    messagesBox.addView(typing);
+    thinkingLog.clear();
+    thinkingLog.add("Understanding your question...");
+    thinkingCard = buildThinkingCard();
+    messagesBox.addView(thinkingCard);
     messagesScroll.post(() -> messagesScroll.fullScroll(View.FOCUS_DOWN));
+    // Simulate detailed steps
+    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+      if (!waiting || thinkingSteps == null) return;
+      thinkingLog.add("Searching knowledge base...");
+      updateThinkingCard();
+    }, 800);
+    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+      if (!waiting || thinkingSteps == null) return;
+      thinkingLog.add("Generating response...");
+      updateThinkingCard();
+    }, 1600);
 
     List<GeminiAi.Message> toSend = new ArrayList<>(history);
     if (overridePrompt != null)
@@ -330,6 +344,63 @@ public class AiChatActivity extends Activity {
         renderMessages();
       }
     });
+  }
+
+  /** Builds the expandable "thinking" status card like Brave Leo's sandbox rows. */
+  private LinearLayout buildThinkingCard() {
+    LinearLayout card = new LinearLayout(this);
+    card.setOrientation(LinearLayout.VERTICAL);
+    card.setBackgroundResource(R.drawable.leo_popup_bg);
+    card.setPadding(dp(12), dp(10), dp(12), dp(10));
+    LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    lp.setMargins(0, dp(4), 0, dp(4));
+    card.setLayoutParams(lp);
+
+    LinearLayout header = new LinearLayout(this);
+    header.setOrientation(LinearLayout.HORIZONTAL);
+    header.setGravity(Gravity.CENTER_VERTICAL);
+    TextView spinner = new TextView(this);
+    spinner.setText("\u25CC");
+    spinner.setTextSize(16);
+    spinner.setTextColor(0xFF7C9CFF);
+    spinner.setPadding(0, 0, dp(8), 0);
+    header.addView(spinner);
+    TextView title = new TextView(this);
+    title.setText("Thinking to help with your query");
+    title.setTextSize(14);
+    title.setTextColor(0xFF7C9CFF);
+    header.addView(title, new LinearLayout.LayoutParams(0,
+        LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+    TextView arrow = new TextView(this);
+    arrow.setText(thinkingExpanded ? "\u25B2" : "\u25BC");
+    arrow.setTextSize(12);
+    arrow.setTextColor(0xFF8A87A0);
+    arrow.setPadding(dp(8), 0, 0, 0);
+    header.addView(arrow);
+    card.addView(header);
+
+    thinkingSteps = new TextView(this);
+    thinkingSteps.setTextSize(13);
+    thinkingSteps.setTextColor(0xFFB0ADC7);
+    thinkingSteps.setPadding(dp(24), dp(4), 0, 0);
+    thinkingSteps.setVisibility(thinkingExpanded ? View.VISIBLE : View.GONE);
+    card.addView(thinkingSteps);
+    updateThinkingCard();
+
+    header.setOnClickListener(v -> {
+      thinkingExpanded = !thinkingExpanded;
+      arrow.setText(thinkingExpanded ? "\u25B2" : "\u25BC");
+      thinkingSteps.setVisibility(thinkingExpanded ? View.VISIBLE : View.GONE);
+    });
+    return card;
+  }
+
+  private void updateThinkingCard() {
+    if (thinkingSteps == null) return;
+    StringBuilder sb = new StringBuilder();
+    for (String s : thinkingLog) sb.append("\u2022 ").append(s).append("\n");
+    thinkingSteps.setText(sb.toString().trim());
   }
 
   private void newConversation() {
