@@ -269,7 +269,6 @@ public final class TvMainActivity extends AppCompatActivity {
         .show();
   }
 
-  @Override
   void applyTvNavMode() {
     try {
       android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
