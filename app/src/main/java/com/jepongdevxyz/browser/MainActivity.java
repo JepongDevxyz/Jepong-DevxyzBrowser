@@ -68,7 +68,7 @@ public final class MainActivity extends AppCompatActivity {
   private View vpnPanelRoot, extPanelRoot;
   private ImageButton vpnPower;
   private ImageView vpnSecureIcon;
-  private TextView vpnStateText, vpnHostText, vpnSubText, vpnSecureTitle, vpnIpText, vpnStatsText;
+  private TextView vpnStateText, vpnHostText, vpnSubText, vpnSecureTitle, vpnIpText, vpnStatsText, vpnLocText;
   private final java.util.List<VpnGateApi.VpnServer> vpnServers = new java.util.ArrayList<>();
   private String vpnServerFilter = "";
   private final java.util.Set<String> vpnFavorites = new java.util.HashSet<>();
@@ -475,6 +475,7 @@ public final class MainActivity extends AppCompatActivity {
     vpnSubText = root.findViewById(R.id.vpn_location_sub);
     vpnSecureTitle = root.findViewById(R.id.vpn_secure_title);
     vpnIpText = root.findViewById(R.id.vpn_ip);
+    vpnLocText = root.findViewById(R.id.vpn_location);
     vpnStatsText = root.findViewById(R.id.vpn_stats);
     vpnFavorites.addAll(prefs.getStringSet("vpn_favorites", new java.util.HashSet<>()));
     swAuto = root.findViewById(R.id.sw_autoconnect);
@@ -865,24 +866,31 @@ public final class MainActivity extends AppCompatActivity {
 
   private void fetchPublicIp() {
     new Thread(() -> {
-      String r = ipFrom("https://ip-api.com/json/?fields=query,city,country");
-      if (r == null) r = ipFrom("https://ipapi.co/json/");
-      if (r == null) try {
-        String ip = new java.util.Scanner(new URL("https://api.ipify.org").openStream(), "UTF-8").useDelimiter("\\A").next().trim();
-        if (!ip.isEmpty()) r = "IP: " + ip;
-      } catch (Exception ignored) { }
-      final String f = r;
-      runOnUiThread(() -> { if (vpnIpText != null) vpnIpText.setText(f != null ? f : "IP: unavailable"); });
+      String ip = null, loc = null;
+      // Primary: ipapi.co (accurate), fallback: ip-api.com
+      String[] urls = {"https://ipapi.co/json/", "https://ip-api.com/json/?fields=query,city,regionName,country"};
+      for (String u : urls) {
+        try {
+          String j = new java.util.Scanner(new URL(u).openStream(), "UTF-8").useDelimiter("\\A").next();
+          ip = jv(j, "ip"); if ("?".equals(ip)) ip = jv(j, "query");
+          if (ip == null || "?".equals(ip)) continue;
+          String c = jv(j, "city"), r = jv(j, "region");
+          if ("?".equals(r)) r = jv(j, "regionName");
+          String o = jv(j, "country_name"); if ("?".equals(o)) o = jv(j, "country");
+          StringBuilder sb = new StringBuilder();
+          if (!"?".equals(c)) sb.append(c);
+          if (!"?".equals(r)) { if (sb.length() > 0) sb.append(", "); sb.append(r); }
+          if (!"?".equals(o)) { if (sb.length() > 0) sb.append(", "); sb.append(o); }
+          loc = sb.toString();
+          break;
+        } catch (Exception ignored) { }
+      }
+      final String fIp = ip, fLoc = loc;
+      runOnUiThread(() -> {
+        if (vpnIpText != null) vpnIpText.setText(fIp != null ? "IP: " + fIp : "IP: unavailable");
+        if (vpnLocText != null) vpnLocText.setText(fLoc != null && !fLoc.isEmpty() ? "Location: " + fLoc : "");
+      });
     }).start();
-  }
-  private String ipFrom(String url) {
-    try {
-      String j = new java.util.Scanner(new URL(url).openStream(), "UTF-8").useDelimiter("\\A").next();
-      String ip = jv(j, "query"); if ("?".equals(ip)) ip = jv(j, "ip"); if ("?".equals(ip)) return null;
-      String c = jv(j, "city"), o = jv(j, "country"); if ("?".equals(o)) o = jv(j, "country_name");
-      String l = "?".equals(c) ? "" : c; if (!"?".equals(o)) l += (l.isEmpty() ? "" : ", ") + o;
-      return "IP: " + ip + (l.isEmpty() ? "" : " (" + l + ")");
-    } catch (Exception e) { return null; }
   }
 
   private String jv(String j, String k) {
