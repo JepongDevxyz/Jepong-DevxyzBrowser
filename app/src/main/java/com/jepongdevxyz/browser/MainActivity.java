@@ -853,10 +853,8 @@ public final class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
           if (vpnPickerDialog != null) vpnPickerDialog.dismiss();
           refreshVpnPanel();
-          DevxyzVpnService.killSwitch = prefs.getBoolean("kill_switch", false);
-          Intent permission = VpnService.prepare(this);
-          if (permission != null) vpnPermission.launch(permission);
-          else requestVpnCredentials(); // VPNGate configs need no credentials; connects directly
+          // Auto-connect using the same path as the power button
+          toggleVpnConnection();
         });
       } catch (Exception e) {
         runOnUiThread(() -> Ui.toastLong(this, "Could not prepare server: " + e.getMessage()));
