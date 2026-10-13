@@ -284,6 +284,16 @@ public final class TvMainActivity extends AppCompatActivity {
     } catch (Exception ignored) { }
   }
 
+  @Override public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
+    try {
+      android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+      if ("cursor".equals(prefs.getString("tv_nav_mode", "dpad"))) {
+        if (TvCursor.onMotion(event, this)) return true;
+      }
+    } catch (Exception ignored) { }
+    return super.dispatchGenericMotionEvent(event);
+  }
+
   @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
     try {
       android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
