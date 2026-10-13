@@ -865,15 +865,24 @@ public final class MainActivity extends AppCompatActivity {
 
   private void fetchPublicIp() {
     new Thread(() -> {
-      String r = null;
-      try {
-        String j = new java.util.Scanner(new URL("https://ip-api.com/json/?fields=query,city,country").openStream(), "UTF-8").useDelimiter("\\A").next();
-        String ip = jv(j, "query");
-        if (ip != null) r = "IP: " + ip + " (" + jv(j, "city") + ", " + jv(j, "country") + ")";
+      String r = ipFrom("https://ip-api.com/json/?fields=query,city,country");
+      if (r == null) r = ipFrom("https://ipapi.co/json/");
+      if (r == null) try {
+        String ip = new java.util.Scanner(new URL("https://api.ipify.org").openStream(), "UTF-8").useDelimiter("\\A").next().trim();
+        if (!ip.isEmpty()) r = "IP: " + ip;
       } catch (Exception ignored) { }
       final String f = r;
       runOnUiThread(() -> { if (vpnIpText != null) vpnIpText.setText(f != null ? f : "IP: unavailable"); });
     }).start();
+  }
+  private String ipFrom(String url) {
+    try {
+      String j = new java.util.Scanner(new URL(url).openStream(), "UTF-8").useDelimiter("\\A").next();
+      String ip = jv(j, "query"); if ("?".equals(ip)) ip = jv(j, "ip"); if ("?".equals(ip)) return null;
+      String c = jv(j, "city"), o = jv(j, "country"); if ("?".equals(o)) o = jv(j, "country_name");
+      String l = "?".equals(c) ? "" : c; if (!"?".equals(o)) l += (l.isEmpty() ? "" : ", ") + o;
+      return "IP: " + ip + (l.isEmpty() ? "" : " (" + l + ")");
+    } catch (Exception e) { return null; }
   }
 
   private String jv(String j, String k) {
