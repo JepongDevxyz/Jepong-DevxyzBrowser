@@ -2161,6 +2161,7 @@ public final class MainActivity extends AppCompatActivity {
     } catch (Exception ignored) { }
   }
 
+  void applyTvNavMode(){TvNavigation.applyMode(this);}
   private void hideKeyboard(View v) {
     try {
       android.view.inputmethod.InputMethodManager imm =
