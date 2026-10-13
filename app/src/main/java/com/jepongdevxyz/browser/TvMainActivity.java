@@ -105,6 +105,12 @@ public final class TvMainActivity extends AppCompatActivity {
     sbp.topMargin = dp(16);
     root.addView(serverBtn);
 
+    Button settingsBtn = tvButton("TV Settings");
+    settingsBtn.setOnClickListener(v -> showTvSettings());
+    LinearLayout.LayoutParams stp = (LinearLayout.LayoutParams) settingsBtn.getLayoutParams();
+    stp.topMargin = dp(16);
+    root.addView(settingsBtn);
+
     TextView hint = new TextView(this);
     hint.setText("Use the remote's D-pad to navigate • OK to select");
     hint.setTextSize(14);
@@ -116,6 +122,7 @@ public final class TvMainActivity extends AppCompatActivity {
     setContentView(root);
     powerBtn.requestFocus();
     refresh();
+    applyTvNavMode();
     // Warm the server cache in the background so the picker opens fast.
     VpnGateApi.fetch(this, false, new VpnGateApi.Callback() {
       @Override public void onResult(List<VpnGateApi.VpnServer> s, boolean fromCache) {
@@ -179,6 +186,117 @@ public final class TvMainActivity extends AppCompatActivity {
       if (s.id().equals(id)) return s;
     }
     return null;
+  }
+
+  /** TV Settings: Remote (D-pad) vs Remote cursor (virtual mouse). */
+  private void showTvSettings() {
+    android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+    LinearLayout root = new LinearLayout(this);
+    root.setOrientation(LinearLayout.VERTICAL);
+    int pad = dp(24);
+    root.setPadding(pad, pad, pad, pad);
+
+    TextView title = new TextView(this);
+    title.setText("TV Navigation");
+    title.setTextSize(22);
+    title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
+    title.setTextColor(getColor(R.color.text));
+    title.setPadding(0, 0, 0, dp(8));
+    root.addView(title);
+
+    TextView desc = new TextView(this);
+    desc.setText("Choose how you control the browser with your TV remote.");
+    desc.setTextSize(14);
+    desc.setTextColor(getColor(R.color.muted));
+    desc.setPadding(0, 0, 0, dp(16));
+    root.addView(desc);
+
+    String cur = prefs.getString("tv_nav_mode", "dpad");
+    String[] modes = {"dpad", "cursor"};
+    String[] labels = {"Remote (D-pad)", "Remote cursor"};
+    String[] subs = {"Arrow keys move focus, OK selects",
+        "Virtual mouse — arrows move pointer, OK clicks"};
+    android.widget.RadioGroup rg = new android.widget.RadioGroup(this);
+    for (int i = 0; i < modes.length; i++) {
+      final String m = modes[i];
+      android.widget.RadioButton rb = new android.widget.RadioButton(this);
+      rb.setText(labels[i] + "\n" + subs[i]);
+      rb.setTextColor(getColor(R.color.text));
+      rb.setChecked(m.equals(cur));
+      rb.setPadding(0, dp(8), 0, dp(8));
+      rb.setOnCheckedChangeListener((b, c) -> {
+        if (c) {
+          prefs.edit().putString("tv_nav_mode", m).apply();
+          applyTvNavMode();
+        }
+      });
+      rg.addView(rb);
+    }
+    root.addView(rg);
+
+    TextView spdTitle = new TextView(this);
+    spdTitle.setText("Cursor speed");
+    spdTitle.setTextSize(16);
+    spdTitle.setTypeface(spdTitle.getTypeface(), android.graphics.Typeface.BOLD);
+    spdTitle.setTextColor(getColor(R.color.text));
+    spdTitle.setPadding(0, dp(16), 0, dp(4));
+    root.addView(spdTitle);
+
+    String[] speeds = {"Slow", "Normal", "Fast"};
+    final float[] vals = {12f, 24f, 40f};
+    int curSpd = prefs.getInt("tv_cursor_speed", 1);
+    android.widget.RadioGroup srg = new android.widget.RadioGroup(this);
+    for (int i = 0; i < speeds.length; i++) {
+      final int idx = i;
+      android.widget.RadioButton rb = new android.widget.RadioButton(this);
+      rb.setText(speeds[i]);
+      rb.setTextColor(getColor(R.color.text));
+      rb.setChecked(i == curSpd);
+      rb.setPadding(0, dp(6), 0, dp(6));
+      rb.setOnCheckedChangeListener((b, c) -> {
+        if (c) {
+          prefs.edit().putInt("tv_cursor_speed", idx).apply();
+          TvCursor.setSpeed(vals[idx]);
+        }
+      });
+      srg.addView(rb);
+    }
+    root.addView(srg);
+
+    new androidx.appcompat.app.AlertDialog.Builder(this)
+        .setView(root)
+        .setPositiveButton("Done", null)
+        .show();
+  }
+
+  void applyTvNavMode() {
+    try {
+      android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+      String mode = prefs.getString("tv_nav_mode", "dpad");
+      float[] speeds = {12f, 24f, 40f};
+      int si = prefs.getInt("tv_cursor_speed", 1);
+      TvCursor.setSpeed(speeds[Math.max(0, Math.min(2, si))]);
+      if ("cursor".equals(mode)) {
+        TvCursor.enable(this, getWindow().getDecorView());
+      } else {
+        TvCursor.disable();
+      }
+    } catch (Exception ignored) { }
+  }
+
+  @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+    try {
+      android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+      if ("cursor".equals(prefs.getString("tv_nav_mode", "dpad"))) {
+        if (TvCursor.onKey(event.getKeyCode(), event, this)) return true;
+      }
+    } catch (Exception ignored) { }
+    return super.dispatchKeyEvent(event);
+  }
+
+  @Override protected void onDestroy() {
+    TvCursor.disable();
+    super.onDestroy();
   }
 
   private void refresh() {
