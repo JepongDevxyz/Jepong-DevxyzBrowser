@@ -375,6 +375,21 @@ public final class MainActivity extends AppCompatActivity {
     onClick(R.id.siteX, quick);
 
     address.setSelectAllOnFocus(true);
+    // Lock icon: tap to show site info (like Chrome)
+    updateAddressLockIcon();
+    address.setOnTouchListener((v, event) -> {
+      if (event.getAction() == android.view.MotionEvent.ACTION_UP) {
+        android.graphics.drawable.Drawable[] ds = address.getCompoundDrawablesRelative();
+        if (ds[0] != null) {
+          int iconEnd = address.getPaddingStart() + ds[0].getIntrinsicWidth() + address.getCompoundDrawablePadding();
+          if (event.getX() < iconEnd + 20) {
+            SiteInfoPanel.show(MainActivity.this);
+            return true;
+          }
+        }
+      }
+      return false;
+    });
     address.setOnEditorActionListener((v, id, e) -> {
       if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { hideKeyboard(v); browse(address.getText().toString()); return true; }
       return false;
@@ -2041,6 +2056,7 @@ public final class MainActivity extends AppCompatActivity {
         tab.url = url;
         if (tab == activeTab) {
           address.setText("about:blank".equals(url) ? "DevxyzBrowser" : url);
+          updateAddressLockIcon();
           progress.setVisibility(View.VISIBLE); progress.setProgress(5);
         }
         updateTabLabel(tab);
@@ -2096,6 +2112,17 @@ public final class MainActivity extends AppCompatActivity {
             getOnBackPressedDispatcher().onBackPressed();
           }
         });
+  }
+
+  /** Update lock/search icon in address bar based on current URL. */
+  private void updateAddressLockIcon() {
+    try {
+      String url = activeTab != null ? activeTab.url : "";
+      int icon = R.drawable.ic_tb_search;
+      if (url.startsWith("https://")) icon = R.drawable.ic_lock;
+      else if (url.startsWith("http://")) icon = R.drawable.ic_lock_open;
+      address.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
+    } catch (Exception ignored) { }
   }
 
   private void hideKeyboard(View v) {
