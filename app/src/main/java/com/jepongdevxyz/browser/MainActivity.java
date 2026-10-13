@@ -867,7 +867,7 @@ public final class MainActivity extends AppCompatActivity {
     new Thread(() -> {
       String r = null;
       try {
-        String j = new java.util.Scanner(new URL("http://ip-api.com/json/?fields=query,city,country").openStream(), "UTF-8").useDelimiter("\\A").next();
+        String j = new java.util.Scanner(new URL("https://ip-api.com/json/?fields=query,city,country").openStream(), "UTF-8").useDelimiter("\\A").next();
         String ip = jv(j, "query");
         if (ip != null) r = "IP: " + ip + " (" + jv(j, "city") + ", " + jv(j, "country") + ")";
       } catch (Exception ignored) { }
