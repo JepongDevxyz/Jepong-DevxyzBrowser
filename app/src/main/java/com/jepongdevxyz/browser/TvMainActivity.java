@@ -277,7 +277,7 @@ public final class TvMainActivity extends AppCompatActivity {
       int si = prefs.getInt("tv_cursor_speed", 1);
       TvCursor.setSpeed(speeds[Math.max(0, Math.min(2, si))]);
       if ("cursor".equals(mode)) {
-        TvCursor.enable(this, getWindow().getDecorView());
+        TvCursor.enable(this);
       } else {
         TvCursor.disable();
       }
