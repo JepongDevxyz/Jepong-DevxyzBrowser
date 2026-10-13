@@ -91,7 +91,7 @@ public final class MainActivity extends AppCompatActivity {
   }
   private LinearLayout tileRow;
 
-  private boolean ipLookedUp;
+  private boolean lastVpnConnected;
   private String extFilter = "";
   private final ArrayList<WebExtension> installedExts = new ArrayList<>();
   private final Set<String> recInstalled = new HashSet<>();
@@ -520,18 +520,16 @@ public final class MainActivity extends AppCompatActivity {
     }
     vpnSecureTitle.setText(connected ? "Your connection is secure" : "You're not protected");
     vpnSecureIcon.setImageTintList(ColorStateList.valueOf(getColor(connected ? R.color.green : R.color.muted)));
+    if (connected != lastVpnConnected) {
+      lastVpnConnected = connected;
+      vpnIpText.setText("IP: looking up…");
+      if (vpnLocText != null) vpnLocText.setText("");
+      fetchPublicIp();
+    }
     if (connected) {
-      if (!ipLookedUp) {
-        ipLookedUp = true;
-        vpnIpText.setText("IP: looking up…");
-        fetchPublicIp();
-      }
       vpnStatsText.setVisibility(View.VISIBLE);
       startVpnStatsTicker();
     } else {
-      ipLookedUp = false;
-      vpnIpText.setText("IP:...");
-      fetchPublicIp();
       vpnStatsText.setVisibility(View.GONE);
       vpnStatsText.setText("");
       stopVpnStatsTicker();
