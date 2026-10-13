@@ -38,6 +38,8 @@ public final class TvNavigation {
         wrapWindowCallback(a);
         // Bold focus highlight so it's clear what's selected + make menus focusable.
         TvFocusHighlight.enable(a);
+        // Don't auto-show keyboard on TV home — user navigates with D-pad first.
+        hideKeyboardOnTv(a);
       } else {
         TvFocusHighlight.disable();
       }
@@ -64,7 +66,13 @@ public final class TvNavigation {
     }
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
       try {
-        if (TvCursor.onKey(event.getKeyCode(), event, activity)) return true;
+        int kc = event.getKeyCode();
+        // BACK button: explicit handling for TV remote (browser history navigation).
+        if (kc == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN
+            && event.getRepeatCount() == 0) {
+          return onTvBack(activity);
+        }
+        if (TvCursor.onKey(kc, event, activity)) return true;
       } catch (Exception ignored) { }
       return wrapped.dispatchKeyEvent(event);
     }
@@ -96,6 +104,36 @@ public final class TvNavigation {
     @Override public ActionMode onWindowStartingActionMode(ActionMode.Callback c, int t) { return wrapped.onWindowStartingActionMode(c, t); }
     @Override public void onActionModeStarted(ActionMode m) { wrapped.onActionModeStarted(m); }
     @Override public void onActionModeFinished(ActionMode m) { wrapped.onActionModeFinished(m); }
+  }
+
+  /**
+   * Handle TV remote BACK: dismiss popups first, else browser back navigation.
+   * Returns true if consumed.
+   */
+  public static boolean onTvBack(MainActivity a) {
+    try {
+      // Let the activity's back dispatcher handle it (goBack/showHome/finish logic).
+      a.getOnBackPressedDispatcher().onBackPressed();
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  /** Hide soft keyboard on TV — D-pad navigation doesn't need it popping up. */
+  private static void hideKeyboardOnTv(MainActivity a) {
+    try {
+      android.view.inputmethod.InputMethodManager imm =
+        (android.view.inputmethod.InputMethodManager) a.getSystemService(
+          android.content.Context.INPUT_METHOD_SERVICE);
+      android.view.View focus = a.getCurrentFocus();
+      if (focus != null && imm != null) {
+        imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+      }
+      // Prevent EditTexts from auto-grabbing focus on TV (which pops the keyboard).
+      android.view.View decor = a.getWindow().getDecorView();
+      decor.setFocusableInTouchMode(true);
+    } catch (Exception ignored) { }
   }
 
   /** Handle D-pad keys on TV. Returns true if consumed. */
