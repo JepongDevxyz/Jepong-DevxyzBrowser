@@ -375,11 +375,11 @@ public final class MainActivity extends AppCompatActivity {
     onClick(R.id.siteX, quick);
 
     address.setOnEditorActionListener((v, id, e) -> {
-      if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { browse(address.getText().toString()); return true; }
+      if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { hideKeyboard(v); browse(address.getText().toString()); return true; }
       return false;
     });
     heroSearch.setOnEditorActionListener((v, id, e) -> {
-      if (id == EditorInfo.IME_ACTION_SEARCH || id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { browse(heroSearch.getText().toString()); return true; }
+      if (id == EditorInfo.IME_ACTION_SEARCH || id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { hideKeyboard(v); browse(heroSearch.getText().toString()); return true; }
       return false;
     });
     getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -889,6 +889,10 @@ public final class MainActivity extends AppCompatActivity {
       runOnUiThread(() -> {
         if (vpnIpText != null) vpnIpText.setText(fIp != null ? "IP: " + fIp : "IP: unavailable");
         if (vpnLocText != null) vpnLocText.setText(fLoc != null && !fLoc.isEmpty() ? "Location: " + fLoc : "");
+        // Retry once if failed
+        if (fIp == null && vpnIpText != null && !DevxyzVpnService.isConnected()) {
+          vpnIpText.postDelayed(() -> { if (!DevxyzVpnService.isConnected()) fetchPublicIp(); }, 3000);
+        }
       });
     }).start();
   }
@@ -2080,6 +2084,15 @@ public final class MainActivity extends AppCompatActivity {
             getOnBackPressedDispatcher().onBackPressed();
           }
         });
+  }
+
+  private void hideKeyboard(View v) {
+    try {
+      android.view.inputmethod.InputMethodManager imm =
+          (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+      if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+      v.clearFocus();
+    } catch (Exception ignored) { }
   }
 
   private void selectTab(BrowserTab tab) {
