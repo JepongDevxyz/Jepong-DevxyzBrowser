@@ -184,13 +184,12 @@ public final class MainActivity extends AppCompatActivity {
     Appearance.applyTheme(earlyPrefs);
     Appearance.applyDynamicColors(this, earlyPrefs);
     super.onCreate(state);
-    // TV detected -> hand off to the D-pad friendly TV home.
-    if (TvUtil.isTv(this)) {
-      startActivity(new Intent(this, TvMainActivity.class));
-      finish();
-      return;
-    }
+    // TV: stay in full browser, enable TV cursor navigation.
+    boolean isTv = TvUtil.isTv(this);
     prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
+    if (isTv) {
+      applyTvNavMode();
+    }
     setContentView(R.layout.activity_main);
     isDesktop = findViewById(R.id.sidebar) != null;
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -2891,6 +2890,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   @Override protected void onDestroy() {
+    try { TvCursor.disable(); } catch (Exception ignored) { }
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
     try { unregisterReceiver(downloadCompleteReceiver); } catch (Exception ignored) { }
     if (prefs.getBoolean("clear_on_quit", false)) {
