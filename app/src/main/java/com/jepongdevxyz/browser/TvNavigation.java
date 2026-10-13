@@ -2,16 +2,19 @@ package com.jepongdevxyz.browser;
 
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Window;
 import com.jepongdevxyz.browser.util.TvUtil;
 
 /**
  * TV navigation helper: cursor speed, nav mode, D-pad/air-mouse handling.
  * Keeps MainActivity lean — all TV logic lives here.
+ *
+ * TV input is wired via a Window.Callback wrapper (no MainActivity overrides needed).
  */
 public final class TvNavigation {
   private TvNavigation() {}
 
-  /** Apply cursor speed and nav mode from settings. */
+  /** Apply cursor speed and nav mode from settings. Wires TV input via window callback. */
   public static void applyMode(MainActivity a) {
     try {
       String mode = a.prefs.getString("tv_nav_mode", "dpad");
@@ -23,7 +26,44 @@ public final class TvNavigation {
       } else {
         TvCursor.disable();
       }
+      // Wire D-pad/air-mouse via window callback — no MainActivity override needed.
+      if (TvUtil.isTv(a)) {
+        wrapWindowCallback(a);
+      }
     } catch (Exception ignored) { }
+  }
+
+  /** Wrap the window callback to intercept TV remote input. */
+  private static void wrapWindowCallback(MainActivity a) {
+    try {
+      Window window = a.getWindow();
+      Window.Callback current = window.getCallback();
+      if (current == null || current instanceof TvWindowCallback) return;
+      window.setCallback(new TvWindowCallback(a, current));
+    } catch (Exception ignored) { }
+  }
+
+  /** Window.Callback wrapper that routes D-pad/air-mouse to TvCursor. */
+  private static final class TvWindowCallback extends android.view.WindowCallbackWrapper {
+    private final MainActivity activity;
+    TvWindowCallback(MainActivity a, Window.Callback wrapped) {
+      super(wrapped);
+      activity = a;
+    }
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+      try {
+        if (TvCursor.onKey(event.getKeyCode(), event, activity)) return true;
+      } catch (Exception ignored) { }
+      return super.dispatchKeyEvent(event);
+    }
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+      try {
+        if (TvCursor.onMotion(event, activity)) return true;
+      } catch (Exception ignored) { }
+      return super.dispatchGenericMotionEvent(event);
+    }
   }
 
   /** Handle D-pad keys on TV. Returns true if consumed. */
