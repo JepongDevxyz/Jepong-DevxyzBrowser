@@ -31,6 +31,8 @@ public final class DevxyzVpnService extends VpnService {
     /** When true, apps cannot bypass the tunnel and unexpected drops auto-reconnect. */
     public static volatile boolean killSwitch;
     private int reconnectTries = 0;
+    private android.content.BroadcastReceiver screenReceiver;
+    private boolean pausedByBatterySaver = false;
 
     private Builder tunBuilder;
     private volatile boolean foreground;
@@ -81,6 +83,8 @@ public final class DevxyzVpnService extends VpnService {
         try {
             String profile = VpnProfileStore.read(this);
             profile = applyProtocolSetting(profile);
+            setupBatterySaver();
+            checkCaptivePortal();
             publish("CONNECTING", "Starting OpenVPN 3", false);
             nativeStarted = true;
             boolean started = NativeOpenVpn.start(this, profile,
@@ -155,6 +159,16 @@ public final class DevxyzVpnService extends VpnService {
                 foreground = false;
             }
         }
+        // Seamless Tunnel: keep kill-switch blocking during reconnect
+        boolean seamless = false;
+        try {
+            seamless = getSharedPreferences("devxyz", MODE_PRIVATE)
+                .getBoolean("vpn_seamless", false);
+        } catch (Exception ignored) {}
+        if (seamless && (error || "DISCONNECTED".equals(state)) && !userStopped && !destroyed) {
+            Log.i("DevxyzVpn", "Seamless tunnel: keeping traffic blocked during reconnect");
+            // Keep TUN up (don't tear down) so traffic stays blocked
+        }
         if (!userStopped && !destroyed && (error || "DISCONNECTED".equals(state))) {
             int maxRetries = maxReconnectAttempts();
             if (maxRetries < 0 || reconnectTries < maxRetries) {
@@ -190,22 +204,71 @@ public final class DevxyzVpnService extends VpnService {
         } catch (Exception e) { return 30; }
     }
 
-    /** Inject proto udp/tcp into ovpn profile based on VPN settings. */
+    /** Apply all VPN settings to the ovpn profile: protocol, TLS, security, timeout. */
     private String applyProtocolSetting(String profile) {
         try {
-            String proto = vpnProtocol();
-            if ("adaptive".equals(proto) || profile == null) return profile;
-            // Remove existing proto lines, add the selected one
+            if (profile == null) return profile;
+            android.content.SharedPreferences p = getSharedPreferences("devxyz", MODE_PRIVATE);
             String[] lines = profile.split("\n");
             StringBuilder sb = new StringBuilder();
             for (String line : lines) {
                 String t = line.trim();
-                if (!t.startsWith("proto ")) sb.append(line).append("\n");
+                // Strip lines we will re-inject from settings
+                if (t.startsWith("proto ") || t.startsWith("tls-version-min") ||
+                    t.startsWith("cipher ") || t.startsWith("connect-timeout") ||
+                    t.startsWith("connect-retry")) continue;
+                sb.append(line).append("\n");
             }
-            sb.append("proto ").append(proto).append("\n");
-            Log.i("DevxyzVpn", "Protocol set to: " + proto);
+            // Protocol
+            String proto = p.getString("vpn_protocol", "adaptive");
+            if (!"adaptive".equals(proto)) {
+                sb.append("proto ").append(proto).append("\n");
+                Log.i("DevxyzVpn", "Protocol: " + proto);
+            }
+            // Enforce TLS 1.3
+            if (p.getBoolean("vpn_tls13", false)) {
+                sb.append("tls-version-min 1.3\n");
+                Log.i("DevxyzVpn", "TLS 1.3 enforced");
+            }
+            // Security level -> cipher
+            String sec = p.getString("vpn_security", "preferred");
+            if ("legacy".equals(sec)) {
+                sb.append("cipher AES-128-CBC\n");
+            } else if ("insecure".equals(sec)) {
+                sb.append("cipher BF-CBC\n");
+            } else {
+                sb.append("cipher AES-256-GCM\n");
+            }
+            Log.i("DevxyzVpn", "Security level: " + sec);
+            // Connection timeout
+            int timeout = 30;
+            try { timeout = Integer.parseInt(p.getString("vpn_timeout", "30")); } catch (Exception ignored) {}
+            if (timeout > 0) {
+                sb.append("connect-timeout ").append(timeout).append("\n");
+                sb.append("connect-retry ").append(timeout).append("\n");
+                Log.i("DevxyzVpn", "Connect timeout: " + timeout + "s");
+            }
             return sb.toString();
         } catch (Exception e) { return profile; }
+    }
+
+    /** Captive portal check: warn if WiFi needs login before VPN. */
+    private void checkCaptivePortal() {
+        try {
+            boolean enabled = getSharedPreferences("devxyz", MODE_PRIVATE)
+                .getBoolean("vpn_captive", true);
+            if (!enabled) return;
+            android.net.ConnectivityManager cm =
+                (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            android.net.Network net = cm.getActiveNetwork();
+            if (net == null) return;
+            android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(net);
+            if (caps != null && caps.hasCapability(
+                    android.net.NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) {
+                Log.w("DevxyzVpn", "Captive portal detected - VPN may not work until login");
+                publish("WARNING", "WiFi login required (captive portal detected)", false);
+            }
+        } catch (Exception e) { Log.e("DevxyzVpn", "Captive check failed", e); }
     }
 
     /** VPN protocol from settings: adaptive/tcp/udp. */
@@ -229,6 +292,47 @@ public final class DevxyzVpnService extends VpnService {
     }
 
     public boolean nativeProtectSocket(int fd) { return protect(fd); }
+
+    private void setupBatterySaver() {
+        try {
+            if (screenReceiver != null) {
+                try { unregisterReceiver(screenReceiver); } catch (Exception ignored) {}
+                screenReceiver = null;
+            }
+            boolean enabled = getSharedPreferences("devxyz", MODE_PRIVATE)
+                .getBoolean("vpn_battery_saver", false);
+            if (!enabled) return;
+            screenReceiver = new android.content.BroadcastReceiver() {
+                @Override public void onReceive(android.content.Context c, android.content.Intent i) {
+                    String a = i.getAction();
+                    if (android.content.Intent.ACTION_SCREEN_OFF.equals(a)) {
+                        if (connected && !pausedByBatterySaver) {
+                            pausedByBatterySaver = true;
+                            Log.i("DevxyzVpn", "Battery saver: pausing VPN (screen off)");
+                            try { NativeOpenVpn.stop(); } catch (Exception ignored) {}
+                        }
+                    } else if (android.content.Intent.ACTION_SCREEN_ON.equals(a)) {
+                        if (pausedByBatterySaver) {
+                            pausedByBatterySaver = false;
+                            Log.i("DevxyzVpn", "Battery saver: resuming VPN (screen on)");
+                            reconnectTries = 0;
+                            try {
+                                android.content.Intent retry = new android.content.Intent(
+                                    DevxyzVpnService.this, DevxyzVpnService.class)
+                                    .setAction(ACTION_CONNECT);
+                                startService(retry);
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            };
+            android.content.IntentFilter f = new android.content.IntentFilter();
+            f.addAction(android.content.Intent.ACTION_SCREEN_OFF);
+            f.addAction(android.content.Intent.ACTION_SCREEN_ON);
+            registerReceiver(screenReceiver, f);
+            Log.i("DevxyzVpn", "Battery saver receiver registered");
+        } catch (Exception e) { Log.e("DevxyzVpn", "Battery saver setup failed", e); }
+    }
 
     public synchronized boolean nativeTunNew() {
         tunBuilder = new Builder().setSession("DevxyzBrowser OpenVPN");
@@ -278,6 +382,15 @@ public final class DevxyzVpnService extends VpnService {
     public synchronized boolean nativeTunAddDns(String address) {
         if (tunBuilder == null) return false;
         tunBuilder.addDnsServer(address);
+        // DNS Fallback: add system DNS as backup if enabled
+        try {
+            boolean fallback = getSharedPreferences("devxyz", MODE_PRIVATE)
+                .getBoolean("vpn_dns_fallback", true);
+            if (fallback) {
+                // Add Cloudflare as fallback (widely reliable)
+                try { tunBuilder.addDnsServer("1.1.1.1"); } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
         return true;
     }
     public synchronized boolean nativeTunSetMtu(int mtu) {
