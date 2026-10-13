@@ -38,6 +38,7 @@ public class AiChatActivity extends Activity {
   private final List<GeminiAi.Message> history = new ArrayList<>();
   private boolean waiting = false;
   private String conversationId;
+  private ImageButton sendStopBtn;
 
   @Override protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -185,8 +186,11 @@ public class AiChatActivity extends Activity {
     LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(sz, sz);
     slp.setMargins(dp(4), 0, dp(2), 0);
     sendBtn.setLayoutParams(slp);
-    sendBtn.setOnClickListener(v -> sendCurrent());
+    sendBtn.setOnClickListener(v -> {
+      if (waiting) { cancelGeneration(); } else { sendCurrent(); }
+    });
     iconRow.addView(sendBtn);
+    this.sendStopBtn = sendBtn;
     box.addView(iconRow);
     inputWrap.addView(box);
     main.addView(inputWrap);
@@ -285,6 +289,18 @@ public class AiChatActivity extends Activity {
     messagesScroll.post(() -> messagesScroll.fullScroll(View.FOCUS_DOWN));
   }
 
+  private void cancelGeneration() {
+    waiting = false;
+    if (thinkingCard != null) { messagesBox.removeView(thinkingCard); thinkingCard = null; thinkingSteps = null; }
+    updateSendButton();
+    Ui.toast(this, "Generation stopped");
+  }
+
+  private void updateSendButton() {
+    if (sendStopBtn == null) return;
+    sendStopBtn.setImageResource(waiting ? R.drawable.ic_ai_stop : R.drawable.ic_ai_send);
+  }
+
   private void sendCurrent() {
     String text = input.getText().toString().trim();
     if (text.isEmpty() || waiting) return;
@@ -301,6 +317,7 @@ public class AiChatActivity extends Activity {
 
   private void askAi(String overridePrompt) {
     waiting = true;
+    updateSendButton();
     thinkingLog.clear();
     thinkingLog.add("Understanding your question...");
     thinkingCard = buildThinkingCard();
