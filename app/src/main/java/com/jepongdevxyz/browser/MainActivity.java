@@ -390,6 +390,23 @@ public final class MainActivity extends AppCompatActivity {
       }
       return false;
     });
+    // VPN Launch Options: auto-connect on app start
+    try {
+      String vpnLaunch = prefs.getString("vpn_launch", "none");
+      if ("latest".equals(vpnLaunch) || "restore".equals(vpnLaunch)) {
+        if (VpnProfileStore.hasProfile(this)) {
+          new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+              if (!DevxyzVpnService.isConnected()) {
+                Ui.toast(this, "Auto-connecting VPN...");
+                toggleVpnConnection();
+              }
+            } catch (Exception ignored) {}
+          }, 2500);
+        }
+      }
+    } catch (Exception ignored) {}
+
     address.setOnEditorActionListener((v, id, e) -> {
       if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { hideKeyboard(v); browse(address.getText().toString()); return true; }
       return false;
@@ -444,23 +461,6 @@ public final class MainActivity extends AppCompatActivity {
       row.setBackgroundColor(active ? 0x1A7C3CFF : 0x00000000);
     }
   }
-
-    // VPN Launch Options: auto-connect on app start
-    try {
-      String launch = prefs.getString("vpn_launch", "none");
-      if ("latest".equals(launch) || "restore".equals(launch)) {
-        if (VpnProfileStore.hasProfile(this)) {
-          new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            try {
-              if (!DevxyzVpnService.isConnected()) {
-                Ui.toast(this, "Auto-connecting VPN...");
-                toggleVpnConnection();
-              }
-            } catch (Exception ignored) {}
-          }, 2500);
-        }
-      }
-    } catch (Exception ignored) {}
 
   // ---------- Right panels (desktop) ----------
   private void togglePanel(int panelRootId) {
