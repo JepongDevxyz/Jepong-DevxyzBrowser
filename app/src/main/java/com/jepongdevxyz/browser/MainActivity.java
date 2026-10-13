@@ -2054,9 +2054,15 @@ public final class MainActivity extends AppCompatActivity {
     });
   }
 
-  @Override public void onBackPressed() {
-    if (VideoFullscreen.isFullscreen()) { session.exitFullScreen(); return; }
-    super.onBackPressed();
+  private void setupBackHandler() {
+    getOnBackPressedDispatcher().addCallback(this,
+        new androidx.activity.OnBackPressedCallback(true) {
+          @Override public void handleOnBackPressed() {
+            if (VideoFullscreen.isFullscreen()) { session.exitFullScreen(); return; }
+            setEnabled(false);
+            getOnBackPressedDispatcher().onBackPressed();
+          }
+        });
   }
 
   private void selectTab(BrowserTab tab) {
