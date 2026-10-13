@@ -17,11 +17,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { buildConfig = true }
-    // Slim build: package arm64 native libs only (Honor 400 is arm64).
-    // Drops the other ABIs' .so files (~316MB) so the APK installs cleanly.
+    // TV support: include 32-bit ARM for Android TV (e.g. Xiaomi TV A 32).
+    // Phone uses arm64-v8a, TV may need armeabi-v7a.
     defaultConfig {
         ndk {
-            abiFilters += "arm64-v8a"
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 }
