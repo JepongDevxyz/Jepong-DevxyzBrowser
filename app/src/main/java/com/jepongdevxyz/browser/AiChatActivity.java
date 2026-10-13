@@ -575,10 +575,9 @@ public class AiChatActivity extends Activity {
     root.setOrientation(LinearLayout.VERTICAL);
     root.setPadding(dp(8), dp(8), dp(8), dp(16));
 
-    root.addView(modelRow("sparkle", "Automatic", "Current",
-        "Model changes dynamically to use the best one for the task", true));
-    root.addView(modelRow("dot", "gemini-3.5-flash-lite", null, "Fast • Recommended", false));
-    root.addView(modelRow("dot", "gemini-3.1-flash-lite", null, "Fast • Budget", false));
+    addModelRow(root, "auto", "Automatic", "Model changes dynamically to use the best one for the task", "Current");
+    addModelRow(root, "gemini-3.5-flash-lite", "gemini-3.5-flash-lite", "Fast • Recommended", null);
+    addModelRow(root, "gemini-3.1-flash-lite", "gemini-3.1-flash-lite", "Fast • Budget", null);
 
     TextView all = new TextView(this);
     all.setText("Show all models  >");
