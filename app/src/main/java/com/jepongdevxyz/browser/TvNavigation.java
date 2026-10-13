@@ -1,8 +1,15 @@
 package com.jepongdevxyz.browser;
 
+import android.view.ActionMode;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.SearchEvent;
+import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
 import com.jepongdevxyz.browser.util.TvUtil;
 
 /**
@@ -43,27 +50,48 @@ public final class TvNavigation {
     } catch (Exception ignored) { }
   }
 
-  /** Window.Callback wrapper that routes D-pad/air-mouse to TvCursor. */
-  private static final class TvWindowCallback extends Window.CallbackWrapper {
+  /** Window.Callback that routes D-pad/air-mouse to TvCursor, delegates the rest. */
+  private static final class TvWindowCallback implements Window.Callback {
     private final MainActivity activity;
-    TvWindowCallback(MainActivity a, Window.Callback wrapped) {
-      super(wrapped);
+    private final Window.Callback wrapped;
+    TvWindowCallback(MainActivity a, Window.Callback w) {
       activity = a;
+      wrapped = w;
     }
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
+    @Override public boolean dispatchKeyEvent(KeyEvent event) {
       try {
         if (TvCursor.onKey(event.getKeyCode(), event, activity)) return true;
       } catch (Exception ignored) { }
-      return super.dispatchKeyEvent(event);
+      return wrapped.dispatchKeyEvent(event);
     }
-    @Override
-    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+    @Override public boolean dispatchGenericMotionEvent(MotionEvent event) {
       try {
         if (TvCursor.onMotion(event, activity)) return true;
       } catch (Exception ignored) { }
-      return super.dispatchGenericMotionEvent(event);
+      return wrapped.dispatchGenericMotionEvent(event);
     }
+    // --- pure delegation below ---
+    @Override public boolean dispatchKeyShortcutEvent(KeyEvent e) { return wrapped.dispatchKeyShortcutEvent(e); }
+    @Override public boolean dispatchTouchEvent(MotionEvent e) { return wrapped.dispatchTouchEvent(e); }
+    @Override public boolean dispatchTrackballEvent(MotionEvent e) { return wrapped.dispatchTrackballEvent(e); }
+    @Override public boolean dispatchPopulateAccessibilityEvent(AccessibilityEvent e) { return wrapped.dispatchPopulateAccessibilityEvent(e); }
+    @Override public View onCreatePanelView(int id) { return wrapped.onCreatePanelView(id); }
+    @Override public boolean onCreatePanelMenu(int id, Menu m) { return wrapped.onCreatePanelMenu(id, m); }
+    @Override public boolean onPreparePanel(int id, View v, Menu m) { return wrapped.onPreparePanel(id, v, m); }
+    @Override public boolean onMenuOpened(int id, Menu m) { return wrapped.onMenuOpened(id, m); }
+    @Override public boolean onMenuItemSelected(int id, MenuItem i) { return wrapped.onMenuItemSelected(id, i); }
+    @Override public void onWindowAttributesChanged(WindowManager.LayoutParams p) { wrapped.onWindowAttributesChanged(p); }
+    @Override public void onContentChanged() { wrapped.onContentChanged(); }
+    @Override public void onWindowFocusChanged(boolean f) { wrapped.onWindowFocusChanged(f); }
+    @Override public void onAttachedToWindow() { wrapped.onAttachedToWindow(); }
+    @Override public void onDetachedFromWindow() { wrapped.onDetachedFromWindow(); }
+    @Override public void onPanelClosed(int id, Menu m) { wrapped.onPanelClosed(id, m); }
+    @Override public boolean onSearchRequested() { return wrapped.onSearchRequested(); }
+    @Override public boolean onSearchRequested(SearchEvent e) { return wrapped.onSearchRequested(e); }
+    @Override public ActionMode onWindowStartingActionMode(ActionMode.Callback c) { return wrapped.onWindowStartingActionMode(c); }
+    @Override public ActionMode onWindowStartingActionMode(ActionMode.Callback c, int t) { return wrapped.onWindowStartingActionMode(c, t); }
+    @Override public void onActionModeStarted(ActionMode m) { wrapped.onActionModeStarted(m); }
+    @Override public void onActionModeFinished(ActionMode m) { wrapped.onActionModeFinished(m); }
   }
 
   /** Handle D-pad keys on TV. Returns true if consumed. */
