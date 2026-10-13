@@ -445,6 +445,23 @@ public final class MainActivity extends AppCompatActivity {
     }
   }
 
+    // VPN Launch Options: auto-connect on app start
+    try {
+      String launch = prefs.getString("vpn_launch", "none");
+      if ("latest".equals(launch) || "restore".equals(launch)) {
+        if (VpnProfileStore.hasProfile(this)) {
+          new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+              if (!DevxyzVpnService.isConnected()) {
+                Ui.toast(this, "Auto-connecting VPN...");
+                toggleVpnConnection();
+              }
+            } catch (Exception ignored) {}
+          }, 2500);
+        }
+      }
+    } catch (Exception ignored) {}
+
   // ---------- Right panels (desktop) ----------
   private void togglePanel(int panelRootId) {
     View container = findViewById(R.id.right_panels);
@@ -610,6 +627,26 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   private void toggleVpnConnection() {
+    String confirm = prefs.getString("vpn_confirm", "all");
+    boolean isConn = DevxyzVpnService.isConnected();
+    boolean needConfirm = "all".equals(confirm) ||
+        ("disconnect".equals(confirm) && isConn) ||
+        ("reconnect".equals(confirm) && !isConn);
+    if (needConfirm) {
+      new androidx.appcompat.app.AlertDialog.Builder(this)
+          .setTitle(isConn ? "Disconnect VPN?" : "Connect VPN?")
+          .setMessage(isConn ? "Disconnect from the VPN server?"
+                             : "Connect to the VPN server?")
+          .setPositiveButton(isConn ? "Disconnect" : "Connect",
+              (d, w) -> doToggleVpnConnection())
+          .setNegativeButton("Cancel", null)
+          .show();
+      return;
+    }
+    doToggleVpnConnection();
+  }
+
+  private void doToggleVpnConnection() {
     if (DevxyzVpnService.isConnected()) {
       Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
       startService(stop);
