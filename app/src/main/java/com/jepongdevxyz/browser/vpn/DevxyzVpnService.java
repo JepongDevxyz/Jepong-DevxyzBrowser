@@ -155,7 +155,8 @@ public final class DevxyzVpnService extends VpnService {
             }
         }
         if (!userStopped && !destroyed && (error || "DISCONNECTED".equals(state))) {
-            if (reconnectTries < 3) {
+            int maxRetries = maxReconnectAttempts();
+            if (maxRetries < 0 || reconnectTries < maxRetries) {
                 reconnectTries++;
                 new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                     if (destroyed || userStopped || connected) return;
@@ -168,6 +169,31 @@ public final class DevxyzVpnService extends VpnService {
             }
         }
         if ("CONNECTED".equals(state)) reconnectTries = 0;
+    }
+
+    /** Max reconnect attempts from VPN Settings (vpn_reconnect_count). -1 = unlimited. */
+    private int maxReconnectAttempts() {
+        try {
+            String v = getSharedPreferences("devxyz", MODE_PRIVATE).getString("vpn_reconnect_count", "3");
+            // Also check default prefs
+            android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+            return Integer.parseInt(v);
+        } catch (Exception e) { return 3; }
+    }
+
+    /** Connection timeout seconds from VPN Settings (vpn_timeout). -1 = retry forever. */
+    private int connectionTimeoutSec() {
+        try {
+            return Integer.parseInt(
+                getSharedPreferences("devxyz", MODE_PRIVATE).getString("vpn_timeout", "30"));
+        } catch (Exception e) { return 30; }
+    }
+
+    /** VPN protocol from settings: adaptive/tcp/udp. */
+    private String vpnProtocol() {
+        try {
+            return getSharedPreferences("devxyz", MODE_PRIVATE).getString("vpn_protocol", "adaptive");
+        } catch (Exception e) { return "adaptive"; }
     }
 
     /** Called on OpenVPN's worker thread for every client event. */
