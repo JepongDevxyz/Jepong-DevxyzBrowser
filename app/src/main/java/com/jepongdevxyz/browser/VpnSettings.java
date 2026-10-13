@@ -133,7 +133,7 @@ public final class VpnSettings {
     copy.setText("COPY");
     copy.setTextSize(13);
     copy.setTypeface(copy.getTypeface(), Typeface.BOLD);
-    copy.setTextColor(a.getColor(R.color.accent));
+    copy.setTextColor(a.getColor(R.color.purple));
     copy.setPadding(a.dp(12), a.dp(8), a.dp(12), a.dp(8));
     copy.setOnClickListener(v -> {
       ClipboardManager cm = (ClipboardManager) a.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -170,7 +170,7 @@ public final class VpnSettings {
       if (i > 0) bp.setMarginStart(a.dp(4));
       boolean selected = values[i].equals(cur);
       btn.setBackgroundResource(selected ? R.drawable.chip_bg_active : R.drawable.chip_bg);
-      btn.setTextColor(a.getColor(selected ? R.color.white : R.color.muted));
+      btn.setTextColor(a.getColor(selected ? R.color.text : R.color.muted));
       btn.setOnClickListener(v -> {
         a.prefs.edit().putString(key, values[idx]).apply();
         // Refresh: rebuild segments
@@ -178,7 +178,7 @@ public final class VpnSettings {
           TextView b = (TextView) seg.getChildAt(j);
           boolean sel = j == idx;
           b.setBackgroundResource(sel ? R.drawable.chip_bg_active : R.drawable.chip_bg);
-          b.setTextColor(a.getColor(sel ? R.color.white : R.color.muted));
+          b.setTextColor(a.getColor(sel ? R.color.text : R.color.muted));
         }
         Ui.toast(a, title + ": " + labels[idx]);
       });
