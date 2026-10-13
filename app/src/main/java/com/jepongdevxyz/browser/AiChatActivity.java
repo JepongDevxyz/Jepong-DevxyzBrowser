@@ -178,8 +178,8 @@ public class AiChatActivity extends Activity {
     iconRow.addView(modelLabel);
 
     ImageButton sendBtn = new ImageButton(this);
-    sendBtn.setImageResource(R.drawable.ic_ai_send);
-    sendBtn.setBackgroundResource(R.drawable.send_btn_bg);
+    sendBtn.setImageResource(R.drawable.ic_ai_up);
+    sendBtn.setBackgroundResource(R.drawable.send_btn_gray);
     sendBtn.setPadding(dp(10), dp(10), dp(10), dp(10));
     sendBtn.setColorFilter(0xFFFFFFFF);
     int sz = dp(40);
@@ -298,7 +298,13 @@ public class AiChatActivity extends Activity {
 
   private void updateSendButton() {
     if (sendStopBtn == null) return;
-    sendStopBtn.setImageResource(waiting ? R.drawable.ic_ai_stop : R.drawable.ic_ai_send);
+    if (waiting) {
+      sendStopBtn.setImageResource(R.drawable.ic_ai_stop_outline);
+      sendStopBtn.setBackgroundResource(R.drawable.stop_btn_dark);
+    } else {
+      sendStopBtn.setImageResource(R.drawable.ic_ai_up);
+      sendStopBtn.setBackgroundResource(R.drawable.send_btn_gray);
+    }
   }
 
   private void sendCurrent() {
@@ -570,6 +576,63 @@ public class AiChatActivity extends Activity {
   }
 
   // ============ Model bottom sheet ============
+  private void addModelRow(LinearLayout sheet, String id, String name, String desc, String badge) {
+    LinearLayout row = new LinearLayout(this);
+    row.setOrientation(LinearLayout.HORIZONTAL);
+    row.setGravity(Gravity.CENTER_VERTICAL);
+    row.setPadding(dp(12), dp(10), dp(12), dp(10));
+    ImageView icon = new ImageView(this);
+    icon.setImageResource(R.drawable.ic_ai_sparkle);
+    icon.setColorFilter(0xFFFFFFFF);
+    if (id.equals("auto")) icon.setBackgroundResource(R.drawable.model_bg_auto);
+    else if (id.contains("3.5")) icon.setBackgroundResource(R.drawable.model_bg_35);
+    else icon.setBackgroundResource(R.drawable.model_bg_31);
+    icon.setPadding(dp(8), dp(8), dp(8), dp(8));
+    int isz = dp(44);
+    row.addView(icon, new LinearLayout.LayoutParams(isz, isz));
+    LinearLayout txt = new LinearLayout(this);
+    txt.setOrientation(LinearLayout.VERTICAL);
+    txt.setPadding(dp(12), 0, 0, 0);
+    LinearLayout nameRow = new LinearLayout(this);
+    nameRow.setOrientation(LinearLayout.HORIZONTAL);
+    nameRow.setGravity(Gravity.CENTER_VERTICAL);
+    TextView nameTv = new TextView(this);
+    nameTv.setText(name);
+    nameTv.setTextSize(16);
+    nameTv.setTextColor(0xFFFFFFFF);
+    nameTv.setTypeface(null, android.graphics.Typeface.BOLD);
+    nameRow.addView(nameTv);
+    if (badge != null) {
+      TextView badgeTv = new TextView(this);
+      badgeTv.setText(badge);
+      badgeTv.setTextSize(11);
+      badgeTv.setTextColor(0xFF7C9CFF);
+      badgeTv.setBackgroundResource(R.drawable.badge_bg);
+      badgeTv.setPadding(dp(8), dp(2), dp(8), dp(2));
+      LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+          LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+      blp.setMargins(dp(8), 0, 0, 0);
+      nameRow.addView(badgeTv, blp);
+    }
+    txt.addView(nameRow);
+    TextView descTv = new TextView(this);
+    descTv.setText(desc);
+    descTv.setTextSize(13);
+    descTv.setTextColor(0xFF8A87A0);
+    txt.addView(descTv);
+    row.addView(txt, new LinearLayout.LayoutParams(0,
+        LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+    row.setOnClickListener(v -> {
+      selectedModel = id;
+      prefs.edit().putString("ai_model", id).apply();
+      modelLabel.setText(id.equals("auto") ? "Automatic" : id);
+      BottomSheetDialog d = (BottomSheetDialog) sheet.getTag();
+      if (d != null) d.dismiss();
+      Ui.toast(this, "Model: " + (id.equals("auto") ? "Automatic" : id));
+    });
+    sheet.addView(row);
+  }
+
   private void showModelSheet() {
     LinearLayout root = new LinearLayout(this);
     root.setOrientation(LinearLayout.VERTICAL);
