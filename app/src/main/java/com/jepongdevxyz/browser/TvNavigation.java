@@ -36,6 +36,10 @@ public final class TvNavigation {
       // Wire D-pad/air-mouse via window callback — no MainActivity override needed.
       if (TvUtil.isTv(a)) {
         wrapWindowCallback(a);
+        // Bold focus highlight so it's clear what's selected + make menus focusable.
+        TvFocusHighlight.enable(a);
+      } else {
+        TvFocusHighlight.disable();
       }
     } catch (Exception ignored) { }
   }
@@ -117,5 +121,6 @@ public final class TvNavigation {
   /** Clean up TV cursor. */
   public static void onDestroy() {
     try { TvCursor.disable(); } catch (Exception ignored) { }
+    try { TvFocusHighlight.disable(); } catch (Exception ignored) { }
   }
 }
