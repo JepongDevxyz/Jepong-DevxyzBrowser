@@ -374,6 +374,7 @@ public final class MainActivity extends AppCompatActivity {
     onClick(R.id.siteReddit, quick);
     onClick(R.id.siteX, quick);
 
+    address.setSelectAllOnFocus(true);
     address.setOnEditorActionListener((v, id, e) -> {
       if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE) { hideKeyboard(v); browse(address.getText().toString()); return true; }
       return false;
@@ -2039,7 +2040,8 @@ public final class MainActivity extends AppCompatActivity {
       @Override public void onPageStart(GeckoSession s, String url) {
         tab.url = url;
         if (tab == activeTab) {
-          address.setText(url); progress.setVisibility(View.VISIBLE); progress.setProgress(5);
+          address.setText("about:blank".equals(url) ? "DevxyzBrowser" : url);
+          progress.setVisibility(View.VISIBLE); progress.setProgress(5);
         }
         updateTabLabel(tab);
         // Incognito tabs never touch history.
@@ -2110,7 +2112,7 @@ public final class MainActivity extends AppCompatActivity {
     session = tab.session;
     geckoView.setSession(session);
     startPage.setVisibility(tab.url.isEmpty() ? View.VISIBLE : View.GONE);
-    address.setText(tab.url.isEmpty() ? "" : tab.url);
+    address.setText(tab.url.isEmpty() || "about:blank".equals(tab.url) ? "DevxyzBrowser" : tab.url);
     // Incognito indicator: show 🕶 in the tab count badge when in a private tab.
     TextView tc = findViewById(R.id.tabCount);
     if (tc != null) tc.setText(tab.incognito ? "🕶" : String.valueOf(tabs.size()));
