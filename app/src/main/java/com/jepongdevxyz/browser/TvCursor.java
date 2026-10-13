@@ -1,108 +1,143 @@
 package com.jepongdevxyz.browser;
 
+import android.app.Activity;
 import android.content.Context;
-import android.graphics.PixelFormat;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.ImageView;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 /**
- * Virtual mouse cursor for Android TV. When enabled, D-pad arrows move the
- * cursor and OK/DPAD_CENTER clicks at the cursor position by synthesizing
- * touch events into the active view.
+ * Virtual mouse cursor for Android TV.
+ *
+ * Robust design: the cursor is a View added directly to the Activity's
+ * decor view (no WindowManager overlay, no special permissions needed).
+ *
+ * - D-pad arrows move the cursor (fallback, always works)
+ * - Air-mouse / motion remotes: cursor follows the pointer
+ * - OK / DPAD_CENTER: synthesizes a tap at the cursor position
  */
 public final class TvCursor {
   private TvCursor() {}
-
-  private static ImageView cursorView;
-  private static WindowManager wm;
-  private static WindowManager.LayoutParams params;
-  private static float x, y;
-  private static float speed = 24f;
-  private static boolean enabled;
-  private static View targetView;
-  private static final Handler handler = new Handler(Looper.getMainLooper());
-  private static Runnable moveTask;
-  private static int moveDx, moveDy;
 
   /** Navigation modes for TV. */
   public static final int MODE_DPAD = 0;
   public static final int MODE_CURSOR = 1;
 
-  public static boolean isEnabled() { return enabled; }
+  private static CursorView cursorView;
+  private static float x, y;
+  private static float speed = 24f;
+  private static boolean enabled;
+  private static Activity activity;
+  private static final Handler handler = new Handler(Looper.getMainLooper());
+  private static Runnable moveTask;
+  private static int moveDx, moveDy;
 
+  public static boolean isEnabled() { return enabled; }
   public static void setSpeed(float s) { speed = s; }
 
-  /** Show the cursor overlay. Call from Activity (needs window token). */
-  public static void enable(Context ctx, View target) {
-    if (enabled) { targetView = target; return; }
+  /** Custom view that draws a proper mouse pointer arrow. */
+  private static final class CursorView extends View {
+    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
+    CursorView(Context ctx) {
+      super(ctx);
+      paint.setColor(Color.WHITE);
+      paint.setStyle(Paint.Style.FILL);
+      outline.setColor(0xFF9D7BFF);
+      outline.setStyle(Paint.Style.STROKE);
+      outline.setStrokeWidth(4f);
+    }
+    @Override protected void onDraw(Canvas c) {
+      // Classic arrow pointer pointing up-left
+      Path p = new Path();
+      p.moveTo(4, 4);
+      p.lineTo(4, 52);
+      p.lineTo(18, 40);
+      p.lineTo(26, 58);
+      p.lineTo(34, 54);
+      p.lineTo(26, 36);
+      p.lineTo(40, 36);
+      p.close();
+      c.drawPath(p, paint);
+      c.drawPath(p, outline);
+    }
+  }
+
+  /** Show the cursor. Safe to call multiple times. */
+  public static void enable(Activity act) {
+    if (enabled && act == activity) return;
+    disable();
     try {
-      targetView = target;
-      wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-      cursorView = new ImageView(ctx);
-      cursorView.setImageResource(android.R.drawable.ic_menu_add);
-      cursorView.setColorFilter(0xFF9D7BFF);
-      android.util.DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
+      activity = act;
+      android.util.DisplayMetrics dm = act.getResources().getDisplayMetrics();
       x = dm.widthPixels / 2f;
       y = dm.heightPixels / 2f;
-      params = new WindowManager.LayoutParams(
-          72, 72,
-          WindowManager.LayoutParams.TYPE_APPLICATION_PANEL,
-          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-              | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-              | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-          PixelFormat.TRANSLUCENT);
-      params.gravity = Gravity.TOP | Gravity.START;
-      params.x = (int) x;
-      params.y = (int) y;
-      wm.addView(cursorView, params);
+      cursorView = new CursorView(act);
+      FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(64, 72);
+      lp.leftMargin = (int) x;
+      lp.topMargin = (int) y;
+      // Add to decor view so it floats above everything, no permissions needed
+      ViewGroup decor = (ViewGroup) act.getWindow().getDecorView();
+      decor.addView(cursorView, lp);
+      cursorView.bringToFront();
       enabled = true;
-    } catch (Exception ignored) { }
+    } catch (Exception ignored) {
+      enabled = false;
+      cursorView = null;
+      activity = null;
+    }
   }
 
   public static void disable() {
     enabled = false;
     stopMoving();
     try {
-      if (wm != null && cursorView != null) wm.removeView(cursorView);
+      if (activity != null && cursorView != null) {
+        ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+        decor.removeView(cursorView);
+      }
     } catch (Exception ignored) { }
     cursorView = null;
-    wm = null;
-    targetView = null;
+    activity = null;
+  }
+
+  private static void moveCursorTo(float nx, float ny) {
+    if (!enabled || cursorView == null || activity == null) return;
+    try {
+      android.util.DisplayMetrics dm = activity.getResources().getDisplayMetrics();
+      x = Math.max(0, Math.min(dm.widthPixels - 64, nx));
+      y = Math.max(0, Math.min(dm.heightPixels - 72, ny));
+      FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) cursorView.getLayoutParams();
+      lp.leftMargin = (int) x;
+      lp.topMargin = (int) y;
+      cursorView.setLayoutParams(lp);
+    } catch (Exception ignored) { }
   }
 
   /**
    * Handle motion events from air-mouse / motion remotes.
    * When the remote sends pointer movement, the cursor follows it.
-   * Returns true if the event was a pointer movement we handled.
    */
   public static boolean onMotion(MotionEvent event, Context ctx) {
-    if (!enabled || cursorView == null) return false;
+    if (!enabled) return false;
     int action = event.getAction();
-    // Air-mouse remotes send HOVER_MOVE or mouse SOURCE events
-    if (action == MotionEvent.ACTION_HOVER_MOVE
-        || action == MotionEvent.ACTION_MOVE) {
+    if (action == MotionEvent.ACTION_HOVER_MOVE || action == MotionEvent.ACTION_MOVE) {
       int src = event.getSource();
       boolean isPointer = (src & android.view.InputDevice.SOURCE_MOUSE) != 0
           || (src & android.view.InputDevice.SOURCE_TOUCHPAD) != 0
           || action == MotionEvent.ACTION_HOVER_MOVE;
       if (isPointer) {
-        android.util.DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
-        x = Math.max(0, Math.min(dm.widthPixels - 72, event.getRawX() - 36));
-        y = Math.max(0, Math.min(dm.heightPixels - 72, event.getRawY() - 36));
-        try {
-          params.x = (int) x;
-          params.y = (int) y;
-          wm.updateViewLayout(cursorView, params);
-        } catch (Exception ignored) { }
-        // Stop D-pad auto-move; motion takes over
-        stopMoving();
+        stopMoving(); // motion takes over from D-pad auto-move
+        moveCursorTo(event.getRawX(), event.getRawY());
         return true;
       }
     }
@@ -113,8 +148,9 @@ public final class TvCursor {
   public static boolean onKey(int keyCode, KeyEvent event, Context ctx) {
     if (!enabled) return false;
     int action = event.getAction();
-    if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-      if (action == KeyEvent.ACTION_DOWN) clickAt(x, y);
+    if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER
+        || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+      if (action == KeyEvent.ACTION_DOWN) clickAt(x + 8, y + 8);
       return true;
     }
     int dx = 0, dy = 0;
@@ -126,26 +162,19 @@ public final class TvCursor {
       default: return false;
     }
     if (action == KeyEvent.ACTION_DOWN) {
-      if (event.getRepeatCount() == 0) { moveDx = dx; moveDy = dy; startMoving(ctx); }
+      if (event.getRepeatCount() == 0) { moveDx = dx; moveDy = dy; startMoving(); }
     } else if (action == KeyEvent.ACTION_UP) {
       stopMoving();
     }
     return true;
   }
 
-  private static void startMoving(final Context ctx) {
+  private static void startMoving() {
     stopMoving();
     moveTask = new Runnable() {
       @Override public void run() {
-        if (!enabled || cursorView == null) return;
-        android.util.DisplayMetrics dm = ctx.getResources().getDisplayMetrics();
-        x = Math.max(0, Math.min(dm.widthPixels - 72, x + moveDx * speed));
-        y = Math.max(0, Math.min(dm.heightPixels - 72, y + moveDy * speed));
-        try {
-          params.x = (int) x;
-          params.y = (int) y;
-          wm.updateViewLayout(cursorView, params);
-        } catch (Exception ignored) { }
+        if (!enabled) return;
+        moveCursorTo(x + moveDx * speed, y + moveDy * speed);
         handler.postDelayed(this, 16);
       }
     };
@@ -159,21 +188,51 @@ public final class TvCursor {
     moveDy = 0;
   }
 
-  /** Synthesize a tap at the cursor position on the target view. */
-  private static void clickAt(float cx, float cy) {
-    if (targetView == null) return;
+  /**
+   * Synthesize a tap at the given screen position.
+   * Finds the deepest view at that point and dispatches touch events to it.
+   */
+  private static void clickAt(float sx, float sy) {
+    if (activity == null) return;
     try {
-      long now = SystemClock.uptimeMillis();
+      ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+      View target = findDeepestAt(decor, sx, sy);
+      if (target == null) target = decor;
+      // Convert screen coords to target-local coords
       int[] loc = new int[2];
-      targetView.getLocationOnScreen(loc);
-      float vx = cx - loc[0] + 36;
-      float vy = cy - loc[1] + 36;
-      MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, vx, vy, 0);
-      MotionEvent up = MotionEvent.obtain(now, now + 80, MotionEvent.ACTION_UP, vx, vy, 0);
-      targetView.dispatchTouchEvent(down);
-      targetView.dispatchTouchEvent(up);
+      target.getLocationOnScreen(loc);
+      float lx = sx - loc[0];
+      float ly = sy - loc[1];
+      long now = SystemClock.uptimeMillis();
+      MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, lx, ly, 0);
+      MotionEvent up = MotionEvent.obtain(now, now + 80, MotionEvent.ACTION_UP, lx, ly, 0);
+      target.dispatchTouchEvent(down);
+      target.dispatchTouchEvent(up);
+      // Also send a click for views that listen for OnClickListener
+      target.performClick();
       down.recycle();
       up.recycle();
     } catch (Exception ignored) { }
+  }
+
+  /** Find the deepest visible view containing the screen point. */
+  private static View findDeepestAt(ViewGroup parent, float sx, float sy) {
+    try {
+      for (int i = parent.getChildCount() - 1; i >= 0; i--) {
+        View child = parent.getChildAt(i);
+        if (child == null || child.getVisibility() != View.VISIBLE || child == cursorView) continue;
+        int[] loc = new int[2];
+        child.getLocationOnScreen(loc);
+        float l = loc[0], t = loc[1], r = l + child.getWidth(), b = t + child.getHeight();
+        if (sx >= l && sx <= r && sy >= t && sy <= b) {
+          if (child instanceof ViewGroup) {
+            View deeper = findDeepestAt((ViewGroup) child, sx, sy);
+            if (deeper != null) return deeper;
+          }
+          return child;
+        }
+      }
+    } catch (Exception ignored) { }
+    return null;
   }
 }
