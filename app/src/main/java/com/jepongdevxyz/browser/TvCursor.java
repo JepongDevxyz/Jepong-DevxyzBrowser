@@ -162,11 +162,54 @@ public final class TvCursor {
       default: return false;
     }
     if (action == KeyEvent.ACTION_DOWN) {
+      // First try native focus navigation (better for buttons)
+      if (event.getRepeatCount() == 0 && tryFocusMove(dx, dy)) {
+        syncCursorToFocus();
+        return true;
+      }
+      // Fallback: move virtual cursor
       if (event.getRepeatCount() == 0) { moveDx = dx; moveDy = dy; startMoving(); }
     } else if (action == KeyEvent.ACTION_UP) {
       stopMoving();
     }
     return true;
+  }
+
+  /** Try Android's native focus search — moves focus between focusable views. */
+  private static boolean tryFocusMove(int dx, int dy) {
+    try {
+      if (activity == null) return false;
+      View current = activity.getCurrentFocus();
+      ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+      View root = current != null ? current : decor;
+      int direction = dy < 0 ? View.FOCUS_UP : dy > 0 ? View.FOCUS_DOWN
+          : dx < 0 ? View.FOCUS_LEFT : View.FOCUS_RIGHT;
+      View next = root.focusSearch(direction);
+      if (next != null && next != root) {
+        next.requestFocus();
+        return true;
+      }
+      // If no focusable found, try from decor
+      if (current == null) {
+        View f = decor.focusSearch(direction);
+        if (f != null && f != decor) { f.requestFocus(); return true; }
+      }
+    } catch (Exception ignored) { }
+    return false;
+  }
+
+  /** Move cursor to the currently focused view's center. */
+  private static void syncCursorToFocus() {
+    try {
+      if (activity == null) return;
+      View focused = activity.getCurrentFocus();
+      if (focused == null || focused == cursorView) return;
+      int[] loc = new int[2];
+      focused.getLocationOnScreen(loc);
+      float cx = loc[0] + focused.getWidth() / 2f;
+      float cy = loc[1] + focused.getHeight() / 2f;
+      moveCursorTo(cx - 8, cy - 8);
+    } catch (Exception ignored) { }
   }
 
   private static void startMoving() {
@@ -198,6 +241,8 @@ public final class TvCursor {
       ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
       View target = findDeepestAt(decor, sx, sy);
       if (target == null) target = decor;
+      // Request focus first for proper TV behavior
+      try { if (target.isFocusable()) target.requestFocus(); } catch (Exception ignored) {}
       // Convert screen coords to target-local coords
       int[] loc = new int[2];
       target.getLocationOnScreen(loc);
