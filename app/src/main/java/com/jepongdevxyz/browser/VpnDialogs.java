@@ -1,6 +1,5 @@
 package com.jepongdevxyz.browser;
 
-import android.content.Intent;
 import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 
 /**
