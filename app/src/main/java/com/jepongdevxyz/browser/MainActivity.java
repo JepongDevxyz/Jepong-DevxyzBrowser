@@ -15,8 +15,7 @@ import android.view.View;
 import android.view.Gravity;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.view.inputmethod.EditorInfo;
-import android.widget.*;
+import android.view.inputmethod.EditorInfo;import android.widget.*;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.result.ActivityResultLauncher;
@@ -625,26 +624,9 @@ public final class MainActivity extends AppCompatActivity {
     return String.format(java.util.Locale.ROOT, "%.2f GB", b / 1073741824.0);
   }
 
-  private void toggleVpnConnection() {
-    String confirm = prefs.getString("vpn_confirm", "all");
-    boolean isConn = DevxyzVpnService.isConnected();
-    boolean needConfirm = "all".equals(confirm) ||
-        ("disconnect".equals(confirm) && isConn) ||
-        ("reconnect".equals(confirm) && !isConn);
-    if (needConfirm) {
-      new androidx.appcompat.app.AlertDialog.Builder(this)
-          .setTitle(isConn ? "Disconnect VPN?" : "Connect VPN?")
-          .setMessage(isConn ? "Disconnect from the VPN server?"
-                             : "Connect to the VPN server?")
-          .setPositiveButton(isConn ? "Disconnect" : "Connect",
-              (d, w) -> doToggleVpnConnection())
-          .setNegativeButton("Cancel", null)
-          .show();
-      return;
+    private void toggleVpnConnection() {
+      VpnDialogs.confirmToggle(this);
     }
-    doToggleVpnConnection();
-  }
-
   private void doToggleVpnConnection() {
     if (DevxyzVpnService.isConnected()) {
       Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
