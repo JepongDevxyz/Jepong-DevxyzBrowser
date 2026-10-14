@@ -1,6 +1,7 @@
 package com.jepongdevxyz.browser;
 
 import android.content.Intent;
+import com.jepongdevxyz.browser.vpn.DevxyzVpnService;
 
 /**
  * VPN confirmation dialogs — themed to match the app (dark/light).
