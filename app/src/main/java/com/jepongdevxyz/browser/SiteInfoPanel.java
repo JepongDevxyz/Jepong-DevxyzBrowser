@@ -64,7 +64,7 @@ public final class SiteInfoPanel {
       root.addView(row(a, R.drawable.ic_m_history, "Last visited " + lastVisit, null));
 
       dismiss();
-      currentDialog = new AlertDialog.Builder(a).setView(root).create();
+      currentDialog = Ui.dialog(a).setView(root).create();
       currentDialog.show();
     } catch (Exception ignored) { }
   }
@@ -155,7 +155,7 @@ public final class SiteInfoPanel {
 
   private static void showDetail(MainActivity a, View content) {
     dismiss();
-    currentDialog = new AlertDialog.Builder(a).setView(content).create();
+    currentDialog = Ui.dialog(a).setView(content).create();
     currentDialog.show();
   }
 
