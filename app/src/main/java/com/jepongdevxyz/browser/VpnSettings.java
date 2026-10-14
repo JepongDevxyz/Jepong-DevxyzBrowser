@@ -100,7 +100,7 @@ public final class VpnSettings {
     root.addView(toggleRow(a, "DNS Fallback",
         "Fall back to system DNS if VPN DNS fails", "vpn_dns_fallback", true));
 
-    new AlertDialog.Builder(a).setView(scroll)
+    Ui.dialog(a).setView(scroll)
         .setPositiveButton("Done", null).show();
   }
 
@@ -234,7 +234,7 @@ public final class VpnSettings {
       for (int i = 0; i < values.length; i++) {
         if (values[i].equals(cv)) checked = i;
       }
-      new AlertDialog.Builder(a)
+      Ui.dialog(a)
           .setTitle(title)
           .setSingleChoiceItems(labels, checked, (d, which) -> {
             a.prefs.edit().putString(key, values[which]).apply();
