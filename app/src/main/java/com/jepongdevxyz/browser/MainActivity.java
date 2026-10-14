@@ -1625,10 +1625,19 @@ public final class MainActivity extends AppCompatActivity {
     row.addView(texts, tp);
     return row;
   }
+  /** Find the branded icon for an installed extension by matching its ID/name to the recommended list. */
+  private int extIconFor(WebExtension ext, String name) {
+    if (ext != null) {
 
+      for (RecExt rec : RECOMMENDED) {
+        if (rec.slug.equalsIgnoreCase(ext.id) || rec.name.equalsIgnoreCase(name)) return rec.icon;
+      }
+    }
+    return R.drawable.ic_extension_puzzle;
+  }
   private View installedExtRow(WebExtension ext, String name) {
     boolean enabled = ext.metaData != null && ext.metaData.enabled;
-    LinearLayout row = extRowBase(R.drawable.ic_extension_puzzle, name,
+    LinearLayout row = extRowBase(extIconFor(ext, name), name,
         (enabled ? "Enabled" : "Disabled") + (ext.metaData != null && ext.metaData.version != null ? " • v" + ext.metaData.version : ""));
     SwitchMaterial toggle = new SwitchMaterial(this);
     toggle.setChecked(enabled);
