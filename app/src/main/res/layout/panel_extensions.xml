@@ -24,20 +24,27 @@
         android:drawableStart="@drawable/ic_tb_search" android:drawablePadding="10dp"
         android:drawableEnd="@drawable/ic_filter" android:drawableTint="@color/muted" />
 
-    <LinearLayout android:id="@+id/ext_installed_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="vertical" />
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1"
+        android:layout_marginTop="8dp" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-    <LinearLayout android:id="@+id/ext_recommended_list" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" />
+            <LinearLayout android:id="@+id/ext_installed_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" />
 
-    <LinearLayout android:id="@+id/ext_search_results" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" />
+            <LinearLayout android:id="@+id/ext_recommended_list" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" />
 
-    <Button android:id="@+id/ext_browse_more" android:layout_width="match_parent" android:layout_height="48dp"
-        android:layout_marginTop="16dp" android:background="@drawable/toolbar_chip_bg"
-        android:text="Browse more extensions" android:textAllCaps="false"
-        android:textColor="@color/purple2" android:textSize="13sp" android:textStyle="bold"
-        android:drawableStart="@drawable/ic_extension_puzzle"
-        android:drawablePadding="10dp" android:gravity="center" />
+            <LinearLayout android:id="@+id/ext_search_results" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <Button android:id="@+id/ext_browse_more" android:layout_width="match_parent" android:layout_height="48dp"
+                android:layout_marginTop="16dp" android:layout_marginBottom="16dp" android:background="@drawable/toolbar_chip_bg"
+                android:text="Browse more extensions" android:textAllCaps="false"
+                android:textColor="@color/purple2" android:textSize="13sp" android:textStyle="bold"
+                android:drawableStart="@drawable/ic_extension_puzzle"
+                android:drawablePadding="10dp" android:gravity="center" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </LinearLayout>
