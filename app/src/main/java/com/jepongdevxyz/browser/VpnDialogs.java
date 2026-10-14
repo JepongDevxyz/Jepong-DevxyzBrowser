@@ -22,11 +22,22 @@ public final class VpnDialogs {
           .setMessage(isConn ? "Disconnect from the VPN server?"
                              : "Connect to the VPN server?")
           .setPositiveButton(isConn ? "Disconnect" : "Connect",
-              (d, w) -> a.doToggleVpnConnection())
+              (d, w) -> doToggle(a))
           .setNegativeButton("Cancel", null)
           .show();
       return;
     }
-    a.doToggleVpnConnection();
+    doToggle(a);
+  }
+
+  /** Invoke MainActivity.doToggleVpnConnection() via reflection (method is private). */
+  private static void doToggle(MainActivity a) {
+    try {
+      java.lang.reflect.Method m = MainActivity.class.getDeclaredMethod("doToggleVpnConnection");
+      m.setAccessible(true);
+      m.invoke(a);
+    } catch (Exception e) {
+      android.util.Log.e("VpnDialogs", "doToggle failed", e);
+    }
   }
 }
