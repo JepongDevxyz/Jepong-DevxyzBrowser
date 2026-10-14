@@ -8,7 +8,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import androidx.appcompat.app.AlertDialog;
+import android.app.AlertDialog;
 
 /**
  * Chrome-style site info panel: tap the lock icon in the address bar to see
