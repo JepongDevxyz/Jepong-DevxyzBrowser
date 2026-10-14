@@ -111,7 +111,7 @@ public final class ChromeSettings {
     root.addView(toggleRow(a, "Navigate pages with a text cursor",
         "To turn caret browsing on or off, use the shortcut F7", "access_caret", false));
 
-    new AlertDialog.Builder(a).setView(scroll)
+    Ui.dialog(a).setView(scroll)
         .setPositiveButton("Done", null).show();
   }
 
@@ -143,7 +143,7 @@ public final class ChromeSettings {
         "To protect your data, remove permissions from sites you haven't visited recently",
         "site_auto_remove_perm", true));
 
-    new AlertDialog.Builder(a).setView(scroll)
+    Ui.dialog(a).setView(scroll)
         .setPositiveButton("Done", null).show();
   }
 
@@ -178,7 +178,7 @@ public final class ChromeSettings {
     refresh.run();
     r.setOnClickListener(v -> {
       int cur = a.prefs.getInt(key, def);
-      new AlertDialog.Builder(a)
+      Ui.dialog(a)
           .setTitle(title)
           .setSingleChoiceItems(opts, cur, (d, which) -> {
             a.prefs.edit().putInt(key, which).apply();
