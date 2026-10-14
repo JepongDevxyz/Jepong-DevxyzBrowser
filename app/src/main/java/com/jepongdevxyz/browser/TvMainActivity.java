@@ -263,7 +263,7 @@ public final class TvMainActivity extends AppCompatActivity {
     }
     root.addView(srg);
 
-    new androidx.appcompat.app.AlertDialog.Builder(this)
+    Ui.dialog(this)
         .setView(root)
         .setPositiveButton("Done", null)
         .show();
