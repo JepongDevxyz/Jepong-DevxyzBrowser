@@ -1,7 +1,7 @@
 package com.jepongdevxyz.browser;
 
 import android.app.Activity;
-import androidx.appcompat.app.AlertDialog;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
