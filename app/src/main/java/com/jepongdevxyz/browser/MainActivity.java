@@ -15,7 +15,8 @@ import android.view.View;
 import android.view.Gravity;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.view.inputmethod.EditorInfo;import android.widget.*;
+import android.view.inputmethod.EditorInfo;
+import android.widget.*;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.result.ActivityResultLauncher;
@@ -624,10 +625,11 @@ public final class MainActivity extends AppCompatActivity {
     return String.format(java.util.Locale.ROOT, "%.2f GB", b / 1073741824.0);
   }
 
-    private void toggleVpnConnection() {
-      VpnDialogs.confirmToggle(this);
-    }
-  private void doToggleVpnConnection() {
+  private void toggleVpnConnection() {
+    VpnDialogs.confirmToggle(this);
+  }
+
+  void doToggleVpnConnection() {
     if (DevxyzVpnService.isConnected()) {
       Intent stop = new Intent(this, DevxyzVpnService.class).setAction(DevxyzVpnService.ACTION_DISCONNECT);
       startService(stop);
@@ -984,7 +986,7 @@ public final class MainActivity extends AppCompatActivity {
       return false;
     });
     root.findViewById(R.id.ext_close).setOnClickListener(v -> onClose.run());
-    root.findViewById(R.id.ext_browse_more).setOnClickListener(v -> newTab("https://addons.mozilla.org/en-US/firefox/"));
+    root.findViewById(R.id.ext_browse_more).setOnClickListener(v -> { onClose.run(); newTab("https://addons.mozilla.org/en-US/firefox/"); });
   }
 
   private void showExtSortMenu() {
@@ -1607,16 +1609,17 @@ public final class MainActivity extends AppCompatActivity {
     row.addView(texts, tp);
     return row;
   }
+
   /** Find the branded icon for an installed extension by matching its ID/name to the recommended list. */
   private int extIconFor(WebExtension ext, String name) {
     if (ext != null) {
-
       for (RecExt rec : RECOMMENDED) {
         if (rec.slug.equalsIgnoreCase(ext.id) || rec.name.equalsIgnoreCase(name)) return rec.icon;
       }
     }
     return R.drawable.ic_extension_puzzle;
   }
+
   private View installedExtRow(WebExtension ext, String name) {
     boolean enabled = ext.metaData != null && ext.metaData.enabled;
     LinearLayout row = extRowBase(extIconFor(ext, name), name,
@@ -2152,7 +2155,21 @@ public final class MainActivity extends AppCompatActivity {
     } catch (Exception ignored) { }
   }
 
-  void applyTvNavMode(){TvNavigation.applyMode(this);}
+  /** TV: apply cursor speed and nav mode from settings. */
+  void applyTvNavMode() { TvNavigation.applyMode(this); }
+
+  @Override
+  public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+    if (TvNavigation.onKey(this, event.getKeyCode(), event)) return true;
+    return super.dispatchKeyEvent(event);
+  }
+
+  @Override
+  public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
+    if (TvNavigation.onMotion(this, event)) return true;
+    return super.dispatchGenericMotionEvent(event);
+  }
+
   private void hideKeyboard(View v) {
     try {
       android.view.inputmethod.InputMethodManager imm =
@@ -2882,7 +2899,7 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   @Override protected void onDestroy() {
-    try { TvCursor.disable(); } catch (Exception ignored) { }
+    TvNavigation.onDestroy();
     if (vpnReceiverRegistered) { unregisterReceiver(vpnStateReceiver); vpnReceiverRegistered = false; }
     try { unregisterReceiver(downloadCompleteReceiver); } catch (Exception ignored) { }
     if (prefs.getBoolean("clear_on_quit", false)) {
