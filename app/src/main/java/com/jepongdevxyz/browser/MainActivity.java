@@ -1847,21 +1847,42 @@ public final class MainActivity extends AppCompatActivity {
   }
 
   void installRecommended(RecExt rec) {
-    String url = "https://addons.mozilla.org/firefox/downloads/latest/" + rec.slug + "/latest.xpi";
     Ui.toast(this, "Installing " + rec.name + "…");
-    runtime.getWebExtensionController().install(url).accept(
-      ext -> {
-        recInstalled.add(rec.slug);
-        prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
-        runOnUiThread(() -> {
-          Ui.toastLong(this, "Installed: " + extName(ext));
-          refreshExtensionLists();
-        });
-      },
-      err -> runOnUiThread(() -> {
-        Ui.toastLong(this, "Install failed: " + (err == null ? "unknown error" : err.getMessage()));
-        renderExtensionLists();
-      }));
+    new Thread(() -> {
+      String directUrl = null;
+      try {
+        java.net.URL apiUrl = new java.net.URL("https://addons.mozilla.org/api/v5/addons/addon/" + rec.slug + "/");
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) apiUrl.openConnection();
+        conn.setConnectTimeout(10000);
+        conn.setReadTimeout(10000);
+        if (conn.getResponseCode() == 200) {
+          java.util.Scanner sc = new java.util.Scanner(conn.getInputStream(), "UTF-8").useDelimiter("\\A");
+          String json = sc.hasNext() ? sc.next() : "";
+          sc.close();
+          int idx = json.indexOf("\"url\":\"https://addons.mozilla.org/firefox/downloads/file/");
+          if (idx >= 0) {
+            int start = idx + 7;
+            int end = json.indexOf("\"", start);
+            if (end > start) directUrl = json.substring(start, end);
+          }
+        }
+      } catch (Exception ignored) {}
+      final String url = directUrl != null ? directUrl
+        : "https://addons.mozilla.org/firefox/downloads/latest/" + rec.slug + "/latest.xpi";
+      runtime.getWebExtensionController().install(url).accept(
+        ext -> {
+          recInstalled.add(rec.slug);
+          prefs.edit().putStringSet("rec_exts", new HashSet<>(recInstalled)).apply();
+          runOnUiThread(() -> {
+            Ui.toastLong(this, "Installed: " + extName(ext));
+            refreshExtensionLists();
+          });
+        },
+        err -> runOnUiThread(() -> {
+          Ui.toastLong(this, "Install failed: " + (err == null ? "unknown error" : err.getMessage()));
+          renderExtensionLists();
+        }));
+    }).start();
   }
 
   private void confirmRemoveRecommended(RecExt rec) {
