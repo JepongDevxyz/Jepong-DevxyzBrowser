@@ -215,30 +215,36 @@ jobs:
           else
             echo "No keystore secret, using debug key."
           fi
-      - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Build Mobile and TV APKs
+        run: gradle --no-daemon :app:assembleMobileDebug :app:assembleTvDebug
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       - name: Lint
-        run: gradle --no-daemon :app:lintDebug
+        run: gradle --no-daemon :app:lintMobileDebug :app:lintTvDebug
       - name: Verify package and APK signature
         run: |
-          APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
-          test -n "$APK"
-          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
-          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
-          test -x "$AAPT"
-          test -x "$APKSIGNER"
-          "$AAPT" dump badging "$APK" | grep "package: name='com.jepongdevxyz.browser'"
-          unzip -Z1 "$APK" | grep -qx 'lib/arm64-v8a/libopenvpn3_core.so'
-          unzip -Z1 "$APK" | grep -qx 'lib/arm64-v8a/libc++_shared.so'
-          unzip -Z1 "$APK" | grep -qx 'assets/licenses/openvpn3/MPL-2.0.txt'
-          unzip -Z1 "$APK" | grep -qx 'assets/licenses/third-party/openssl.txt'
-          "$APKSIGNER" verify --verbose "$APK"
+          # Verify both Mobile and TV flavor APKs.
+          for APK in $(find app/build/outputs/apk -name '*.apk'); do
+            echo "Verifying $APK"
+            AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)
+            APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
+            test -x "$AAPT"
+            test -x "$APKSIGNER"
+            "$AAPT" dump badging "$APK" | grep -E "package: name='com.jepongdevxyz.browser(\.tv)?'"
+            unzip -Z1 "$APK" | grep -qx 'assets/licenses/openvpn3/MPL-2.0.txt'
+            unzip -Z1 "$APK" | grep -qx 'assets/licenses/third-party/openssl.txt'
+            "$APKSIGNER" verify --verbose "$APK"
+          done
       - uses: actions/upload-artifact@v4
         with:
-          name: DevxyzBrowser-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: DevxyzBrowser-mobile-apk
+          path: app/build/outputs/apk/mobile/debug/*.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DevxyzBrowser-tv-apk
+          path: app/build/outputs/apk/tv/debug/*.apk
           if-no-files-found: error
