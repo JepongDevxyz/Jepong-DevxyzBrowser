@@ -24,6 +24,34 @@ android {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
+    // APK signer: uses Jepong's release keystore when KEYSTORE_PATH is set
+    // (via GitHub Secrets in CI). Falls back to debug key otherwise.
+    // NOTE: signingConfigs must be defined BEFORE buildTypes in Kotlin DSL.
+    signingConfigs {
+        create("jepong") {
+            val ksPath = System.getenv("KEYSTORE_PATH")
+            if (!ksPath.isNullOrEmpty()) {
+                storeFile = file(ksPath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        getByName("debug") {
+            val ksPath = System.getenv("KEYSTORE_PATH")
+            if (!ksPath.isNullOrEmpty()) {
+                signingConfig = signingConfigs.getByName("jepong")
+            }
+        }
+        getByName("release") {
+            val ksPath = System.getenv("KEYSTORE_PATH")
+            if (!ksPath.isNullOrEmpty()) {
+                signingConfig = signingConfigs.getByName("jepong")
+            }
+        }
+    }
 }
 
 dependencies {
