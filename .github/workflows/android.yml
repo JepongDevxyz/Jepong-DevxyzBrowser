@@ -206,8 +206,21 @@ jobs:
             test -s "$VCPKG_INSTALLED/share/$package/copyright"
             cp "$VCPKG_INSTALLED/share/$package/copyright" "$LICENSES/third-party/$package.txt"
           done
+      - name: Decode release keystore (if secrets set)
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/jepong-release.jks"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/jepong-release.jks" >> "$GITHUB_ENV"
+            echo "Keystore decoded, APK will be signed with release key."
+          else
+            echo "No keystore secret, using debug key."
+          fi
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       - name: Lint
         run: gradle --no-daemon :app:lintDebug
       - name: Verify package and APK signature
