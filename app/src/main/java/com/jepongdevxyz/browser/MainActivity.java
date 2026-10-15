@@ -66,6 +66,7 @@ public final class MainActivity extends AppCompatActivity {
 
   // Desktop right-panel widgets (null on phones).
   private View vpnPanelRoot, extPanelRoot;
+  private Runnable extPanelOnClose;
   private ImageButton vpnPower;
   private ImageView vpnSecureIcon;
   private TextView vpnStateText, vpnHostText, vpnSubText, vpnSecureTitle, vpnIpText, vpnStatsText, vpnLocText;
@@ -953,6 +954,7 @@ public final class MainActivity extends AppCompatActivity {
   private void initExtPanel(View root, Runnable onClose) {
     if (root == null) return;
     extPanelRoot = root;
+    extPanelOnClose = onClose;
     extSearch = root.findViewById(R.id.ext_search);
     extInstalledList = root.findViewById(R.id.ext_installed_list);
     extRecommendedList = root.findViewById(R.id.ext_recommended_list);
@@ -1788,6 +1790,7 @@ public final class MainActivity extends AppCompatActivity {
     toggle.setContentDescription(rec.name);
     if (rec.searchOnly) {
       android.view.View.OnClickListener openSearch = v -> {
+        if (extPanelOnClose != null) extPanelOnClose.run();
         newTab("https://addons.mozilla.org/en-US/firefox/search/?q=" + rec.slug);
         Ui.toastLong(this, "Find " + rec.name + " on addons.mozilla.org");
       };
