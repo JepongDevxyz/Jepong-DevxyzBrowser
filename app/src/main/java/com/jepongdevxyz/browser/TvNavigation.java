@@ -24,7 +24,7 @@ public final class TvNavigation {
   /** Apply cursor speed and nav mode from settings. Wires TV input via window callback. */
   public static void applyMode(MainActivity a) {
     try {
-      String mode = a.prefs.getString("tv_nav_mode", "dpad");
+      String mode = a.prefs.getString("tv_nav_mode", "cursor");
       float[] speeds = {12f, 24f, 40f};
       int si = a.prefs.getInt("tv_cursor_speed", 1);
       TvCursor.setSpeed(speeds[Math.max(0, Math.min(2, si))]);
