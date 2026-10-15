@@ -17,11 +17,22 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { buildConfig = true }
-    // Fat APK with both ABIs (phone arm64 + TV 32-bit).
-    // Single 178MB APK works on both; splits break CI verification.
-    defaultConfig {
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+    // Separate APKs: Mobile (arm64 only, smaller) and TV (both ABIs for compatibility).
+    // Per Jepong's 2026-10-15 order: no more 2-in-1, separate Mobile and TV APKs.
+    flavorDimensions += "device"
+    productFlavors {
+        create("mobile") {
+            dimension = "device"
+            ndk {
+                abiFilters += listOf("arm64-v8a")
+            }
+        }
+        create("tv") {
+            dimension = "device"
+            applicationIdSuffix = ".tv"
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            }
         }
     }
     // APK signer: uses Jepong's release keystore when KEYSTORE_PATH is set
