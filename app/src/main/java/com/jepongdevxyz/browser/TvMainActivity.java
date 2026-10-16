@@ -211,7 +211,7 @@ public final class TvMainActivity extends AppCompatActivity {
     desc.setPadding(0, 0, 0, dp(16));
     root.addView(desc);
 
-    String cur = prefs.getString("tv_nav_mode", "cursor");
+    String cur = prefs.getString("tv_nav_mode", "dpad");
     String[] modes = {"dpad", "cursor"};
     String[] labels = {"Remote (D-pad)", "Remote cursor"};
     String[] subs = {"Arrow keys move focus, OK selects",
@@ -272,7 +272,7 @@ public final class TvMainActivity extends AppCompatActivity {
   void applyTvNavMode() {
     try {
       android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
-      String mode = prefs.getString("tv_nav_mode", "cursor");
+      String mode = prefs.getString("tv_nav_mode", "dpad");
       float[] speeds = {12f, 24f, 40f};
       int si = prefs.getInt("tv_cursor_speed", 1);
       TvCursor.setSpeed(speeds[Math.max(0, Math.min(2, si))]);
@@ -287,7 +287,7 @@ public final class TvMainActivity extends AppCompatActivity {
   @Override public boolean dispatchGenericMotionEvent(android.view.MotionEvent event) {
     try {
       android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
-      if ("cursor".equals(prefs.getString("tv_nav_mode", "cursor"))) {
+      if ("cursor".equals(prefs.getString("tv_nav_mode", "dpad"))) {
         if (TvCursor.onMotion(event, this)) return true;
       }
     } catch (Exception ignored) { }
@@ -297,7 +297,7 @@ public final class TvMainActivity extends AppCompatActivity {
   @Override public boolean dispatchKeyEvent(android.view.KeyEvent event) {
     try {
       android.content.SharedPreferences prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
-      if ("cursor".equals(prefs.getString("tv_nav_mode", "cursor"))) {
+      if ("cursor".equals(prefs.getString("tv_nav_mode", "dpad"))) {
         if (TvCursor.onKey(event.getKeyCode(), event, this)) return true;
       }
     } catch (Exception ignored) { }
