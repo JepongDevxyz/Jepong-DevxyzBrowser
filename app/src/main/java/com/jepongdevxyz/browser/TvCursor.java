@@ -162,12 +162,8 @@ public final class TvCursor {
       default: return false;
     }
     if (action == KeyEvent.ACTION_DOWN) {
-      // First try native focus navigation (better for buttons)
-      if (event.getRepeatCount() == 0 && tryFocusMove(dx, dy)) {
-        syncCursorToFocus();
-        return true;
-      }
-      // Fallback: move virtual cursor
+      // Free cursor movement like a mouse — always move the virtual cursor.
+      // (Native focus navigation caused the cursor to snap/jump instead of moving freely.)
       if (event.getRepeatCount() == 0) { moveDx = dx; moveDy = dy; startMoving(); }
     } else if (action == KeyEvent.ACTION_UP) {
       stopMoving();
@@ -234,6 +230,7 @@ public final class TvCursor {
   /**
    * Synthesize a tap at the given screen position.
    * Finds the deepest view at that point and dispatches touch events to it.
+   * Works across the whole app: home, menus, settings, dialogs, panels, WebView.
    */
   private static void clickAt(float sx, float sy) {
     if (activity == null) return;
@@ -241,6 +238,15 @@ public final class TvCursor {
       ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
       View target = findDeepestAt(decor, sx, sy);
       if (target == null) target = decor;
+      // Walk up to find a clickable/long-clickable ancestor if the deepest isn't clickable.
+      // This fixes taps on icons inside non-clickable containers (extensions, VPN rows, etc.)
+      View clickable = target;
+      while (clickable != null && clickable != decor) {
+        if (clickable.isClickable() || clickable.isLongClickable() || clickable.isFocusable()) break;
+        Object parent = clickable.getParent();
+        clickable = (parent instanceof View) ? (View) parent : null;
+      }
+      if (clickable != null) target = clickable;
       // Request focus first for proper TV behavior
       try { if (target.isFocusable()) target.requestFocus(); } catch (Exception ignored) {}
       // Convert screen coords to target-local coords
