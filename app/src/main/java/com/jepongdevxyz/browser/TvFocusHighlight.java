@@ -49,12 +49,15 @@ public final class TvFocusHighlight {
       decor.getViewTreeObserver().addOnGlobalFocusChangeListener(focusListener);
 
       // Make clickable views focusable for D-pad (catches popups/dialogs).
+      // Throttle: only run on layout, not on every frame.
       layoutListener = () -> {
         makeClickableFocusable(decor);
-        fixAllWindows();
+        // fixAllWindows uses reflection - only run occasionally, not on every layout
       };
       decor.getViewTreeObserver().addOnGlobalLayoutListener(layoutListener);
       makeClickableFocusable(decor);
+      // Run fixAllWindows once after a delay (for popups), not on every layout
+      decor.postDelayed(() -> fixAllWindows(), 500);
     } catch (Exception ignored) { }
   }
 
@@ -155,9 +158,8 @@ public final class TvFocusHighlight {
       paint.setStyle(Paint.Style.STROKE);
       paint.setColor(Color.parseColor("#FF9800")); // Bold orange
       paint.setStrokeWidth(dp(4));
-      // Subtle glow fill
-      paint.setShadowLayer(dp(8), 0, 0, Color.parseColor("#80FF9800"));
-      setLayerType(LAYER_TYPE_SOFTWARE, null);
+      paint.setAntiAlias(true);
+      // Hardware acceleration for smooth 60fps (no shadow layer - too slow)
     }
 
     private int dp(int v) {
@@ -184,22 +186,12 @@ public final class TvFocusHighlight {
           invalidate();
           return;
         }
-        // Animate from current to new position (smooth).
-        final float sl = animLeft, st = animTop, sr = animRight, sb = animBottom;
+        // Instant move for Netflix-like snappiness (no animation lag).
+        // Cancel any running animation.
         if (animator != null) animator.cancel();
-        animator = ValueAnimator.ofFloat(0f, 1f);
-        animator.setDuration(150);
-        animator.setInterpolator(new DecelerateInterpolator());
-        animator.addUpdateListener(a -> {
-          float f = (float) a.getAnimatedValue();
-          animLeft = sl + (nl - sl) * f;
-          animTop = st + (nt - st) * f;
-          animRight = sr + (nr - sr) * f;
-          animBottom = sb + (nb - sb) * f;
-          invalidate();
-        });
-        animator.start();
+        animLeft = nl; animTop = nt; animRight = nr; animBottom = nb;
         setVisibility(VISIBLE);
+        invalidate();
       } catch (Exception ignored) { }
     }
 
@@ -215,16 +207,8 @@ public final class TvFocusHighlight {
       if (!hasTarget || getVisibility() != VISIBLE) return;
       rect.set(animLeft, animTop, animRight, animBottom);
       float radius = dp(8);
-      // Bold double border for maximum visibility
+      // Single bold border - fast and clear
       canvas.drawRoundRect(rect, radius, radius, paint);
-      paint.setStrokeWidth(dp(2));
-      paint.setAlpha(128);
-      RectF inner = new RectF(rect);
-      float inset = dp(6);
-      inner.inset(inset, inset);
-      canvas.drawRoundRect(inner, radius, radius, paint);
-      paint.setStrokeWidth(dp(4));
-      paint.setAlpha(255);
     }
   }
 }
