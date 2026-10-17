@@ -743,9 +743,12 @@ public final class SettingsScreens {
             a.prefs.edit().putString("tv_nav_mode", mode).apply();
             // Apply immediately
             TvNavigation.applyMode(a);
-            a.refreshSettingsPanel();
-            // Refresh the row label
-            initSettingsPanel(root);
+            // Dismiss settings; user reopens to see updated label
+            // (avoids duplicate rows from re-init)
+            if (a.settingsDialog != null) {
+              a.settingsDialog.dismiss();
+              a.settingsDialog = null;
+            }
           }));
       root.addView(navRow, Math.max(0, root.getChildCount() - 1));
     }
