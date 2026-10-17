@@ -58,6 +58,16 @@ public final class TvFocusHighlight {
       makeClickableFocusable(decor);
       // Run fixAllWindows once after a delay (for popups), not on every layout
       decor.postDelayed(() -> fixAllWindows(), 500);
+      // Ensure there's an initial focus for D-pad navigation (Netflix-style:
+      // focus starts on the first focusable view so D-pad works immediately)
+      decor.postDelayed(() -> {
+        try {
+          if (boundActivity != null && boundActivity.getCurrentFocus() == null) {
+            View first = decor.focusSearch(View.FOCUS_DOWN);
+            if (first != null) first.requestFocus();
+          }
+        } catch (Exception ignored) { }
+      }, 800);
     } catch (Exception ignored) { }
   }
 
@@ -131,9 +141,15 @@ public final class TvFocusHighlight {
   public static void makeClickableFocusable(View view) {
     try {
       if (view == null) return;
-      if (view != highlightView && view.isClickable() && !view.isFocusable()) {
-        view.setFocusable(true);
-        view.setFocusableInTouchMode(false);
+      // Make ALL potentially interactive views focusable for D-pad:
+      // clickable, long-clickable, or has click listener
+      if (view != highlightView && !view.isFocusable()) {
+        boolean interactive = view.isClickable() || view.isLongClickable()
+            || view.hasOnClickListeners();
+        if (interactive) {
+          view.setFocusable(true);
+          view.setFocusableInTouchMode(false);
+        }
       }
       if (view instanceof ViewGroup) {
         ViewGroup vg = (ViewGroup) view;
