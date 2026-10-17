@@ -185,15 +185,35 @@ public final class TvFocusHighlight {
     /** Animate the highlight to wrap the given view. */
     void moveTo(View target) {
       try {
+        // Validate target: must have valid size, not be the decor itself
+        if (target == null || target.getWidth() <= 0 || target.getHeight() <= 0) {
+          hide();
+          return;
+        }
+        // Don't highlight the decor view or the highlight itself (causes full-screen lines)
+        if (target == getParent() || target == this) {
+          hide();
+          return;
+        }
         int[] loc = new int[2];
         target.getLocationOnScreen(loc);
         int[] rootLoc = new int[2];
-        ((View) getParent()).getLocationOnScreen(rootLoc);
+        View parent = (View) getParent();
+        if (parent == null) {
+          hide();
+          return;
+        }
+        parent.getLocationOnScreen(rootLoc);
         float pad = dp(6);
         float nl = loc[0] - rootLoc[0] - pad;
         float nt = loc[1] - rootLoc[1] - pad;
         float nr = loc[0] - rootLoc[0] + target.getWidth() + pad;
         float nb = loc[1] - rootLoc[1] + target.getHeight() + pad;
+        // Validate coordinates: must be on-screen with reasonable size
+        if (nr <= nl || nb <= nt || nl < -100 || nt < -100) {
+          hide();
+          return;
+        }
 
         if (!hasTarget) {
           animLeft = nl; animTop = nt; animRight = nr; animBottom = nb;
