@@ -188,10 +188,12 @@ public final class MainActivity extends AppCompatActivity {
     // TV: stay in full browser, enable TV cursor navigation.
     boolean isTv = TvUtil.isTv(this);
     prefs = getSharedPreferences("devxyz", MODE_PRIVATE);
-    if (isTv) {
+       setContentView(R.layout.activity_main); 
+   if (isTv) {
+         // Must be AFTER setContentView: TvFocusHighlight needs inflated views
+         // to make them focusable for D-pad navigation.
       applyTvNavMode();
-    }
-    setContentView(R.layout.activity_main);
+          }
     isDesktop = findViewById(R.id.sidebar) != null;
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     View content = findViewById(android.R.id.content);
