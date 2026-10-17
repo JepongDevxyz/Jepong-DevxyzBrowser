@@ -729,6 +729,26 @@ public final class SettingsScreens {
     aiRow.setOnClickListener(v -> showAiSettings());
     // Insert before the last child (version footer if any)
     root.addView(aiRow, Math.max(0, root.getChildCount() - 1));
+    // TV Navigation Mode row (only on TV devices)
+    if (com.jepongdevxyz.browser.util.TvUtil.isTv(a)) {
+      String navMode = a.prefs.getString("tv_nav_mode", "dpad");
+      String navLabel = "cursor".equals(navMode) ? "Cursor (virtual mouse)" : "D-pad (Netflix-style)";
+      LinearLayout navRow = appearanceRow("TV Navigation", navLabel);
+      navRow.setOnClickListener(v -> a.pickOption(
+          "TV Navigation Mode",
+          new String[]{"D-pad (Netflix-style)", "Cursor (virtual mouse)"},
+          navLabel,
+          val -> {
+            String mode = val.startsWith("Cursor") ? "cursor" : "dpad";
+            a.prefs.edit().putString("tv_nav_mode", mode).apply();
+            // Apply immediately
+            TvNavigation.applyMode(a);
+            a.refreshSettingsPanel();
+            // Refresh the row label
+            initSettingsPanel(root);
+          }));
+      root.addView(navRow, Math.max(0, root.getChildCount() - 1));
+    }
     // Chrome-style pages: Accessibility + Site settings
     ChromeSettings.addRows(a, root);
     a.refreshSettingsPanel();
